@@ -275,10 +275,11 @@ TH1D* fitTemplate(TH1D *templateh, bool doEB, double pedestal=0, TH1D* simTempla
   return shifted_temp;
 }
 
-void saveTemplates(bool dobarrel) {
+void saveTemplates(bool dobarrel, int min_run=1, int max_run=999999) {
 
-  TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_dynped_rawid.root"); // 2013 low PU runs
-  // TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_tree_pi0_2015C_lowPU.root"); // 2015 low PU runs
+  // TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_dynped_rawid.root"); // 2013 low PU runs
+  TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_tree_pi0_2015C_lowPU.root"); // 2015 low PU runs
+  // TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_pi0_lonebunch.root"); // 2015 lone bunch triggers on pi0 stream
   TTree *tree = (TTree*)file->Get("pulseDump/pulse_tree");
 
   Long64_t nentries = tree->GetEntries();
@@ -293,7 +294,11 @@ void saveTemplates(bool dobarrel) {
   Int_t           iz;
   Double_t        pulse[10];
   UInt_t          rawid;
-  
+  Int_t           run = 2; // define like that to cope with the trees where run branch was not present
+  Int_t           lumi;
+
+  tree->SetBranchAddress("run", &run);
+  tree->SetBranchAddress("lumi", &lumi);
   tree->SetBranchAddress("barrel", &barrel);
   tree->SetBranchAddress("gain", &gain);
   tree->SetBranchAddress("pedrms", &pedrms);
@@ -309,6 +314,9 @@ void saveTemplates(bool dobarrel) {
   std::map<int, double> norm_average;
   std::map<int, double> norm_counts;
   std::map<int, unsigned int> rawIds;
+  std::map<int, int> iXs;
+  std::map<int, int> iYs;
+  std::map<int, int> iZs;
 
   // to reject noise" better in ADC not to make eta-dependent cuts
   // ~10 sigma from the 2012 plots: https://twiki.cern.ch/twiki/bin/view/CMSPublic/EcalDPGResultsCMSDP2013007
@@ -330,6 +338,8 @@ void saveTemplates(bool dobarrel) {
     nb = tree->GetEntry(jentry);   nbytes += nb;
 
     if(jentry%100000==0) std::cout << "Processing entry " << jentry << std::endl;
+
+    if(run < min_run || run > max_run) continue;
 
     if((dobarrel && (!barrel)) || (!dobarrel && barrel)) continue;
 
@@ -375,6 +385,7 @@ void saveTemplates(bool dobarrel) {
       norm_counts[ic] = 1;
       // std::cout << "inserting new ped for DetId = " << ic << std::endl;
       rawIds[ic] = rawid;
+      iXs[ic] = ietaix;       iYs[ic] = iphiiy;        iZs[ic] = iz;
     } else {
       std::vector<double> &templ = templates[ic];
       for(int iSample(0); iSample < 10; iSample++) templ[iSample] += pulse[iSample]/maxval * weight;
@@ -387,21 +398,23 @@ void saveTemplates(bool dobarrel) {
   TH1D *simTemplate = simPulseShapeTemplate(dobarrel);
 
   /// output
-  TString nameoutput = dobarrel ? "template_histograms_EB.root" : "template_histograms_EE.root";
+  TString nameoutput = dobarrel ? "template_histograms_EB" : "template_histograms_EE";
+  nameoutput += Form("_runs_%d_%d.root",min_run,max_run);
   TFile *outfile = TFile::Open(nameoutput.Data(),"recreate");
   TH1D *htemplAverage =  (TH1D*)htempl->Clone("templates_average");
   int nCry(0);
 
   // text file to fill the DB objects with templates
   ofstream txtdumpfile;  
-  TString nametxtoutput = dobarrel ? "template_histograms_EB.txt" : "template_histograms_EE.txt";
+  TString nametxtoutput = dobarrel ? "template_histograms_EB" : "template_histograms_EE";
+  nametxtoutput += Form("_runs_%d_%d.txt",min_run,max_run);
   txtdumpfile.open (nametxtoutput.Data(), ios::out | ios::trunc);
 
   for(std::map<int, std::vector<double> >::iterator it=templates.begin(); it!=templates.end(); ++it) {
     unsigned int rawId = rawIds[it->first];
     txtdumpfile.unsetf ( std::ios::floatfield ); 
     txtdumpfile << ( dobarrel ? 1 : 0 ) << "\t";
-    txtdumpfile << rawId << "\t";
+    txtdumpfile << iXs[it->first] << "\t" << iYs[it->first] << "\t" << iZs[it->first] << "\t" << rawId << "\t";
     txtdumpfile.precision(6);
     txtdumpfile.setf( std::ios::fixed, std:: ios::floatfield ); // floatfield set to fixed
     
