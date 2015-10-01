@@ -7,6 +7,7 @@
 #include "TTree.h"
 #include "THashList.h"
 #include "TH2D.h"
+#include "TProfile2D.h"
 #include "TCanvas.h"
 #include "TString.h"
 #include "TLegend.h"
@@ -54,8 +55,10 @@ pulseshape getPulseShape(TH1D *pulse, int doEB, double pedestal=0) {
   TF1 *fitF = new TF1("alphabeta",alphabeta,0,10,5);
   fitF->SetParNames("norm","#alpha","#beta","tmax","pedestal");
   fitF->SetParLimits(0,0,10000); // normalization
-  fitF->FixParameter(1,alpha);
-  fitF->FixParameter(2,beta);
+  fitF->SetParameter(1,alpha);
+  fitF->SetParLimits(1,1.0,1.5);
+  fitF->SetParameter(2,beta);
+  fitF->SetParLimits(2,1.4,1.9);
   fitF->SetParameter(3,5.5);
   fitF->SetParLimits(3,4,7); // tmax
   fitF->FixParameter(5,pedestal);
@@ -91,7 +94,10 @@ void historyPlots() {
 
   std::map<int, string> tags;
   tags[254987] = "template_histograms_EB_runs_1_999999.txt";
-  tags[257400] = "template_histograms_EB_runs_257400_257400.txt";
+  tags[257645] = "template_histograms_EB_runs_257645_257645.txt";
+  tags[257682] = "template_histograms_EB_runs_257682_257682.txt";
+  tags[257721] = "template_histograms_EB_runs_257721_257743.txt";
+  tags[257751] = "template_histograms_EB_runs_257751_257751.txt";
 
   typedef std::map<int, pulseshape> shapemap;
   std::map<int, shapemap> shapetags;
@@ -101,8 +107,8 @@ void historyPlots() {
   TH1D *pulseshapeH = new TH1D("pulseshape","",15,0,15);
 
   // 2D example maps
-  TH2D* ebmap = new TH2D("ebmap","",360,1,360,170,-85,85);
-  TH2D* eemap = new TH2D("eemap","",100,1,100,100,1,100);
+  TProfile2D* ebmap = new TProfile2D("ebmap","",360,1,360,170,-85,85);
+  TProfile2D* eemap = new TProfile2D("eemap","",100,1,100,100,1,100);
 
   int iov = 1;
   for(std::map<int, std::string>::iterator it = tags.begin(); it!=tags.end(); ++it) {
@@ -118,17 +124,17 @@ void historyPlots() {
     int iecal, ietaix, iphiiy, iz;
     double normpulse[15];
 
-    TH2D* time_eb, *alpha_eb, *beta_eb;
-    TH2D* time_ee, *alpha_ee, *beta_ee;
+    TProfile2D* time_eb, *alpha_eb, *beta_eb;
+    TProfile2D* time_ee, *alpha_ee, *beta_ee;
 
     if(iov>1) {
-      time_eb  = (TH2D*)ebmap->Clone(Form("time_eb_run_%d",it->first));
-      alpha_eb = (TH2D*)ebmap->Clone(Form("alpha_eb_run_%d",it->first));
-      beta_eb  = (TH2D*)ebmap->Clone(Form("beta_eb_run_%d",it->first));
+      time_eb  = (TProfile2D*)ebmap->Clone(Form("time_eb_run_%d",it->first));
+      alpha_eb = (TProfile2D*)ebmap->Clone(Form("alpha_eb_run_%d",it->first));
+      beta_eb  = (TProfile2D*)ebmap->Clone(Form("beta_eb_run_%d",it->first));
       
-      time_ee  = (TH2D*)eemap->Clone(Form("time_ee_run_%d",it->first));
-      alpha_ee = (TH2D*)eemap->Clone(Form("alpha_ee_run_%d",it->first));
-      beta_ee  = (TH2D*)eemap->Clone(Form("beta_ee_run_%d",it->first));
+      time_ee  = (TProfile2D*)eemap->Clone(Form("time_ee_run_%d",it->first));
+      alpha_ee = (TProfile2D*)eemap->Clone(Form("alpha_ee_run_%d",it->first));
+      beta_ee  = (TProfile2D*)eemap->Clone(Form("beta_ee_run_%d",it->first));
     }
     
     // now read the tag
@@ -153,14 +159,15 @@ void historyPlots() {
       psmap[rawId] = ps;
 
       if(iov > 1) {
+	if(ietaix>0) ietaix = ietaix-1;
 	if(iecal==1) {
-	  time_eb ->SetBinContent(iphiiy, ietaix, ps.time  / reference_psmap[rawId].time);
-	  alpha_eb->SetBinContent(iphiiy, ietaix, ps.alpha / reference_psmap[rawId].alpha);
-	  beta_eb ->SetBinContent(iphiiy, ietaix, ps.beta  / reference_psmap[rawId].beta);
+	  time_eb ->Fill(iphiiy, ietaix+0.5, ps.time  - reference_psmap[rawId].time);
+	  alpha_eb->Fill(iphiiy, ietaix+0.5, (ps.alpha / reference_psmap[rawId].alpha)/reference_psmap[rawId].alpha);
+	  beta_eb ->Fill(iphiiy, ietaix+0.5, (ps.beta  / reference_psmap[rawId].beta)/reference_psmap[rawId].beta);
 	} else {
-	  time_ee ->SetBinContent(iphiiy, ietaix, ps.time  / reference_psmap[rawId].time);
-	  alpha_ee->SetBinContent(iphiiy, ietaix, ps.alpha / reference_psmap[rawId].alpha);
-	  beta_ee ->SetBinContent(iphiiy, ietaix, ps.beta  / reference_psmap[rawId].beta);
+	  time_ee ->Fill(iphiiy, ietaix+0.5, ps.time  - reference_psmap[rawId].time);
+	  alpha_ee->Fill(iphiiy, ietaix+0.5, (ps.alpha / reference_psmap[rawId].alpha)/reference_psmap[rawId].alpha);
+	  beta_ee ->Fill(iphiiy, ietaix+0.5, (ps.beta  / reference_psmap[rawId].beta)/reference_psmap[rawId].beta);
 	}
       }
 
