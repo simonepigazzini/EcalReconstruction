@@ -278,8 +278,9 @@ TH1D* fitTemplate(TH1D *templateh, bool doEB, double pedestal=0, TH1D* simTempla
 void saveTemplates(bool dobarrel, int min_run=1, int max_run=999999) {
 
   // TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_dynped_rawid.root"); // 2013 low PU runs
-  TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_tree_pi0_2015C_lowPU.root"); // 2015 low PU runs
+  // TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_tree_pi0_2015C_lowPU.root"); // 2015 low PU runs
   // TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_pi0_lonebunch.root"); // 2015 lone bunch triggers on pi0 stream
+  TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_phisymm_lonebunch.root"); // 2015 lone bunch triggers on phi-symmetry stream
   TTree *tree = (TTree*)file->Get("pulseDump/pulse_tree");
 
   Long64_t nentries = tree->GetEntries();
@@ -1302,5 +1303,21 @@ void draw1DSamples(bool dobarrel, const char *txtdumpfile = "template_histograms
    c1->SaveAs(Form("h_1d_sample%d.pdf",s));
    c1->SaveAs(Form("h_1d_sample%d.png",s));
  }
+
+}
+
+
+void saveAllTemplatesByRunRanges() {
+  
+  std::vector< std::pair<int,int> > ranges;
+  ranges.push_back(std::make_pair(257645,257645));
+  ranges.push_back(std::make_pair(257682,257682));
+  ranges.push_back(std::make_pair(257721,257743));
+  ranges.push_back(std::make_pair(257751,257751));
+
+  std::vector< std::pair<int,int> >::const_iterator it;
+  for(it=ranges.begin(); it!=ranges.end(); ++it) {
+    for(int iecal=1; iecal>-1; --iecal) saveTemplates(iecal,it->first,it->second);
+  }
 
 }
