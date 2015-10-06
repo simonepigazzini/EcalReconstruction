@@ -8,6 +8,7 @@
 #include "THashList.h"
 #include "TH2D.h"
 #include "TProfile2D.h"
+#include "TGraphErrors.h"
 #include "TCanvas.h"
 #include "TString.h"
 #include "TLegend.h"
@@ -19,10 +20,9 @@ struct pulseshape {
   double alpha;
   double beta;
   double chi2;
-  int iecal;
-  int ietaix;
-  int iphiiy;
-  int iz;
+  double time_err;
+  double alpha_err;
+  double beta_err;
 };
 
 Double_t alphabeta( Double_t *x, Double_t * par)
@@ -56,9 +56,9 @@ pulseshape getPulseShape(TH1D *pulse, int doEB, double pedestal=0) {
   fitF->SetParNames("norm","#alpha","#beta","tmax","pedestal");
   fitF->SetParLimits(0,0,10000); // normalization
   fitF->SetParameter(1,alpha);
-  fitF->SetParLimits(1,1.0,1.5);
+  fitF->SetParLimits(1,1.2,1.3);
   fitF->SetParameter(2,beta);
-  fitF->SetParLimits(2,1.4,1.9);
+  fitF->SetParLimits(2,1.58,1.8);
   fitF->SetParameter(3,5.5);
   fitF->SetParLimits(3,4,7); // tmax
   fitF->FixParameter(5,pedestal);
@@ -67,7 +67,12 @@ pulseshape getPulseShape(TH1D *pulse, int doEB, double pedestal=0) {
 
   ps.alpha = fitF->GetParameter(1);
   ps.beta = fitF->GetParameter(2);
-  ps.time = fitF->GetParameter(3);
+  ps.time = 25. * fitF->GetParameter(3);
+
+  ps.alpha_err = fitF->GetParError(1);
+  ps.beta_err = fitF->GetParError(2);
+  ps.time_err = 25. * fitF->GetParError(3);
+
   ps.chi2 = fitF->GetChisquare();
 
   // plotting (for debug only: 1 plot / rechit
@@ -93,11 +98,11 @@ pulseshape getPulseShape(TH1D *pulse, int doEB, double pedestal=0) {
 void historyPlots() {
 
   std::map<int, string> tags;
-  tags[254987] = "template_histograms_EB_runs_1_999999.txt";
-  tags[257645] = "template_histograms_EB_runs_257645_257645.txt";
-  tags[257682] = "template_histograms_EB_runs_257682_257682.txt";
-  tags[257721] = "template_histograms_EB_runs_257721_257743.txt";
-  tags[257751] = "template_histograms_EB_runs_257751_257751.txt";
+  tags[254987] = "template_histograms_ECAL_runs_1_999999.txt";
+  tags[257645] = "template_histograms_ECAL_runs_257645_257645.txt";
+  tags[257682] = "template_histograms_ECAL_runs_257682_257682.txt";
+  tags[257721] = "template_histograms_ECAL_runs_257721_257743.txt";
+  tags[257751] = "template_histograms_ECAL_runs_257751_257751.txt";
 
   typedef std::map<int, pulseshape> shapemap;
   std::map<int, shapemap> shapetags;
@@ -151,10 +156,6 @@ void historyPlots() {
       }
 
       pulseshape ps = getPulseShape(pulseshapeH, iecal);
-      ps.iecal = iecal;
-      ps.ietaix = ietaix;
-      ps.iphiiy = iphiiy;
-      ps.iz = iz;
       
       psmap[rawId] = ps;
 
@@ -162,12 +163,12 @@ void historyPlots() {
 	if(ietaix>0) ietaix = ietaix-1;
 	if(iecal==1) {
 	  time_eb ->Fill(iphiiy, ietaix+0.5, ps.time  - reference_psmap[rawId].time);
-	  alpha_eb->Fill(iphiiy, ietaix+0.5, (ps.alpha / reference_psmap[rawId].alpha)/reference_psmap[rawId].alpha);
-	  beta_eb ->Fill(iphiiy, ietaix+0.5, (ps.beta  / reference_psmap[rawId].beta)/reference_psmap[rawId].beta);
+	  alpha_eb->Fill(iphiiy, ietaix+0.5, (ps.alpha - reference_psmap[rawId].alpha)/reference_psmap[rawId].alpha_err);
+	  beta_eb ->Fill(iphiiy, ietaix+0.5, (ps.beta  - reference_psmap[rawId].beta)/reference_psmap[rawId].beta_err);
 	} else {
-	  time_ee ->Fill(iphiiy, ietaix+0.5, ps.time  - reference_psmap[rawId].time);
-	  alpha_ee->Fill(iphiiy, ietaix+0.5, (ps.alpha / reference_psmap[rawId].alpha)/reference_psmap[rawId].alpha);
-	  beta_ee ->Fill(iphiiy, ietaix+0.5, (ps.beta  / reference_psmap[rawId].beta)/reference_psmap[rawId].beta);
+	  time_ee ->Fill(ietaix, iphiiy, ps.time  - reference_psmap[rawId].time);
+	  alpha_ee->Fill(ietaix, iphiiy, (ps.alpha - reference_psmap[rawId].alpha)/reference_psmap[rawId].alpha_err * 100.);
+	  beta_ee ->Fill(ietaix, iphiiy, (ps.beta  - reference_psmap[rawId].beta)/reference_psmap[rawId].beta_err * 100.);
 	}
       }
 
@@ -191,4 +192,87 @@ void historyPlots() {
 
   fileOut->Close();  
 
+}
+
+void drawAll() {
+
+  gStyle->SetOptStat(0);
+  gStyle->SetOptFit(1111);
+
+  const int nvars=3;
+  const int niovs=4;
+  int iovs[niovs] = {257645,257682,257721,257751};
+  string titles[nvars] = {"t-t_{0} (ns)", "#alpha variation (n#sigma_{#alpha})", "#beta variation (n#sigma_{#beta})"};
+  string vars[nvars] = {"time","alpha","beta"};
+  string partitions[2] = {"eb","ee"};
+
+  std::vector<TGraphErrors*> graphs;
+  for(int var=0; var<nvars; ++var) {
+    graphs.push_back(new TGraphErrors(niovs));
+    graphs[var]->SetName(Form("graph_%s",vars[var].c_str()));
+  }
+
+  TFile *tfile = TFile::Open("pulseshape_history.root");
+
+  int plotscale=600;
+  TCanvas *ceb = new TCanvas("ceb","",plotscale*360./170,plotscale);
+  TCanvas *cee = new TCanvas("cee","",plotscale,plotscale);
+
+  for(int iov=0; iov<niovs; ++iov) {
+    for(int var=0; var<nvars; ++var) {
+      double min = var==0 ? -1.5 : -2.;
+      double max = var==0 ?  1.5 : 2.;
+      for(int partition=0; partition<2; ++partition) {
+	TProfile2D *p2d = (TProfile2D*)tfile->Get(Form("%s_%s_run_%d",vars[var].c_str(),partitions[partition].c_str(),iovs[iov]));
+	p2d->GetZaxis()->SetRangeUser(min,max);
+	p2d->SetTitle(titles[var].c_str());
+	if(partition==0) {
+	  ceb->cd(); 
+	  p2d->GetXaxis()->SetTitle("i#phi");
+	  p2d->GetYaxis()->SetTitle("i#eta");
+	}
+	else {
+	  cee->cd();
+	  p2d->GetXaxis()->SetTitle("ix");
+	  p2d->GetYaxis()->SetTitle("iy");
+	}
+	p2d->Draw("colz");
+	gPad->SaveAs(Form("map_%s.pdf",p2d->GetName()));
+	gPad->SaveAs(Form("map_%s.png",p2d->GetName()));
+
+
+	// plot 1D
+	int nbins1D = (partition==0 ? 400 : 150);
+	TH1D *plot1D = new TH1D(Form("%s_1D",p2d->GetName()),"",nbins1D,min,max);
+
+	for(int bin=0; bin<p2d->GetNbinsX() * p2d->GetNbinsY(); ++bin) {
+	  if(p2d->GetBinEntries(bin+1)>0) plot1D->Fill(p2d->GetBinContent(bin+1));
+	}
+	if(var==0) {
+	  if(partition==0) plot1D->Fit("gaus","","",-0.9,0.15);
+	  else plot1D->Fit("gaus","","",-1.5,0.5);
+	}
+	cee->cd();
+	plot1D->GetXaxis()->SetTitle(titles[var].c_str());
+	plot1D->Draw();
+
+	// fill averages
+	graphs[var]->SetPoint(iov,iov,plot1D->GetMean());
+	graphs[var]->SetPointError(iov,iov,plot1D->GetRMS());
+	
+	graphs[var]->GetXaxis()->SetBinLabel(iov+1,Form("%d",iovs[iov]));
+
+	cee->SaveAs(Form("%s.pdf",plot1D->GetName()));
+	cee->SaveAs(Form("%s.png",plot1D->GetName()));
+      }
+    }
+  }
+
+  TCanvas *c1 = new TCanvas("c1","",plotscale,plotscale);
+  for(int var=0; var<nvars; ++var) {
+    graphs[var]->Draw("AP");
+    c1->SaveAs(Form("historyplot_%s.pdf",graphs[var]->GetName()));
+    c1->SaveAs(Form("historyplot_%s.png",graphs[var]->GetName()));
+  }
+  
 }
