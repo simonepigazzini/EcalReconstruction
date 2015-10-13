@@ -179,3 +179,21 @@ void makeSimTimeShiftedTemplates(double timeOffset) {
   }
 
 }
+
+void makeAll(double minOffset=-5.0, double maxOffset=5.0, double step=0.250) {
+
+  for(double offset=minOffset; offset<maxOffset; offset+=step) {
+    std::cout << "MAKING SHIFTED TEMPLATES FOR SHIFT = " << offset << " ns..." << std::endl;
+    makeTimeShiftedTemplates(offset);
+  }
+
+}
+
+void makeSimAll(double minOffset=-5.0, double maxOffset=5.0, double step=0.250) {
+
+  for(double offset=minOffset; offset<maxOffset; offset+=step) {
+    std::cout << "MAKING SHIFTED TEMPLATES FOR SHIFT = " << offset << " ns..." << std::endl;
+    makeSimTimeShiftedTemplates(offset);
+  }
+
+}
