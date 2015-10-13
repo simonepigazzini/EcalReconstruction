@@ -544,3 +544,230 @@ void plotResolution() {
 
 }
 
+void runAll() {
+  
+  string tree_dir = "Trees_DATA_SYST_ECALRECO/";
+  string tree_file = "/treeProducerDarkMatterMonoJet/tree.root";
+  vector<string> rerecoes;
+  rerecoes.push_back("privDoubleEG_Run2015D_Nominal");
+  rerecoes.push_back("privDoubleEG_Run2015D_SystMinus500ps");
+  rerecoes.push_back("privDoubleEG_Run2015D_SystMinus250ps");
+  rerecoes.push_back("privDoubleEG_Run2015D_SystPlus250ps");
+  rerecoes.push_back("privDoubleEG_Run2015D_SystPlus500ps");
+  rerecoes.push_back("privDoubleEG_Run2015D_SystPlus1000ps");
+
+  string outputpref="";
+
+  for(int isyst=0; isyst<(int)rerecoes.size(); ++isyst) {
+    string inputf = tree_dir + rerecoes[isyst] + tree_file;
+    string outputpref = "results_" + rerecoes[isyst];
+    std::cout << "RUNNING OVER FILE = " << rerecoes[isyst] << std::endl;
+    // do the fits in eta,pt bins of the electrons
+    for(int r9b=0; r9b<2; ++r9b) {
+      std::cout << "r9b = " << r9b << std::endl;
+      for(int etab=0; etab<5; ++etab) {
+	std::cout << "   eta bin = " << etab << std::endl;
+	for( int p4kind=1; p4kind<2; ++p4kind) {
+	  std::cout << " local reco type = " << p4kind << std::endl;
+	  TString outputfdata=Form("%s_R9Bin%d_EtaBin%d_Reco%d",outputpref.c_str(),r9b,etab,p4kind);
+	  std::cout <<"        fitting DATA..." << std::endl;
+	  FitZMassScaleAndResolution(p4kind,inputf.c_str(),outputfdata.Data(),r9b,etab,-1);
+	  std::cout << "        output is in file " << outputfdata.Data() << std::endl;
+	}
+      }
+    }
+  }
+
+}
+
+
+
+
+
+void plotParametersVsTimeShift() {
+
+  TStyle *mystyle = RooHZZStyle("ZZ");
+  mystyle->cd();
+
+  const int nTimeBins = 6;
+  const int nominalPoint = 2;
+  double timeBinSize = 0.25;
+  
+  vector<string> rerecoes;
+  rerecoes.push_back("privDoubleEG_Run2015D_SystMinus500ps");
+  rerecoes.push_back("privDoubleEG_Run2015D_SystMinus250ps");
+  rerecoes.push_back("privDoubleEG_Run2015D_Nominal");
+  rerecoes.push_back("privDoubleEG_Run2015D_SystPlus250ps");
+  rerecoes.push_back("privDoubleEG_Run2015D_SystPlus500ps");
+  rerecoes.push_back("privDoubleEG_Run2015D_SystPlus1000ps");
+
+  double timeBins[nTimeBins] = {-0.50,-0.25,0.00,0.25,0.50,1.00};
+  double timeBinEdges[nTimeBins+1];
+  for(int b=0; b<nTimeBins; ++b) timeBinEdges[b] = timeBins[b] - timeBinSize/2.;
+  timeBinEdges[nTimeBins] = timeBins[nTimeBins-1] + timeBinSize/2.;
+
+  const int nBinsEta = 5;
+  const int nBinsR9 = 2;
+  TGraphAsymmErrors gScaleZ[nBinsR9][nBinsEta];
+  TGraphAsymmErrors gResoZ[nBinsR9][nBinsEta];
+
+  double MZ0 = 91.1876;
+
+  // Z->ee
+  for(int ir9=0; ir9<nBinsR9; ++ir9) {
+    for(int ieta=0; ieta<nBinsEta; ++ieta) {
+      for(int shift = 0; shift<(int)rerecoes.size(); ++shift) {
+
+	stringstream datafile, mcfile;
+	cout << "Analyzing R9 bin = " << ir9 << " eta bin = " << ieta << endl;
+	datafile << "results_" << rerecoes[shift] << "_R9Bin" << ir9 << "_EtaBin" << ieta << "_Reco1.root";
+      
+	TFile *tdatafile = TFile::Open(datafile.str().c_str());
+	RooFitResult *datafr = (RooFitResult*)tdatafile->Get("fitres");
+	float dataDM = ((RooRealVar*)(datafr->floatParsFinal().find("#Deltam_{CB}")))->getVal();
+	float dataDM_err = ((RooRealVar*)(datafr->floatParsFinal().find("#Deltam_{CB}")))->getError();
+	float dataS = ((RooRealVar*)(datafr->floatParsFinal().find("#sigma_{CB}")))->getVal();
+	float dataS_err = ((RooRealVar*)(datafr->floatParsFinal().find("#sigma_{CB}")))->getError();
+	tdatafile->Close();
+
+	float bincenter=timeBins[shift];	
+	float binerrup=timeBinSize/2.;
+	float binerrdn=timeBinSize/2.;
+
+	gScaleZ[ir9][ieta].SetPoint(shift,bincenter,dataDM/MZ0 * 100);
+	gScaleZ[ir9][ieta].SetPointError(shift,binerrdn,binerrup,dataDM_err/MZ0*100,dataDM_err/MZ0*100);
+	gResoZ[ir9][ieta].SetPoint(shift,bincenter,dataS);
+	gResoZ[ir9][ieta].SetPointError(shift,binerrdn,binerrup,dataS_err,dataS_err);
+      }
+    }
+  }
+
+  for(int ir9=0; ir9<nBinsR9; ++ir9) {
+    for(int ieta=0; ieta<nBinsEta; ++ieta) {
+      for(int shift = 0; shift<(int)rerecoes.size(); ++shift) {
+	// rescale for the change in the mass scale
+	double bincenter, y, y0, yerr, yerr0;
+	int p = gScaleZ[ir9][ieta].GetPoint(shift,bincenter,y);
+	yerr =  gScaleZ[ir9][ieta].GetErrorYhigh(shift);
+
+	double reso;
+	p =  gResoZ[ir9][ieta].GetPoint(ieta,bincenter,reso);
+
+	double massscalef = MZ0 + y;
+	double massreso_scaled = reso / massscalef / sqrt(2.0);
+	double massresoerr_scaled = gResoZ[ir9][ieta].GetErrorYhigh(shift) / massscalef / sqrt(2.0);
+
+	float binerrup=timeBinSize/2.;
+	float binerrdn=timeBinSize/2.;
+
+	gResoZ[ir9][ieta].SetPoint(shift,bincenter,massreso_scaled);
+	gResoZ[ir9][ieta].SetPointError(shift,binerrdn,binerrup,massresoerr_scaled,massresoerr_scaled);
+      }}}  
+
+  int markerstyles[2] = {kOpenSquare,kFullCircle};
+  int markercolors[2] = {kRed,kBlack};
+  std::string r9labels[2] = {"R_{9}>0.94","R_{9}<0.94"};
+
+  TPaveText *pt2 = new TPaveText(0.20,0.94,0.93,0.98,"brNDC");
+  pt2->SetBorderSize(0);
+  pt2->SetFillStyle(0);
+  pt2->SetTextAlign(12);
+  pt2->SetTextFont(42);
+  pt2->SetTextSize(0.04);
+  pt2->AddText("CMS Preliminary, #sqrt{s} = 13 TeV,     L = xxx pb^{-1}");
+  
+  TCanvas *c1 = new TCanvas("c1","",600,600);
+  c1->Range(-22.61122,-0.006062015,75.00967,0.004744186);
+  c1->SetLeftMargin(0.2316227);
+  c1->SetRightMargin(0.05131761);
+  c1->SetTopMargin(0.06886657);
+  c1->SetBottomMargin(0.1908178);
+  
+  for(int ieta=0; ieta<nBinsEta; ++ieta) {
+    TLegend* leg2 = new TLegend(0.3,0.80,0.90,0.90);
+    leg2->SetFillStyle(0); leg2->SetBorderSize(0); leg2->SetTextSize(0.03);
+    leg2->SetTextFont(42);
+    leg2->SetFillColor(0);
+    for(int ir9=0; ir9<nBinsR9; ++ir9) {
+
+      gScaleZ[ir9][ieta].GetXaxis()->SetLimits(timeBinEdges[0],timeBinEdges[nTimeBins]);
+      gScaleZ[ir9][ieta].GetXaxis()->SetTitle("time shift (ns)");
+
+      gScaleZ[ir9][ieta].GetYaxis()->SetTitle("#Delta M/M_{ Z^{0}} [%]");
+      gScaleZ[ir9][ieta].GetYaxis()->SetTitleOffset(1.8);
+      gScaleZ[ir9][ieta].GetXaxis()->SetTitleOffset(1.5);
+
+      gScaleZ[ir9][ieta].SetMarkerSize(1.);
+      gScaleZ[ir9][ieta].GetYaxis()->SetRangeUser(-5.0,5.0);
+      
+      gScaleZ[ir9][ieta].SetMarkerColor(markercolors[ir9]);
+      gScaleZ[ir9][ieta].SetLineColor(markercolors[ir9]);
+      gScaleZ[ir9][ieta].SetMarkerStyle(markerstyles[ir9]);
+
+      if(ir9==0) gScaleZ[0][ieta].Draw("AP");
+      else gScaleZ[ir9][ieta].Draw("P");
+      leg2->AddEntry(&gScaleZ[ir9][ieta],Form("Z,    %s",r9labels[ir9].c_str()),"pl");
+    }
+    
+    leg2->Draw();
+    pt2->Draw();
+
+    TLine *zero2 = new TLine(0,0,2.5,0);
+    zero2->SetLineColor(kGray+2);
+    zero2->SetLineWidth(1);
+    zero2->Draw();
+
+    c1->SaveAs(Form("scale-EtaBin%d.pdf",ieta));
+    c1->SaveAs(Form("scale-EtaBin%d.png",ieta));
+    delete leg2;
+    delete zero2;
+  }
+
+  /*
+  TCanvas *c2 = new TCanvas("c2","",600,600);
+  c2->Range(-22.61122,-0.006062015,75.00967,0.004744186);
+  c2->SetLeftMargin(0.2316227);
+  c2->SetRightMargin(0.05131761);
+  c2->SetTopMargin(0.06886657);
+  c2->SetBottomMargin(0.1908178);
+
+  for(int ir9=0; ir9<2; ++ir9) {
+    TLegend* leg2 = new TLegend(0.3,0.80,0.90,0.90);
+    leg2->SetFillStyle(0); leg2->SetBorderSize(0); leg2->SetTextSize(0.03);
+    leg2->SetTextFont(42);
+    leg2->SetFillColor(0);
+    for(int idata=0; idata<3; ++idata) {
+
+      gResoZ[ir9][idata].GetXaxis()->SetLimits(0,2.5);
+      gResoZ[ir9][idata].GetXaxis()->SetTitle("electron #eta");
+      gResoZ[ir9][idata].GetYaxis()->SetTitle("#sigma_{CB} (Z ^{0}-width subtracted) / #sqrt{2} m_{CB}");
+      gResoZ[ir9][idata].GetYaxis()->SetTitleOffset(1.8);
+      gResoZ[ir9][idata].GetXaxis()->SetTitleOffset(1.5);
+
+      gResoZ[ir9][idata].SetMarkerSize(1.);
+      if(ir9==0) gResoZ[ir9][idata].GetYaxis()->SetRangeUser(0.00,0.06);
+      else gResoZ[ir9][idata].GetYaxis()->SetRangeUser(0.00,0.06);
+      // if(ieta==0) gResoZ[ir9][idata].GetYaxis()->SetRangeUser(0.1/MZ0,3.5/MZ0);
+      // else gResoZ[ir9][idata].GetYaxis()->SetRangeUser(1.0/MZ0,10./MZ0);
+
+      
+      gResoZ[ir9][idata].SetMarkerColor(markercolors[idata]);
+      gResoZ[ir9][idata].SetLineColor(markercolors[idata]);
+      gResoZ[ir9][idata].SetMarkerStyle(markerstyles[idata]);
+
+      if(idata==0) gResoZ[ir9][0].Draw("AP");
+      else gResoZ[ir9][idata].Draw("P");
+      leg2->AddEntry(&gResoZ[ir9][idata],Form("Z,    %s, %s",r9labels[ir9].c_str(),datalabels[idata].c_str()),"pl");
+    }
+    
+    leg2->Draw();
+    pt2->Draw();
+
+    c2->SaveAs(Form("resolution-R9Bin%d.pdf",ir9));
+    c2->SaveAs(Form("resolution-R9Bin%d.png",ir9));
+    delete leg2;
+  }
+  */
+
+
+}
