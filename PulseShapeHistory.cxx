@@ -163,12 +163,12 @@ void historyPlots() {
 	if(ietaix>0) ietaix = ietaix-1;
 	if(iecal==1) {
 	  time_eb ->Fill(iphiiy, ietaix+0.5, ps.time  - reference_psmap[rawId].time);
-	  alpha_eb->Fill(iphiiy, ietaix+0.5, (ps.alpha - reference_psmap[rawId].alpha)/reference_psmap[rawId].alpha_err);
-	  beta_eb ->Fill(iphiiy, ietaix+0.5, (ps.beta  - reference_psmap[rawId].beta)/reference_psmap[rawId].beta_err);
+	  if(reference_psmap[rawId].alpha_err>0) alpha_eb->Fill(iphiiy, ietaix+0.5, (ps.alpha - reference_psmap[rawId].alpha)/reference_psmap[rawId].alpha_err);
+	  if(reference_psmap[rawId].beta_err>0) beta_eb ->Fill(iphiiy, ietaix+0.5, (ps.beta  - reference_psmap[rawId].beta)/reference_psmap[rawId].beta_err);
 	} else {
 	  time_ee ->Fill(ietaix, iphiiy, ps.time  - reference_psmap[rawId].time);
-	  alpha_ee->Fill(ietaix, iphiiy, (ps.alpha - reference_psmap[rawId].alpha)/reference_psmap[rawId].alpha_err * 100.);
-	  beta_ee ->Fill(ietaix, iphiiy, (ps.beta  - reference_psmap[rawId].beta)/reference_psmap[rawId].beta_err * 100.);
+	  if(reference_psmap[rawId].alpha_err>0) alpha_ee->Fill(ietaix, iphiiy, (ps.alpha - reference_psmap[rawId].alpha)/reference_psmap[rawId].alpha_err * 100.);
+	  if(reference_psmap[rawId].beta_err>0) beta_ee ->Fill(ietaix, iphiiy, (ps.beta  - reference_psmap[rawId].beta)/reference_psmap[rawId].beta_err * 100.);
 	}
       }
 
@@ -206,10 +206,9 @@ void drawAll() {
   string vars[nvars] = {"time","alpha","beta"};
   string partitions[2] = {"eb","ee"};
 
-  std::vector<TGraphErrors*> graphs;
+  std::vector<TH1D*> graphs;
   for(int var=0; var<nvars; ++var) {
-    graphs.push_back(new TGraphErrors(niovs));
-    graphs[var]->SetName(Form("graph_%s",vars[var].c_str()));
+    graphs.push_back(new TH1D(Form("history_%s",vars[var].c_str()),"",niovs,0,niovs));
   }
 
   TFile *tfile = TFile::Open("pulseshape_history.root");
@@ -241,6 +240,7 @@ void drawAll() {
 	gPad->SaveAs(Form("map_%s.png",p2d->GetName()));
 
 
+
 	// plot 1D
 	int nbins1D = (partition==0 ? 400 : 150);
 	TH1D *plot1D = new TH1D(Form("%s_1D",p2d->GetName()),"",nbins1D,min,max);
@@ -257,9 +257,8 @@ void drawAll() {
 	plot1D->Draw();
 
 	// fill averages
-	graphs[var]->SetPoint(iov,iov,plot1D->GetMean());
-	graphs[var]->SetPointError(iov,iov,plot1D->GetRMS());
-	
+	graphs[var]->SetBinContent(iov+1,plot1D->GetMean());
+	graphs[var]->SetBinError(iov+1,plot1D->GetRMS());
 	graphs[var]->GetXaxis()->SetBinLabel(iov+1,Form("%d",iovs[iov]));
 
 	cee->SaveAs(Form("%s.pdf",plot1D->GetName()));
@@ -270,9 +269,10 @@ void drawAll() {
 
   TCanvas *c1 = new TCanvas("c1","",plotscale,plotscale);
   for(int var=0; var<nvars; ++var) {
-    graphs[var]->Draw("AP");
-    c1->SaveAs(Form("historyplot_%s.pdf",graphs[var]->GetName()));
-    c1->SaveAs(Form("historyplot_%s.png",graphs[var]->GetName()));
+    graphs[var]->GetYaxis()->SetTitle(titles[var].c_str());
+    graphs[var]->Draw("PE");
+    c1->SaveAs(Form("%s.pdf",graphs[var]->GetName()));
+    c1->SaveAs(Form("%s.png",graphs[var]->GetName()));
   }
   
 }
