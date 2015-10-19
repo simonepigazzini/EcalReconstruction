@@ -3,6 +3,7 @@
 #include <string>
 #include <fstream>
 
+#include "TStyle.h"
 #include "TFile.h"
 #include "TTree.h"
 #include "THashList.h"
@@ -11,7 +12,10 @@
 #include "TString.h"
 #include "TLegend.h"
 #include "TPaveText.h"
-#include "/Users/emanuele/Scripts/RooHZZStyle.C"
+#include "TMath.h"
+#include "TF1.h"
+#include "TProfile.h"
+//#include "/Users/emanuele/Scripts/RooHZZStyle.C"
 
 struct rechit {
   double time;
@@ -280,7 +284,8 @@ void saveTemplates(bool dobarrel, int min_run=1, int max_run=999999) {
   // TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_dynped_rawid.root"); // 2013 low PU runs
   // TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_tree_pi0_2015C_lowPU.root"); // 2015 low PU runs
   // TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_pi0_lonebunch.root"); // 2015 lone bunch triggers on pi0 stream
-  TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_phisymm_lonebunch.root"); // 2015 lone bunch triggers on phi-symmetry stream
+  // TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_phisymm_lonebunch.root"); // 2015 lone bunch triggers on phi-symmetry stream
+  TFile *file = TFile::Open("/data1/emanuele/ecal/localreco/multifit/templates_lonebunch_27SepTo11Oct.root"); // 2015 lone bunch triggers on phi-symmetry and pi0 streams
   TTree *tree = (TTree*)file->Get("pulseDump/pulse_tree");
 
   Long64_t nentries = tree->GetEntries();
@@ -481,9 +486,9 @@ void plotTemplates (int ixmin, int ixmax, int iymin, int iymax, bool doEB=true, 
 
   int maxCryToBePlotted = 10;
   
-  TStyle *mystyle = RooHZZStyle("ZZ");
-  mystyle->cd();
-  mystyle->SetPalette(1);
+  //  TStyle *mystyle = RooHZZStyle("ZZ");
+  //  mystyle->cd();
+  gStyle->SetPalette(1);
 
   TFile *tfile;
   if(shifted) tfile = TFile::Open((doEB ? "shifted_template_histograms_EB.root" : "shifted_template_histograms_EE.root"));
@@ -597,9 +602,9 @@ TH1D *s4s5_raw, *s4s5_fit, *val4val5_fit;
 
 void fitTemplates (int ixmin, int ixmax, int iymin, int iymax, bool doEB=true) {
 
-  TStyle *mystyle = RooHZZStyle("ZZ");
-  mystyle->cd();
-  mystyle->SetPalette(1);
+  //  TStyle *mystyle = RooHZZStyle("ZZ");
+  //  mystyle->cd();
+  gStyle->SetPalette(1);
 
   float xlow = 0;
   float xup = doEB ? 85 : 50;
@@ -682,9 +687,9 @@ void fitTemplates (int ixmin, int ixmax, int iymin, int iymax, bool doEB=true) {
 
 void FitAllTemplatesSubdet(bool doEB) {
 
-  TStyle *mystyle = RooHZZStyle("ZZ");
-  mystyle->cd();
-  mystyle->SetPalette(1);
+  // TStyle *mystyle = RooHZZStyle("ZZ");
+  // mystyle->cd();
+  gStyle->SetPalette(1);
 
   TString subdet = doEB ? "EB" : "EE";
   TFile *resultfile = TFile::Open(Form("shape_results_%s.root",subdet.Data()), "recreate");
@@ -715,7 +720,7 @@ void FitAllTemplatesSubdet(bool doEB) {
   results_hist.push_back(val4val5_fit);
 
   for(int i=0; i<(int)results_prof.size(); ++i) {
-    mystyle->SetOptStat(1111111);
+    gStyle->SetOptStat(1111111);
     resultfile->cd();
     TProfile *prof = results_prof[i];
     if(doEB) prof->GetXaxis()->SetTitle("i #eta");
@@ -1007,9 +1012,9 @@ void saveCovariances(bool dobarrel) {
 
 void plotCovarianceElements(bool doEB, bool diagonal=false) {
 
-  TStyle *mystyle = RooHZZStyle("ZZ");
-  mystyle->cd();
-  mystyle->SetPalette(1);
+  // TStyle *mystyle = RooHZZStyle("ZZ");
+  // mystyle->cd();
+  gStyle->SetPalette(1);
 
   int ixmin = doEB ? -85 : -100;
   int ixmax = doEB ?  85 :  100;
@@ -1310,10 +1315,10 @@ void draw1DSamples(bool dobarrel, const char *txtdumpfile = "template_histograms
 void saveAllTemplatesByRunRanges() {
   
   std::vector< std::pair<int,int> > ranges;
-  ranges.push_back(std::make_pair(257645,257645));
-  ranges.push_back(std::make_pair(257682,257682));
-  ranges.push_back(std::make_pair(257721,257743));
-  ranges.push_back(std::make_pair(257751,257751));
+  ranges.push_back(std::make_pair(257645,257751)); // 27-29 Sep
+  ranges.push_back(std::make_pair(257968,258215)); // 30 Sep - 04 Oct
+  ranges.push_back(std::make_pair(258287,258714)); // 05 Oct - 09 Oct
+  ranges.push_back(std::make_pair(258741,258750)); // 11 Oct
 
   std::vector< std::pair<int,int> >::const_iterator it;
   for(it=ranges.begin(); it!=ranges.end(); ++it) {
