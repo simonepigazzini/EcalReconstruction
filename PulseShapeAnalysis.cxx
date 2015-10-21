@@ -1311,6 +1311,86 @@ void draw1DSamples(bool dobarrel, const char *txtdumpfile = "template_histograms
 
 }
 
+void compareTemplates(bool dobarrel, const char *txtdumpfile1 = "template_histograms_ECAL_1.txt", const char *txtdumpfile2 = "template_histograms_ECAL_2.txt", int maxPlots=10) {
+
+  gStyle->SetOptStat(0);
+
+  std::vector<std::string> files;
+  files.push_back(std::string(txtdumpfile1));
+  files.push_back(std::string(txtdumpfile2));
+
+  typedef std::map<unsigned int, std::vector<float> > tempmap;
+  tempmap templates1;
+  tempmap templates2;
+  std::vector<tempmap> templatemaps;
+  templatemaps.push_back(templates1);
+  templatemaps.push_back(templates2);
+
+  int iseb;
+  unsigned int detid;
+
+  std::cout << "now filling the maps..." << std::endl;
+  for(int ifile=0;ifile<2;++ifile) {
+    ifstream myfile;
+    myfile.open(files[ifile]);
+
+    if (myfile.is_open()) {
+      while ( !myfile.eof() ) {
+	myfile >> iseb;
+	myfile >> detid;
+	std::vector<float> samples;
+	samples.resize(12);
+	for(int s=0; s<12; ++s) myfile >> samples[s];
+	if((dobarrel && iseb==1) || (!dobarrel && iseb==0)) (templatemaps[ifile])[detid] = samples;
+      }
+      myfile.close();
+    }
+    else cout << "Unable to open file"; 
+  }
+
+  std::cout << "Maps filled. Now do the plots" << std::endl;
+  
+
+  // now draw the first templates
+  TCanvas *c1 = new TCanvas("c1","",1200,1200);
+  TH1F *shape1 = new TH1F("shape1","",12,0,12);
+  TH1F *shape2 = new TH1F("shape2","",12,0,12);
+
+  shape1->SetLineColor(kBlue);
+  shape2->SetMarkerStyle(kFullCircle);
+
+  int nPlots = 0;
+  for(tempmap::iterator it=templatemaps[0].begin(); it != templatemaps[0].end(); ++it) {
+    unsigned int detid = it->first;
+    std::vector<float> samples1 = it->second;
+    tempmap::iterator it2 = templatemaps[1].find(detid);
+    if(it2==templatemaps[1].end()) {
+      std::cout << "detid not found in the second templates file. Skipping... " << std::endl;
+      continue;
+    } 
+
+    std::vector<float> samples2 = it2->second;
+
+    // fill the histograms now
+    shape1->Reset();
+    shape2->Reset();
+    for(int s=0; s<12; ++s) {
+      shape1->SetBinContent(s+1,samples1[s]);
+      shape2->SetBinContent(s+1,samples2[s]);
+      shape2->SetBinError(s+1,0.);
+    }
+
+    shape1->Draw("hist");
+    shape2->Draw("pe4 same");
+
+    c1->SaveAs(Form("shape_id%d.png",detid));
+
+    nPlots++;
+    if(nPlots>maxPlots) break;
+  }
+
+}
+
 
 void saveAllTemplatesByRunRanges() {
   
