@@ -103,6 +103,9 @@ void historyPlots() {
   tags[257682] = "template_histograms_ECAL_runs_257682_257682.txt";
   tags[257721] = "template_histograms_ECAL_runs_257721_257743.txt";
   tags[257751] = "template_histograms_ECAL_runs_257751_257751.txt";
+  tags[257969] = "template_histograms_ECAL_runs_257969_258225.txt";
+  tags[258226] = "template_histograms_ECAL_runs_258226_258697.txt";
+  tags[258699] = "template_histograms_ECAL_runs_258699_258967.txt";
 
   typedef std::map<int, pulseshape> shapemap;
   std::map<int, shapemap> shapetags;
@@ -145,7 +148,7 @@ void historyPlots() {
     // now read the tag
     int icry = 0;
     while (tempdump.good()) {
-      if(icry%1000==0) std::cout << "IOV = " << iov << "\tAnalyzing crystal " << icry << std::endl;  
+      if(icry%1000==0) std::cout << "IOV = " << iov << " (initial run = " << it->first << ")\tAnalyzing crystal " << icry << std::endl;  
       tempdump >> iecal >> ietaix >> iphiiy >> iz >> rawId ;
       for(int i=0;i<3;++i) normpulse[i] = 0.0;
       for(int i=3;i<15;++i) tempdump >> normpulse[i];
@@ -201,14 +204,16 @@ void drawAll() {
 
   const int nvars=3;
   const int niovs=4;
-  int iovs[niovs] = {257645,257682,257721,257751};
+  int iovs[niovs] = {257721,257751,257969,258699};
+  string iovlabels[niovs] = {"Sep/24","Sep/27-29","Oct/01-05","Oct/08-11"};
   string titles[nvars] = {"t-t_{0} (ns)", "#alpha variation (n#sigma_{#alpha})", "#beta variation (n#sigma_{#beta})"};
   string vars[nvars] = {"time","alpha","beta"};
   string partitions[2] = {"eb","ee"};
 
-  std::vector<TH1D*> graphs;
+  std::vector<TH1D*> graphsEB, graphsEE;
   for(int var=0; var<nvars; ++var) {
-    graphs.push_back(new TH1D(Form("history_%s",vars[var].c_str()),"",niovs,0,niovs));
+    graphsEB.push_back(new TH1D(Form("history_eb_%s",vars[var].c_str()),"",niovs,0,niovs));
+    graphsEE.push_back(new TH1D(Form("history_ee_%s",vars[var].c_str()),"",niovs,0,niovs));
   }
 
   TFile *tfile = TFile::Open("pulseshape_history.root");
@@ -257,9 +262,15 @@ void drawAll() {
 	plot1D->Draw();
 
 	// fill averages
-	graphs[var]->SetBinContent(iov+1,plot1D->GetMean());
-	graphs[var]->SetBinError(iov+1,plot1D->GetRMS());
-	graphs[var]->GetXaxis()->SetBinLabel(iov+1,Form("%d",iovs[iov]));
+	if(partition==0) {
+	  graphsEB[var]->SetBinContent(iov+1,plot1D->GetMean());
+	  graphsEB[var]->SetBinError(iov+1,plot1D->GetMeanError());
+	  graphsEB[var]->GetXaxis()->SetBinLabel(iov+1,iovlabels[iov].c_str());
+	} else {
+	  graphsEE[var]->SetBinContent(iov+1,plot1D->GetMean());
+	  graphsEE[var]->SetBinError(iov+1,plot1D->GetMeanError());
+	  graphsEE[var]->GetXaxis()->SetBinLabel(iov+1,iovlabels[iov].c_str());
+	}
 
 	cee->SaveAs(Form("%s.pdf",plot1D->GetName()));
 	cee->SaveAs(Form("%s.png",plot1D->GetName()));
@@ -269,10 +280,14 @@ void drawAll() {
 
   TCanvas *c1 = new TCanvas("c1","",plotscale,plotscale);
   for(int var=0; var<nvars; ++var) {
-    graphs[var]->GetYaxis()->SetTitle(titles[var].c_str());
-    graphs[var]->Draw("PE");
-    c1->SaveAs(Form("%s.pdf",graphs[var]->GetName()));
-    c1->SaveAs(Form("%s.png",graphs[var]->GetName()));
+    graphsEB[var]->GetYaxis()->SetTitle(titles[var].c_str());
+    graphsEB[var]->Draw("PE");
+    c1->SaveAs(Form("%s.pdf",graphsEB[var]->GetName()));
+    c1->SaveAs(Form("%s.png",graphsEB[var]->GetName()));
+    graphsEE[var]->GetYaxis()->SetTitle(titles[var].c_str());
+    graphsEE[var]->Draw("PE");
+    c1->SaveAs(Form("%s.pdf",graphsEE[var]->GetName()));
+    c1->SaveAs(Form("%s.png",graphsEE[var]->GetName()));
   }
   
 }
