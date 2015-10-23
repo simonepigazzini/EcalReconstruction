@@ -283,9 +283,8 @@ void saveTemplates(bool dobarrel, int min_run=1, int max_run=999999) {
 
   // TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_dynped_rawid.root"); // 2013 low PU runs
   // TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_tree_pi0_2015C_lowPU.root"); // 2015 low PU runs
-  // TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_pi0_lonebunch.root"); // 2015 lone bunch triggers on pi0 stream
+  TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_alcap0_runs_257394_259686.root"); // 2015 lone bunch triggers on pi0 stream
   // TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_phisymm_lonebunch.root"); // 2015 lone bunch triggers on phi-symmetry stream
-  TFile *file = TFile::Open("/data1/emanuele/ecal/localreco/multifit/templates_lonebunch_27SepTo11Oct.root"); // 2015 lone bunch triggers on phi-symmetry and pi0 streams
   TTree *tree = (TTree*)file->Get("pulseDump/pulse_tree");
 
   Long64_t nentries = tree->GetEntries();
@@ -1395,7 +1394,7 @@ void compareTemplates(bool dobarrel, const char *txtdumpfile1 = "template_histog
 void saveAllTemplatesByRunRanges() {
   
   std::vector< std::pair<int,int> > ranges;
-  ranges.push_back(std::make_pair(257645,257751)); // 27-29 Sep
+  ranges.push_back(std::make_pair(257394,257751)); // 27-29 Sep
   ranges.push_back(std::make_pair(257968,258215)); // 30 Sep - 04 Oct
   ranges.push_back(std::make_pair(258287,258714)); // 05 Oct - 09 Oct
   ranges.push_back(std::make_pair(258741,258750)); // 11 Oct
@@ -1404,5 +1403,12 @@ void saveAllTemplatesByRunRanges() {
   for(it=ranges.begin(); it!=ranges.end(); ++it) {
     for(int iecal=1; iecal>-1; --iecal) saveTemplates(iecal,it->first,it->second);
   }
+
+}
+
+// to parallelise things
+void saveAllTemplatesOneRange(int firstRun, int lastRun) {
+
+  for(int iecal=1; iecal>-1; --iecal) saveTemplates(firstRun, lastRun);
 
 }
