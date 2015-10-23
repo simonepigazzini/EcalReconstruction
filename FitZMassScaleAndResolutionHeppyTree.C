@@ -54,6 +54,10 @@
 
 using namespace RooFit;
 
+double quad_sum(double err1, double err2) {
+  return std::sqrt(pow(err1,2)+pow(err2,2));
+}
+
 float mass_2_ene(float ene1, float eta1, float phi1, float m1, float ene2, float eta2, float phi2, float m2) {
     typedef ROOT::Math::LorentzVector<ROOT::Math::PtEtaPhiM4D<double> > PtEtaPhiMVector;
     PtEtaPhiMVector unitp41(1.0,eta1,phi1,m1);
@@ -94,7 +98,7 @@ void FitZMassScaleAndResolution(int energytype, string inputFilename, string out
 }
 //______________________________________________________________
 
-enum p4Kind {kFullCorr=0,kRaw};
+enum p4Kind {kFullCorr=0,kRaw,kCorrEcal};
 
 enum Flags { 
   kGood=0,                   // channel ok, the energy and time measurement are reliable
@@ -137,7 +141,7 @@ void makefit(int energytype, string inputFilename, string outFilename,
   // Reading everything from root tree instead
   TFile *tfile = TFile::Open(inputFilename.c_str());
   TTree *ttree = (TTree*)tfile->Get("tree");
-  float lpt[10],leta[10],lphi[10],lrawenergy[10],mass_Z1,lr9[10];
+  float lpt[10],leta[10],lphi[10],lrawenergy[10],lcorrecalenergy[10], mass_Z1,lr9[10];
   Int_t nvtx;
   UInt_t run;
 
@@ -147,6 +151,8 @@ void makefit(int energytype, string inputFilename, string outFilename,
   ttree->SetBranchAddress("LepGood_r9",lr9);
   ttree->SetBranchAddress("mZ1",&mass_Z1);
   ttree->SetBranchAddress("LepGood_superCluster_rawEnergy",lrawenergy);
+  ttree->SetBranchAddress("LepGood_correctedEcalEnergy",lcorrecalenergy); // Corrected Ecal energy with present pretty good regression if using 76x or latest MINIAOD in 74x
+
   ttree->SetBranchAddress("nVert",&nvtx);
   ttree->SetBranchAddress("run",&run);
 
@@ -156,7 +162,7 @@ void makefit(int energytype, string inputFilename, string outFilename,
   RooDataSet* data = new RooDataSet("data", "ntuple parameters", zMassArgSet, RooFit::WeightVar("puW"));
 
   for (int i = 0; i < ttree->GetEntries(); i++) {
-    if(i%100000==0) cout << "Processing Event " << i << endl;
+    if(i%10000==0) cout << "Processing Event " << i << endl;
     ttree->GetEntry(i);
 
     //*************************************************************************
@@ -173,6 +179,8 @@ void makefit(int energytype, string inputFilename, string outFilename,
     double l2eta = leta[1];
     double l1phi = lphi[0];
     double l2phi = lphi[1];
+
+    if(run<257645) continue; 
 
     // if (run > 256700) continue; // Fill 4381 (76.5/pb)
     // if (run < 256728 || run > 256734) continue; // Fill 4384 (66.8/pb)
@@ -225,7 +233,6 @@ void makefit(int energytype, string inputFilename, string outFilename,
     if (etaBin > -1 && !(Ele1EtaBin == etaBin && Ele2EtaBin == etaBin)) continue; 
     if (vtxBin > -1 && NvtxBin != vtxBin) continue;
     
-
     //*************************************************************************
     // restrict range of mass
     //*************************************************************************
@@ -237,6 +244,9 @@ void makefit(int energytype, string inputFilename, string outFilename,
     case kRaw:
       zMass = mass_2_ene(lrawenergy[0],l1eta,l1phi,0., lrawenergy[1],l2eta,l2phi,0.);
       break;
+    case kCorrEcal:
+      zMass = mass_2_ene(lcorrecalenergy[0],l1eta,l1phi,0., lcorrecalenergy[1],l2eta,l2phi,0.);
+      break;      
     }
 
     if (zMass < minMass || zMass > maxMass) continue;
@@ -263,7 +273,7 @@ void makefit(int energytype, string inputFilename, string outFilename,
   //====================== Parameters===========================
 
   //Crystal Ball parameters
-  RooRealVar cbBias ("#Deltam_{CB}", "CB Bias", -.01, -20, 20, "GeV");
+  RooRealVar cbBias ("#Deltam_{CB}", "CB Bias", -.01, -40, 40, "GeV");
   RooRealVar cbSigma("#sigma_{CB}", "CB Width", 1.5, 0.5, 10.0, "GeV");
   RooRealVar cbCut  ("a_{CB}","CB Cut", 1.0, 1.0, 3.0);
   RooRealVar cbPower("n_{CB}","CB Order", 2.5, 0.1, 20.0);
@@ -546,15 +556,52 @@ void plotResolution() {
 
 void runAll() {
   
-  string tree_dir = "Trees_DATA_SYST_ECALRECO/";
-  string tree_file = "/treeProducerDarkMatterMonoJet/tree.root";
+  string tree_dir = "Trees_WeeklyPS/";
+  string tree_file = "/Loop/treeProducerDarkMatterMonoJet/tree.root";
   vector<string> rerecoes;
-  rerecoes.push_back("privDoubleEG_Run2015D_Nominal");
-  rerecoes.push_back("privDoubleEG_Run2015D_SystMinus500ps");
-  rerecoes.push_back("privDoubleEG_Run2015D_SystMinus250ps");
-  rerecoes.push_back("privDoubleEG_Run2015D_SystPlus250ps");
-  rerecoes.push_back("privDoubleEG_Run2015D_SystPlus500ps");
-  rerecoes.push_back("privDoubleEG_Run2015D_SystPlus1000ps");
+
+  // rerecoes.push_back("privDoubleEG_Run2015D_0p000000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_0p250000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_0p500000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_0p750000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_1p000000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_1p250000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_1p500000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_1p750000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_2p000000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_2p250000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_2p500000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_2p750000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_3p000000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_3p250000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_3p500000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_3p750000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_4p000000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_4p250000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_4p750000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m0p250000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m0p500000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m0p750000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m1p000000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m1p250000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m1p500000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m1p750000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m2p000000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m2p250000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m2p500000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m2p750000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m3p000000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m3p250000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m3p500000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m3p750000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m4p000000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m4p250000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m4p500000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m4p750000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m5p000000ns");
+
+  rerecoes.push_back("privDoubleEG_Run2015D_Default");
+  rerecoes.push_back("privDoubleEG_Run2015D_WeeklyPS");
 
   string outputpref="";
 
@@ -563,11 +610,11 @@ void runAll() {
     string outputpref = "results_" + rerecoes[isyst];
     std::cout << "RUNNING OVER FILE = " << rerecoes[isyst] << std::endl;
     // do the fits in eta,pt bins of the electrons
-    for(int r9b=0; r9b<2; ++r9b) {
+    for(int r9b=0; r9b<1; ++r9b) {
       std::cout << "r9b = " << r9b << std::endl;
       for(int etab=0; etab<5; ++etab) {
 	std::cout << "   eta bin = " << etab << std::endl;
-	for( int p4kind=1; p4kind<2; ++p4kind) {
+	for( int p4kind=kCorrEcal; p4kind<kCorrEcal+1; ++p4kind) {
 	  std::cout << " local reco type = " << p4kind << std::endl;
 	  TString outputfdata=Form("%s_R9Bin%d_EtaBin%d_Reco%d",outputpref.c_str(),r9b,etab,p4kind);
 	  std::cout <<"        fitting DATA..." << std::endl;
@@ -589,25 +636,48 @@ void plotParametersVsTimeShift() {
   TStyle *mystyle = RooHZZStyle("ZZ");
   mystyle->cd();
 
-  const int nTimeBins = 6;
-  const int nominalPoint = 2;
+  const int nTimeBins = 2;
+  const int nominalPoint = 0;
   double timeBinSize = 0.25;
   
   vector<string> rerecoes;
-  rerecoes.push_back("privDoubleEG_Run2015D_SystMinus500ps");
-  rerecoes.push_back("privDoubleEG_Run2015D_SystMinus250ps");
-  rerecoes.push_back("privDoubleEG_Run2015D_Nominal");
-  rerecoes.push_back("privDoubleEG_Run2015D_SystPlus250ps");
-  rerecoes.push_back("privDoubleEG_Run2015D_SystPlus500ps");
-  rerecoes.push_back("privDoubleEG_Run2015D_SystPlus1000ps");
 
-  double timeBins[nTimeBins] = {-0.50,-0.25,0.00,0.25,0.50,1.00};
+  rerecoes.push_back("privDoubleEG_Run2015D_Default");  
+  rerecoes.push_back("privDoubleEG_Run2015D_WeeklyPS");  
+
+  // rerecoes.push_back("privDoubleEG_Run2015D_m2p250000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m2p000000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m1p750000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m1p500000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m1p250000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m1p000000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m0p750000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m0p500000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_m0p250000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_0p000000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_0p250000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_0p500000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_0p750000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_1p000000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_1p250000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_1p500000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_1p750000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_2p000000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_2p250000ns");
+  // rerecoes.push_back("privDoubleEG_Run2015D_2p500000ns");
+
+  double timeBins[nTimeBins];
+  int ibin=0;
+  for(double shift=-2.25; shift<=2.50; shift+=0.25) {
+    timeBins[ibin] = shift;
+    ibin++;
+  }
   double timeBinEdges[nTimeBins+1];
   for(int b=0; b<nTimeBins; ++b) timeBinEdges[b] = timeBins[b] - timeBinSize/2.;
   timeBinEdges[nTimeBins] = timeBins[nTimeBins-1] + timeBinSize/2.;
 
   const int nBinsEta = 5;
-  const int nBinsR9 = 2;
+  const int nBinsR9 = 1;
   TGraphAsymmErrors gScaleZ[nBinsR9][nBinsEta];
   TGraphAsymmErrors gResoZ[nBinsR9][nBinsEta];
 
@@ -618,10 +688,16 @@ void plotParametersVsTimeShift() {
     for(int ieta=0; ieta<nBinsEta; ++ieta) {
       for(int shift = 0; shift<(int)rerecoes.size(); ++shift) {
 
-	stringstream datafile, mcfile;
+	stringstream datafile, reffile;
 	cout << "Analyzing R9 bin = " << ir9 << " eta bin = " << ieta << endl;
 	datafile << "results_" << rerecoes[shift] << "_R9Bin" << ir9 << "_EtaBin" << ieta << "_Reco1.root";
-      
+	reffile <<  "results_" << rerecoes[nominalPoint] << "_R9Bin" << ir9 << "_EtaBin" << ieta << "_Reco1.root";
+
+	TFile *treffile = TFile::Open(reffile.str().c_str());
+	RooFitResult *reffr = (RooFitResult*)treffile->Get("fitres");
+	float refDM = ((RooRealVar*)(reffr->floatParsFinal().find("#Deltam_{CB}")))->getVal();
+	float refDM_err = ((RooRealVar*)(reffr->floatParsFinal().find("#Deltam_{CB}")))->getError();
+
 	TFile *tdatafile = TFile::Open(datafile.str().c_str());
 	RooFitResult *datafr = (RooFitResult*)tdatafile->Get("fitres");
 	float dataDM = ((RooRealVar*)(datafr->floatParsFinal().find("#Deltam_{CB}")))->getVal();
@@ -634,7 +710,7 @@ void plotParametersVsTimeShift() {
 	float binerrup=timeBinSize/2.;
 	float binerrdn=timeBinSize/2.;
 
-	gScaleZ[ir9][ieta].SetPoint(shift,bincenter,dataDM/MZ0 * 100);
+	gScaleZ[ir9][ieta].SetPoint(shift,bincenter,(dataDM-refDM)/MZ0 * 100);
 	gScaleZ[ir9][ieta].SetPointError(shift,binerrdn,binerrup,dataDM_err/MZ0*100,dataDM_err/MZ0*100);
 	gResoZ[ir9][ieta].SetPoint(shift,bincenter,dataS);
 	gResoZ[ir9][ieta].SetPointError(shift,binerrdn,binerrup,dataS_err,dataS_err);
@@ -651,7 +727,7 @@ void plotParametersVsTimeShift() {
 	yerr =  gScaleZ[ir9][ieta].GetErrorYhigh(shift);
 
 	double reso;
-	p =  gResoZ[ir9][ieta].GetPoint(ieta,bincenter,reso);
+	p =  gResoZ[ir9][ieta].GetPoint(shift,bincenter,reso);
 
 	double massscalef = MZ0 + y;
 	double massreso_scaled = reso / massscalef / sqrt(2.0);
@@ -674,7 +750,7 @@ void plotParametersVsTimeShift() {
   pt2->SetTextAlign(12);
   pt2->SetTextFont(42);
   pt2->SetTextSize(0.04);
-  pt2->AddText("CMS Preliminary, #sqrt{s} = 13 TeV,     L = xxx pb^{-1}");
+  pt2->AddText("CMS Preliminary, #sqrt{s} = 13 TeV,     L = 152 pb^{-1}");
   
   TCanvas *c1 = new TCanvas("c1","",600,600);
   c1->Range(-22.61122,-0.006062015,75.00967,0.004744186);
@@ -698,7 +774,8 @@ void plotParametersVsTimeShift() {
       gScaleZ[ir9][ieta].GetXaxis()->SetTitleOffset(1.5);
 
       gScaleZ[ir9][ieta].SetMarkerSize(1.);
-      gScaleZ[ir9][ieta].GetYaxis()->SetRangeUser(-5.0,5.0);
+      if(ieta!=nBinsEta-1) gScaleZ[ir9][ieta].GetYaxis()->SetRangeUser(-1.5,1.5);
+      else gScaleZ[ir9][ieta].GetYaxis()->SetRangeUser(-10.0,10.0);
       
       gScaleZ[ir9][ieta].SetMarkerColor(markercolors[ir9]);
       gScaleZ[ir9][ieta].SetLineColor(markercolors[ir9]);
@@ -712,7 +789,7 @@ void plotParametersVsTimeShift() {
     leg2->Draw();
     pt2->Draw();
 
-    TLine *zero2 = new TLine(0,0,2.5,0);
+    TLine *zero2 = new TLine(timeBinEdges[0],0,timeBinEdges[nTimeBins],0);
     zero2->SetLineColor(kGray+2);
     zero2->SetLineWidth(1);
     zero2->Draw();
@@ -723,7 +800,6 @@ void plotParametersVsTimeShift() {
     delete zero2;
   }
 
-  /*
   TCanvas *c2 = new TCanvas("c2","",600,600);
   c2->Range(-22.61122,-0.006062015,75.00967,0.004744186);
   c2->SetLeftMargin(0.2316227);
@@ -731,43 +807,43 @@ void plotParametersVsTimeShift() {
   c2->SetTopMargin(0.06886657);
   c2->SetBottomMargin(0.1908178);
 
-  for(int ir9=0; ir9<2; ++ir9) {
+
+  for(int ieta=0; ieta<nBinsEta; ++ieta) {
     TLegend* leg2 = new TLegend(0.3,0.80,0.90,0.90);
     leg2->SetFillStyle(0); leg2->SetBorderSize(0); leg2->SetTextSize(0.03);
     leg2->SetTextFont(42);
     leg2->SetFillColor(0);
-    for(int idata=0; idata<3; ++idata) {
+    for(int ir9=0; ir9<nBinsR9; ++ir9) {
 
-      gResoZ[ir9][idata].GetXaxis()->SetLimits(0,2.5);
-      gResoZ[ir9][idata].GetXaxis()->SetTitle("electron #eta");
-      gResoZ[ir9][idata].GetYaxis()->SetTitle("#sigma_{CB} (Z ^{0}-width subtracted) / #sqrt{2} m_{CB}");
-      gResoZ[ir9][idata].GetYaxis()->SetTitleOffset(1.8);
-      gResoZ[ir9][idata].GetXaxis()->SetTitleOffset(1.5);
+      gResoZ[ir9][ieta].GetXaxis()->SetLimits(timeBinEdges[0],timeBinEdges[nTimeBins]);
+      gResoZ[ir9][ieta].GetXaxis()->SetTitle("time shift (ns)");
+      gResoZ[ir9][ieta].GetYaxis()->SetTitle("#sigma_{CB} (Z ^{0}-width subtracted) / #sqrt{2} m_{CB}");
+      gResoZ[ir9][ieta].GetYaxis()->SetTitleOffset(1.8);
+      gResoZ[ir9][ieta].GetXaxis()->SetTitleOffset(1.5);
 
-      gResoZ[ir9][idata].SetMarkerSize(1.);
-      if(ir9==0) gResoZ[ir9][idata].GetYaxis()->SetRangeUser(0.00,0.06);
-      else gResoZ[ir9][idata].GetYaxis()->SetRangeUser(0.00,0.06);
-      // if(ieta==0) gResoZ[ir9][idata].GetYaxis()->SetRangeUser(0.1/MZ0,3.5/MZ0);
-      // else gResoZ[ir9][idata].GetYaxis()->SetRangeUser(1.0/MZ0,10./MZ0);
+      gResoZ[ir9][ieta].SetMarkerSize(1.);
+      if(ir9==0) gResoZ[ir9][ieta].GetYaxis()->SetRangeUser(0.00,0.06);
+      else gResoZ[ir9][ieta].GetYaxis()->SetRangeUser(0.00,0.06);
+      // if(ieta==0) gResoZ[ir9][ieta].GetYaxis()->SetRangeUser(0.1/MZ0,3.5/MZ0);
+      // else gResoZ[ir9][ieta].GetYaxis()->SetRangeUser(1.0/MZ0,10./MZ0);
 
       
-      gResoZ[ir9][idata].SetMarkerColor(markercolors[idata]);
-      gResoZ[ir9][idata].SetLineColor(markercolors[idata]);
-      gResoZ[ir9][idata].SetMarkerStyle(markerstyles[idata]);
+      gResoZ[ir9][ieta].SetMarkerColor(markercolors[ir9]);
+      gResoZ[ir9][ieta].SetLineColor(markercolors[ir9]);
+      gResoZ[ir9][ieta].SetMarkerStyle(markerstyles[ir9]);
 
-      if(idata==0) gResoZ[ir9][0].Draw("AP");
-      else gResoZ[ir9][idata].Draw("P");
-      leg2->AddEntry(&gResoZ[ir9][idata],Form("Z,    %s, %s",r9labels[ir9].c_str(),datalabels[idata].c_str()),"pl");
+      if(ir9==0) gResoZ[0][ieta].Draw("AP");
+      else gResoZ[ir9][ieta].Draw("P");
+      leg2->AddEntry(&gResoZ[ir9][ieta],Form("Z,    %s",r9labels[ir9].c_str()),"pl");
     }
     
     leg2->Draw();
     pt2->Draw();
 
-    c2->SaveAs(Form("resolution-R9Bin%d.pdf",ir9));
-    c2->SaveAs(Form("resolution-R9Bin%d.png",ir9));
+    c2->SaveAs(Form("resolution-EtaBin%d.pdf",ieta));
+    c2->SaveAs(Form("resolution-EtaBin%d.png",ieta));
     delete leg2;
   }
-  */
 
 
 }
