@@ -1409,6 +1409,7 @@ void saveAllTemplatesByRunRanges() {
 // to parallelise things
 void saveAllTemplatesOneRange(int firstRun, int lastRun) {
 
-  for(int iecal=1; iecal>-1; --iecal) saveTemplates(firstRun, lastRun);
+  std::cout << "Analysing runs between [ " << firstRun << " , " << lastRun << " ] " << std::endl; 
+  for(int iecal=1; iecal>-1; --iecal) saveTemplates(iecal, firstRun, lastRun);
 
 }
