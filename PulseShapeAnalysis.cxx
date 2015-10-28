@@ -160,8 +160,7 @@ Double_t alphabeta( Double_t *x, Double_t * par)
   double fcn;
   if(deltat>-alphabeta) fcn = par[0] * power_term * decay_term + par[4];
   else fcn = par[4];
-  return fcn;
-}
+  return fcn;}
 
 double ALPHABETAT[3];
 double ERR_ALPHABETAT[3];
@@ -192,7 +191,7 @@ rechit makeRecHit(TH1D *pulse, bool doEB, double pedestal) {
   fitF->SetParLimits(3,4,7); // tmax
   fitF->FixParameter(4,pedestal);
 
-  pulse->Fit("alphabeta","Q M","",0,10);
+  pulse->Fit("alphabeta","Q","",0,10);
 
   rh.amplitude = fitF->GetParameter(0);
   rh.time = fitF->GetParameter(3);
@@ -399,7 +398,7 @@ void saveTemplates(bool dobarrel, int min_run=1, int max_run=999999) {
   float maxTimeShift = 4.0/25.; // ns
   float maxChi2 = 2.167;  
   float maxAmplitude = dobarrel ? 100000 : 100000;
-  float maxDevRef = 0.10; // is relative deviation
+  float maxDevRef = 10000.; // is relative deviation
   int minNhits = 2;
 
   // float adcToGeV = dobarrel ? 0.035 : 0.06;
@@ -418,6 +417,8 @@ void saveTemplates(bool dobarrel, int min_run=1, int max_run=999999) {
     if(run < min_run || run > max_run) continue;
 
     if((dobarrel && (!barrel)) || (!dobarrel && barrel)) continue;
+
+    if(gain<12) continue;
 
     int offset;
     if(barrel) offset = (ietaix > 0) ? 1000 * ietaix : 1000 * (abs(ietaix)+85);
