@@ -349,8 +349,9 @@ void saveTemplates(bool dobarrel, int min_run=1, int max_run=999999) {
 
   // TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_dynped_rawid.root"); // 2013 low PU runs
   // TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_tree_pi0_2015C_lowPU.root"); // 2015 low PU runs
-  TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_alcap0_runs_257394_259686.root"); // 2015 lone bunch triggers on pi0 stream
+  //  TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_alcap0_runs_257394_259686.root"); // 2015 lone bunch triggers on pi0 stream
   // TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_phisymm_lonebunch.root"); // 2015 lone bunch triggers on phi-symmetry stream
+  TFile *file = TFile::Open("/data1/emanuele/ecal/localreco/multifit/templates_phisymm_runs_Oct2015.root");
   TTree *tree = (TTree*)file->Get("pulseDump/pulse_tree");
 
   Long64_t nentries = tree->GetEntries();
@@ -367,6 +368,12 @@ void saveTemplates(bool dobarrel, int min_run=1, int max_run=999999) {
   UInt_t          rawid;
   Int_t           run = 2; // define like that to cope with the trees where run branch was not present
   Int_t           lumi;
+   Double_t        ene;
+   Double_t        time;
+   Double_t        chi2;
+   Int_t           flag_kweird;
+   Int_t           flag_kdiweird;
+
 
   tree->SetBranchAddress("run", &run);
   tree->SetBranchAddress("lumi", &lumi);
@@ -379,6 +386,11 @@ void saveTemplates(bool dobarrel, int min_run=1, int max_run=999999) {
   tree->SetBranchAddress("iz", &iz);
   tree->SetBranchAddress("pulse", pulse);
   tree->SetBranchAddress("rawid", &rawid); 
+  tree->SetBranchAddress("ene", &ene);
+  tree->SetBranchAddress("time", &time);
+  tree->SetBranchAddress("chi2", &chi2);
+  tree->SetBranchAddress("flag_kweird", &flag_kweird);
+  tree->SetBranchAddress("flag_kdiweird", &flag_kdiweird);
 
   std::map<int, std::vector<double> > templates;
   std::map<int, std::vector<double> > templates_weight;
@@ -392,12 +404,15 @@ void saveTemplates(bool dobarrel, int min_run=1, int max_run=999999) {
   // to reject noise" better in ADC not to make eta-dependent cuts
   // ~10 sigma from the 2012 plots: https://twiki.cern.ch/twiki/bin/view/CMSPublic/EcalDPGResultsCMSDP2013007
   float minAmplitude = dobarrel ? 25 : 50; 
+  float minEnergy = dobarrel ? 1. : 3.;
   // to reject spikes
   float currecntTimeBiasNs = -0.500;
   float avgtime = 5.5 + currecntTimeBiasNs / 25.;
-  float maxTimeShift = 4.0/25.; // ns
-  float maxChi2 = 2.167;  
+  float maxTimeShift = 5.0; // ns
+  float maxChi2 = 20.0;
+  //  float maxChi2 = 2.167;  
   float maxAmplitude = dobarrel ? 100000 : 100000;
+  float maxEnergy = 100.; 
   float maxDevRef = 10000.; // is relative deviation
   int minNhits = 2;
 
@@ -412,13 +427,14 @@ void saveTemplates(bool dobarrel, int min_run=1, int max_run=999999) {
     if (ientry < 0) break;
     nb = tree->GetEntry(jentry);   nbytes += nb;
 
-    if(jentry%100000==0) std::cout << "Processing entry " << jentry << std::endl;
+    if(jentry%100000==0) std::cout << "Processing entry " << jentry/1000 << "K" << std::endl;
+    if(jentry%1000000==0) std::cout << "\t***Processed " << jentry/1000000 << "M hits***" << std::endl;
 
     if(run < min_run || run > max_run) continue;
 
     if((dobarrel && (!barrel)) || (!dobarrel && barrel)) continue;
 
-    if(gain<12) continue;
+    if(gain<12 || flag_kweird==1 || flag_kdiweird==1) continue;
 
     int offset;
     if(barrel) offset = (ietaix > 0) ? 1000 * ietaix : 1000 * (abs(ietaix)+85);
@@ -427,14 +443,14 @@ void saveTemplates(bool dobarrel, int min_run=1, int max_run=999999) {
     
     //    std::cout << "ietaix = " << ietaix << "\toffset = " << offset << "\tic = " << ic << std::endl;
 
-    TH1D *digis = (TH1D*)htempl->Clone(Form("rh_%d",ic));
-    for(int iSample(0); iSample < 10; iSample++) digis->SetBinContent(iSample+1,pulse[iSample]);
-    rechit rh = makeRecHit(digis,barrel,0.0);
+    //    TH1D *digis = (TH1D*)htempl->Clone(Form("rh_%d",ic));
+    //    for(int iSample(0); iSample < 10; iSample++) digis->SetBinContent(iSample+1,pulse[iSample]);
+    //    rechit rh = makeRecHit(digis,barrel,0.0);
 
     // std::cout << "\t Rechit has A = " << rh.amplitude << "   t = " << rh.time << "   chi2 = " << rh.chi2 
     //  	      << "   A_maxsample = " << pulse[5] << std::endl;
 
-    delete digis;
+    //delete digis;
 
 
     // calc the max-sample
@@ -459,9 +475,11 @@ void saveTemplates(bool dobarrel, int min_run=1, int max_run=999999) {
     }
 
     //double weight = 1.0;
-    double weight = pow(rh.amplitude,2);
+    double weight = pow(ene,2);
 
-    if(rh.amplitude<minAmplitude || rh.amplitude>maxAmplitude || fabs(rh.time-avgtime)>maxTimeShift || rh.chi2>maxChi2 || max_dev_ref > maxDevRef) continue;
+    //    if(rh.amplitude<minAmplitude || rh.amplitude>maxAmplitude || fabs(rh.time-avgtime)>maxTimeShift || rh.chi2>maxChi2 || max_dev_ref > maxDevRef) continue;
+
+    if(ene < minEnergy || ene > maxEnergy || fabs(time-currecntTimeBiasNs) > maxTimeShift || chi2 > maxChi2) continue;
 
     if(templates.count(ic)==0) {
       std::vector<double> templ;
@@ -1489,10 +1507,11 @@ void compareDataTemplate(bool dobarrel, const char *txtdumpfile, int min_run, in
   // to reject spikes
   float currecntTimeBiasNs = -0.500;
   float avgtime = 5.5 + currecntTimeBiasNs / 25.;
-  float maxTimeShift = 4.0/25.; // ns
+  float maxTimeShift = 7.0/25.; // ns
   //  float maxChi2 = 25.188; 
-  float maxChi2 = 15.987;
+  float maxChi2 = 20.0;
   float maxAmplitude = dobarrel ? 125 : 200;
+  float maxEnergy = 100.;
   float maxDevRef = 0.10; // is relative deviation
   int minNhits = 2;
 
@@ -1553,7 +1572,7 @@ void compareDataTemplate(bool dobarrel, const char *txtdumpfile, int min_run, in
 
     if(rh.amplitude<minAmplitude || rh.amplitude>maxAmplitude || fabs(rh.time-avgtime)>maxTimeShift) continue;
 
-    if(max_dev_ref > maxDevRef) continue;
+    //    if(max_dev_ref > maxDevRef) continue;
 
 
     TH1D* templ = (TH1D*)digis->Clone("templ");
