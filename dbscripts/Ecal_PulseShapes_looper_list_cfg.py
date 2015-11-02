@@ -3,8 +3,7 @@ import os
 import sys
 import re
 
-#ranges = ["257394_258215", "258287_258714", "258741_258750"]
-ranges = [ "257615_258600", "258600_259700" ]
+ranges = [ "257615_258600", "258601_259896" ]
 
 for r in ranges:
     print "processing run range ",r
