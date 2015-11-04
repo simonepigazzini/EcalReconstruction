@@ -10,4 +10,4 @@ for r in ranges:
     
     label="runs_"+r
     
-    os.system("cmsRun Ecal_PulseShapes_argv_cfg.py "+label+" "+label)
+    os.system("cmsRun Ecal_PulseCovariances_argv_cfg.py "+label+" "+label)

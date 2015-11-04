@@ -370,11 +370,11 @@ void saveTemplates(bool dobarrel, int min_run=1, int max_run=999999) {
   UInt_t          rawid;
   Int_t           run = 2; // define like that to cope with the trees where run branch was not present
   Int_t           lumi;
-   Double_t        ene;
-   Double_t        time;
-   Double_t        chi2;
-   Int_t           flag_kweird;
-   Int_t           flag_kdiweird;
+  Double_t        ene;
+  Double_t        time;
+  Double_t        chi2;
+  Int_t           flag_kweird;
+  Int_t           flag_kdiweird;
 
 
   tree->SetBranchAddress("run", &run);
@@ -868,9 +868,10 @@ void FitAllTemplates() {
 // ===========================================
 
 
-void saveCovariances(bool dobarrel) {
+void saveCovariances(bool dobarrel, int min_run=1, int max_run=999999) {
 
-  TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_tree_pi0_2015C_lowPU.root");
+  TFile *file = TFile::Open("/data1/emanuele/ecal/localreco/multifit/templates_phisymm_runs_Oct2015.root");
+  //  TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_tree_pi0_2015C_lowPU.root");
   TTree *tree = (TTree*)file->Get("pulseDump/pulse_tree");
 
   Long64_t nentries = tree->GetEntries();
@@ -885,7 +886,16 @@ void saveCovariances(bool dobarrel) {
   Int_t           iz;
   Double_t        pulse[10];
   UInt_t          rawid;
+  Int_t           run = 2; // define like that to cope with the trees where run branch was not present
+  Int_t           lumi;
+  Double_t        ene;
+  Double_t        time;
+  Double_t        chi2;
+  Int_t           flag_kweird;
+  Int_t           flag_kdiweird;
 
+  tree->SetBranchAddress("run", &run);
+  tree->SetBranchAddress("lumi", &lumi);
   tree->SetBranchAddress("barrel", &barrel);
   tree->SetBranchAddress("gain", &gain);
   tree->SetBranchAddress("pedrms", &pedrms);
@@ -895,7 +905,12 @@ void saveCovariances(bool dobarrel) {
   tree->SetBranchAddress("iz", &iz);
   tree->SetBranchAddress("pulse", pulse);
   tree->SetBranchAddress("rawid", &rawid); 
-  
+  tree->SetBranchAddress("ene", &ene);
+  tree->SetBranchAddress("time", &time);
+  tree->SetBranchAddress("chi2", &chi2);
+  tree->SetBranchAddress("flag_kweird", &flag_kweird);
+  tree->SetBranchAddress("flag_kdiweird", &flag_kdiweird);
+
   std::map<int, std::vector<double> > xy, x, xx;
   std::map<int, std::vector<double> > noise_xy, noise_x, noise_xx;
   std::map<int, std::vector<double> > templates_weight;
@@ -906,10 +921,16 @@ void saveCovariances(bool dobarrel) {
   // to reject noise" better in ADC not to make eta-dependent cuts
   // ~10 sigma from the 2012 plots: https://twiki.cern.ch/twiki/bin/view/CMSPublic/EcalDPGResultsCMSDP2013007
   float minAmplitude = dobarrel ? 25 : 50; 
+  float minEnergy = dobarrel ? 1. : 3.;
   // to reject spikes
-  float maxTimeShift = 8.0/25.; // ns
-  float maxChi2 = 25.188; 
-  float maxAmplitude = dobarrel ? 125 : 200;
+  float currecntTimeBiasNs = -0.500;
+  float avgtime = 5.5 + currecntTimeBiasNs / 25.;
+  float maxTimeShift = 5.0; // ns
+  float maxChi2 = 20.0;
+  //  float maxChi2 = 2.167;  
+  float maxAmplitude = dobarrel ? 100000 : 100000;
+  float maxEnergy = 100.; 
+  float maxDevRef = 10000.; // is relative deviation
   int minNhits = 2;
 
   TH1D *htempl = new TH1D("htempl","",10,0,10);
@@ -920,9 +941,14 @@ void saveCovariances(bool dobarrel) {
     if (ientry < 0) break;
     nb = tree->GetEntry(jentry);   nbytes += nb;
 
-    if(jentry%100000==0) std::cout << "Processing entry " << jentry << std::endl;
+    if(jentry%100000==0) std::cout << "Processing entry " << jentry/1000 << "K" << std::endl;
+    if(jentry%1000000==0) std::cout << "\t***Processed " << jentry/1000000 << "M hits***" << std::endl;
+
+    if(run < min_run || run > max_run) continue;
 
     if((dobarrel && (!barrel)) || (!dobarrel && barrel)) continue;
+
+    if(gain<12 || flag_kweird==1 || flag_kdiweird==1) continue;
 
     int offset;
     if(barrel) offset = (ietaix > 0) ? 1000 * ietaix : 1000 * (abs(ietaix)+85);
@@ -931,11 +957,11 @@ void saveCovariances(bool dobarrel) {
     
     //    std::cout << "ietaix = " << ietaix << "\toffset = " << offset << "\tic = " << ic << std::endl;
 
-    TH1D *digis = (TH1D*)htempl->Clone(Form("rh_%d",ic));
-    for(int iSample(0); iSample < 10; iSample++) digis->SetBinContent(iSample+1,pulse[iSample]);
-    rechit rh = makeRecHit(digis,barrel,0.0);
+    // TH1D *digis = (TH1D*)htempl->Clone(Form("rh_%d",ic));
+    // for(int iSample(0); iSample < 10; iSample++) digis->SetBinContent(iSample+1,pulse[iSample]);
+    // rechit rh = makeRecHit(digis,barrel,0.0);
 
-    delete digis;
+    // delete digis;
 
     // calc the max-sample
     int maxsample=5;
@@ -951,7 +977,7 @@ void saveCovariances(bool dobarrel) {
     double weight = 1.0;
     //double weight = pow(rh.amplitude,2);
 
-    if(rh.amplitude<minAmplitude || rh.amplitude>maxAmplitude || fabs(rh.time-5.5)>maxTimeShift || rh.chi2>maxChi2) continue;
+    if(ene < minEnergy || ene > maxEnergy || fabs(time-currecntTimeBiasNs) > maxTimeShift || chi2 > maxChi2) continue;
     
     if(xy.count(ic)==0) {
       std::vector<double> this_xy, this_x, this_xx;
@@ -1012,7 +1038,8 @@ void saveCovariances(bool dobarrel) {
   TH2D *simCovariance = simPulseShapeCovariance(dobarrel);
   
   /// output
-  TString nameoutput = dobarrel ? "templatecov_histograms_EB.root" : "templatecov_histograms_EE.root";
+  TString nameoutput = dobarrel ? "templatecov_histograms_EB" : "templatecov_histograms_EE";
+  nameoutput += Form("_runs_%d_%d.root",min_run,max_run);
   TFile *outfile = TFile::Open(nameoutput.Data(),"recreate");
   TH2D *hcov = new TH2D("htempl","",10,0,10,10,0,10);
   TH2D *hcovAverage =  (TH2D*)hcov->Clone("covariance_average");
@@ -1020,7 +1047,8 @@ void saveCovariances(bool dobarrel) {
 
   // text file to fill the DB objects with templates
   ofstream txtdumpfile;  
-  TString nametxtoutput = dobarrel ? "template_covariances_EB.txt" : "template_covariances_EE.txt";
+  TString nametxtoutput = dobarrel ? "template_histograms_EB" : "template_histograms_EE";
+  nametxtoutput += Form("_runs_%d_%d.txt",min_run,max_run);
   txtdumpfile.open (nametxtoutput.Data(), ios::out | ios::trunc);
 
   int minHits = 50;
@@ -1038,7 +1066,7 @@ void saveCovariances(bool dobarrel) {
     if(dobarrel && ix >= 85) ix = -1*(ix-85);
     if((!dobarrel) && ix >= 100) ix = -1*(ix-100);
     int iy = it->first % 1000;
-    // std::cout << "Writing templates histogram. ix = " << ix << "  iy = " << iy << " got " << nevts[it->first] << " events" << std::endl;
+    std::cout << "Writing templates histogram. ix = " << ix << "  iy = " << iy << " got " << norm_counts[it->first] << " events" << std::endl;
     TH2D *ch = (TH2D*)hcov->Clone(Form("templatecov_%d_%d",ix,iy));
     TH2D *chNotNorm = (TH2D*)hcov->Clone(Form("templatecovNotNorm_%d_%d",ix,iy));
     for(int index=0; index<100; ++index) {
@@ -1711,5 +1739,13 @@ void saveAllTemplatesOneRange(int firstRun, int lastRun) {
 
   std::cout << "Analysing runs between [ " << firstRun << " , " << lastRun << " ] " << std::endl; 
   for(int iecal=1; iecal>-1; --iecal) saveTemplates(iecal, firstRun, lastRun);
+
+}
+
+// to parallelise things
+void saveAllCovariancesOneRange(int firstRun, int lastRun) {
+
+  std::cout << "Analysing runs between [ " << firstRun << " , " << lastRun << " ] " << std::endl; 
+  for(int iecal=1; iecal>-1; --iecal) saveCovariances(iecal, firstRun, lastRun);
 
 }

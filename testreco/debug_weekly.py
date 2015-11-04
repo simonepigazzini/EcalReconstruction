@@ -21,7 +21,7 @@ process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(300)
+    input = cms.untracked.int32(1000)
 )
 
 # Input source
@@ -88,8 +88,14 @@ process=convertToUnscheduled(process)
 from FWCore.ParameterSet.Utilities import cleanUnscheduled
 process=cleanUnscheduled(process)
 
+# process.GlobalTag.toGet = cms.VPSet(
+# cms.PSet(record = cms.string("EcalPulseShapesRcd"),
+# tag = cms.string("EcalPulseShapes_data"),
+# connect = cms.untracked.string("sqlite_file:ecaltemplates_popcon_weekly.db"
+# )))
+
 process.GlobalTag.toGet = cms.VPSet(
-cms.PSet(record = cms.string("EcalPulseShapesRcd"),
-tag = cms.string("EcalPulseShapes_data"),
-connect = cms.untracked.string("sqlite_file:ecaltemplates_popcon_weekly.db"
+cms.PSet(record = cms.string("EcalPulseCovariancesRcd"),
+tag = cms.string("EcalPulseCovariances_data"),
+connect = cms.untracked.string("sqlite_file:ecalcovariances_popcon_weekly.db"
 )))
