@@ -88,7 +88,7 @@ void FitZMassScaleAndResolution(int energytype, string inputFilename, string out
 //double power_cb = 1.40;		// Use to fix some fits
   double power_cb = 2.45;
   const char *plotOpt = "NEU";
-  int nbins = 40;
+  int nbins = 38;
   //int nbins = 20;
 
   // Call the fitting program and output a workspace with a root file
@@ -180,7 +180,7 @@ void makefit(int energytype, string inputFilename, string outFilename,
     double l1phi = lphi[0];
     double l2phi = lphi[1];
 
-    if(run<257645) continue; 
+    if(run<257615) continue; 
 
     // if (run > 256700) continue; // Fill 4381 (76.5/pb)
     // if (run < 256728 || run > 256734) continue; // Fill 4384 (66.8/pb)
@@ -560,48 +560,9 @@ void runAll() {
   string tree_file = "/Loop/treeProducerDarkMatterMonoJet/tree.root";
   vector<string> rerecoes;
 
-  // rerecoes.push_back("privDoubleEG_Run2015D_0p000000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_0p250000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_0p500000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_0p750000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_1p000000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_1p250000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_1p500000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_1p750000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_2p000000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_2p250000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_2p500000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_2p750000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_3p000000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_3p250000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_3p500000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_3p750000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_4p000000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_4p250000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_4p750000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_m0p250000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_m0p500000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_m0p750000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_m1p000000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_m1p250000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_m1p500000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_m1p750000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_m2p000000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_m2p250000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_m2p500000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_m2p750000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_m3p000000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_m3p250000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_m3p500000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_m3p750000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_m4p000000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_m4p250000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_m4p500000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_m4p750000ns");
-  // rerecoes.push_back("privDoubleEG_Run2015D_m5p000000ns");
-
   rerecoes.push_back("privDoubleEG_Run2015D_Default");
-  rerecoes.push_back("privDoubleEG_Run2015D_WeeklyPS");
+  rerecoes.push_back("privDoubleEG_Run2015D_WeeklyPS_RecHitCuts");
+  rerecoes.push_back("privDoubleEG_Run2015D_WeeklyPC_RecHitCuts");
 
   string outputpref="";
 
@@ -614,7 +575,7 @@ void runAll() {
       std::cout << "r9b = " << r9b << std::endl;
       for(int etab=0; etab<5; ++etab) {
 	std::cout << "   eta bin = " << etab << std::endl;
-	for( int p4kind=kCorrEcal; p4kind<kCorrEcal+1; ++p4kind) {
+	for( int p4kind=kRaw; p4kind<kCorrEcal+1; ++p4kind) {
 	  std::cout << " local reco type = " << p4kind << std::endl;
 	  TString outputfdata=Form("%s_R9Bin%d_EtaBin%d_Reco%d",outputpref.c_str(),r9b,etab,p4kind);
 	  std::cout <<"        fitting DATA..." << std::endl;
@@ -643,7 +604,7 @@ void plotParametersVsTimeShift() {
   vector<string> rerecoes;
 
   rerecoes.push_back("privDoubleEG_Run2015D_Default");  
-  rerecoes.push_back("privDoubleEG_Run2015D_WeeklyPS");  
+  rerecoes.push_back("privDoubleEG_Run2015D_WeeklyPS_AlCaP0");  
 
   // rerecoes.push_back("privDoubleEG_Run2015D_m2p250000ns");
   // rerecoes.push_back("privDoubleEG_Run2015D_m2p000000ns");

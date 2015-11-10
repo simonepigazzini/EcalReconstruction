@@ -238,9 +238,11 @@ rechit makeRecHitMaxSample(TH1D *pulse, std::vector<float> itemplate) {
 
   rh.chi2 = 0;
 
-  for(int s=3; s<=pulse->GetNbinsX(); s++) {
-    double val = pulse->GetBinContent(s);
-    double R_s = val - itemplate[s]*rh.amplitude;
+  // do not use the first and last samples, which are affected by variations
+  for(int s=4; s<pulse->GetNbinsX()-1; s++) {
+    double val = pulse->GetBinContent(s+1);
+    double R_s = val - itemplate[s-3]*rh.amplitude;
+    // std::cout << "\t\t MaxSample Algo: is = " << s << "   val = " << val << "  expected: " << itemplate[s-3]*rh.amplitude << "   residual = " << R_s << std::endl;
     double R_sErrorSquare = const_A*const_A*rh.amplitude*rh.amplitude;
 
     rh.chi2 += R_s*R_s/R_sErrorSquare;
@@ -448,7 +450,7 @@ void saveTemplates(bool dobarrel, int min_run=1, int max_run=999999) {
     //    rechit rh = makeRecHit(digis,barrel,0.0);
 
     // std::cout << "\t Rechit has A = " << rh.amplitude << "   t = " << rh.time << "   chi2 = " << rh.chi2 
-    //  	      << "   A_maxsample = " << pulse[5] << std::endl;
+    //   	      << "   A_maxsample = " << rh2.amplitude << "   chi2 maxs = " << rh2.chi2 << std::endl;
 
     //delete digis;
 
