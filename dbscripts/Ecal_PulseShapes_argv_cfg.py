@@ -42,7 +42,7 @@ process.PoolDBOutputService = cms.Service("PoolDBOutputService",
     ))
 )
 
-txtfile = "template_histograms_ECAL_"+suffixorig+".txt"
+txtfile = "iov_templates_"+suffixorig+".txt"
 if os.path.isfile(txtfile)==False:
     print "WARNING: file ",txtfile," does not exist. Exiting... "
     exit
