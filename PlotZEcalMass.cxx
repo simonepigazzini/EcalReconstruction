@@ -11,6 +11,7 @@
 #include <TROOT.h>
 #include <TStyle.h>
 #include <TPaveText.h>
+#include <TGAxis.h>
 
 using namespace std;
 
@@ -55,7 +56,7 @@ TPaveText* doSpam(TString text,float x1,float y1,float x2,float y2,int align=12,
 }
 
 void doTinyCmsPrelim(TString textLeft,TString textRight,float textSize=0.033,float lumi=2.11,float xoffs=0) {
-  doSpam(textLeft, .16+xoffs, .955, .60+xoffs, .995, 12, textSize);
+  doSpam(textLeft, .30+xoffs, .955, .60+xoffs, .995, 12, textSize);
   doSpam(textRight,.66+xoffs, .955, .97+xoffs, .995, 32, textSize);
 }
 
@@ -64,6 +65,7 @@ void plotMasses(const char* file, bool iseb, const char *plotpref) {
   gROOT->ProcessLine(".x tdrstyle.cc");
   gStyle->SetOptStat(0);
   gStyle->SetOptTitle(0);
+  TGaxis::SetMaxDigits(3);
 
   TFile *tfile = TFile::Open(file);
   
@@ -76,7 +78,7 @@ void plotMasses(const char* file, bool iseb, const char *plotpref) {
   mass_corrEcEnergy_data->SetLineWidth(2);
   mass_corrEcEnergy_data->GetXaxis()->SetTitle("m(e^{+}e^{-}) [GeV]");
   mass_corrEcEnergy_data->GetYaxis()->SetTitle("Events / GeV");
-  mass_corrEcEnergy_data->GetYaxis()->SetTitleOffset(1.6);
+  mass_corrEcEnergy_data->GetYaxis()->SetTitleOffset(1.3);
 
   mass_ScRaw_data->SetLineColor(kBlue+2);
   mass_ScRaw_data->SetFillColor(kBlue+2);
@@ -108,11 +110,13 @@ void plotMasses(const char* file, bool iseb, const char *plotpref) {
   mass_ScRaw_data->Draw("same hist");
   if(!iseb) mass_ScRawES_data->Draw("same hist");
 
-  std::cout << "bella" << std::endl;
-
   TLegend *leg = doLegend(pmap,style);
   leg->Draw();
+
+  if(iseb) doSpam("Barrel-Barrel", .25, .80, .50, .90, 12);
+  else doSpam("Endcap-Endcap", .25, .80, .50, .90, 12);
   
+
   doTinyCmsPrelim("CMS Preliminary","2.11 fb^{-1} (13 TeV)");
 
   c1->SaveAs(Form("%s.png",plotpref));
@@ -122,7 +126,7 @@ void plotMasses(const char* file, bool iseb, const char *plotpref) {
 }
 
 void plotAll() {
-  plotMasses("zee_incl_plots_bb.root",true,"zee_mass_bb");
-  plotMasses("zee_incl_plots_ee.root",false,"zee_mass_ee");
+  plotMasses("canvases/zee_incl_plots_bb.root",true,"zee_mass_bb");
+  plotMasses("canvases/zee_incl_plots_ee.root",false,"zee_mass_ee");
 }
 
