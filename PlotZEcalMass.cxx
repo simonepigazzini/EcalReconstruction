@@ -12,6 +12,7 @@
 #include <TStyle.h>
 #include <TPaveText.h>
 #include <TGAxis.h>
+#include <TObjArray.h>
 
 using namespace std;
 
@@ -125,8 +126,23 @@ void plotMasses(const char* file, bool iseb, const char *plotpref) {
 
 }
 
-void plotAll() {
+void plotAllMassEstimates() {
   plotMasses("canvases/zee_incl_plots_bb.root",true,"zee_mass_bb");
   plotMasses("canvases/zee_incl_plots_ee.root",false,"zee_mass_ee");
 }
 
+
+void plotDataMC(const char* file, bool iseb) {
+  //  gROOT->ProcessLine(".x tdrstyle.cc");
+  gStyle->SetOptStat(0);
+  gStyle->SetOptTitle(0);
+  TGaxis::SetMaxDigits(3);
+
+  TFile *tfile = TFile::Open(file);
+  TCanvas *cheppy = (TCanvas*)tfile->Get("mass_corrEcEnergy_calib_canvas");
+
+  cheppy->Draw();
+  if(iseb) doSpam("Barrel-Barrel", .25, .80, .50, .90, 12);
+  else doSpam("Not Barrel-Barrel", .25, .80, .50, .90, 12);
+  
+}
