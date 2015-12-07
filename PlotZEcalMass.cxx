@@ -56,7 +56,7 @@ TPaveText* doSpam(TString text,float x1,float y1,float x2,float y2,int align=12,
     return cmsprel;
 }
 
-void doTinyCmsPrelim(TString textLeft,TString textRight,float textSize=0.033,float lumi=2.11,float xoffs=0) {
+void doTinyCmsPrelim(TString textLeft,TString textRight,float textSize=0.033,float lumi=2.1,float xoffs=0) {
   doSpam(textLeft, .30+xoffs, .955, .60+xoffs, .995, 12, textSize);
   doSpam(textRight,.66+xoffs, .955, .97+xoffs, .995, 32, textSize);
 }
@@ -118,7 +118,7 @@ void plotMasses(const char* file, bool iseb, const char *plotpref) {
   else doSpam("Endcap-Endcap", .25, .80, .50, .90, 12);
   
 
-  doTinyCmsPrelim("CMS Preliminary","2.11 fb^{-1} (13 TeV)");
+  doTinyCmsPrelim("CMS Preliminary","#sqrt{s} = 13 TeV, L = 2.1 fb^{-1}");
 
   c1->SaveAs(Form("%s.png",plotpref));
   c1->SaveAs(Form("%s.pdf",plotpref));
