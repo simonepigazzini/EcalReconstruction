@@ -75,17 +75,20 @@ void plotMasses(const char* file, bool iseb, const char *plotpref) {
   TH1F *mass_ScRawES_data = ( iseb ? 0 : (TH1F*)tfile->Get("mass_ScRawES_data") );
   TH1F *mass_corrEcEnergy_data = (TH1F*)tfile->Get("mass_corrEcEnergy_data");
 
-  mass_corrEcEnergy_data->SetLineColor(kBlack);
+  mass_corrEcEnergy_data->SetLineColor(kBlue+1);
   mass_corrEcEnergy_data->SetLineWidth(2);
+  mass_corrEcEnergy_data->SetFillColor(kBlue+2);
+  mass_corrEcEnergy_data->SetFillStyle(3002);
   mass_corrEcEnergy_data->GetXaxis()->SetTitle("m(e^{+}e^{-}) [GeV]");
   mass_corrEcEnergy_data->GetYaxis()->SetTitle("Events / GeV");
   mass_corrEcEnergy_data->GetYaxis()->SetTitleOffset(1.3);
 
-  mass_ScRaw_data->SetLineColor(kBlue+2);
-  mass_ScRaw_data->SetFillColor(kBlue+2);
-  mass_ScRaw_data->SetFillStyle(3002);
+  mass_ScRaw_data->SetLineColor(kTeal+9);
+  mass_ScRaw_data->SetLineWidth(2);
+  //mass_ScRaw_data->SetFillColor(kBlue+2);
+  //mass_ScRaw_data->SetFillStyle(3002);
   if (!iseb) {
-    mass_ScRawES_data->SetLineColor(kMagenta+1);
+    mass_ScRawES_data->SetLineColor(kViolet-5);
     mass_ScRawES_data->SetLineWidth(2);
   }
   mass_e5x5_data->SetLineColor(kOrange-3);
@@ -100,9 +103,9 @@ void plotMasses(const char* file, bool iseb, const char *plotpref) {
   pmap.insert(std::pair<TString,TH1F*>("E^{SuperCluster}_{raw}",mass_ScRaw_data));
   pmap.insert(std::pair<TString,TH1F*>("E_{5x5 crystals}",mass_e5x5_data));
 
-  style.push_back("l");
-  if(!iseb) style.push_back("l");
   style.push_back("fl");
+  if(!iseb) style.push_back("l");
+  style.push_back("l");
   style.push_back("fl");
 
   TCanvas *c1 = new TCanvas("c1","c1");
