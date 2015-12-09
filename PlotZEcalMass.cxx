@@ -56,7 +56,7 @@ TPaveText* doSpam(TString text,float x1,float y1,float x2,float y2,int align=12,
     return cmsprel;
 }
 
-void doTinyCmsPrelim(TString textLeft,TString textRight,float textSize=0.033,float lumi=2.1,float xoffs=0) {
+void doTinyCmsPrelim(TString textLeft,TString textRight,float textSize=0.033,float lumi=2.2,float xoffs=0) {
   doSpam(textLeft, .30+xoffs, .955, .60+xoffs, .995, 12, textSize);
   doSpam(textRight,.66+xoffs, .955, .97+xoffs, .995, 32, textSize);
 }
@@ -75,13 +75,14 @@ void plotMasses(const char* file, bool iseb, const char *plotpref) {
   TH1F *mass_ScRawES_data = ( iseb ? 0 : (TH1F*)tfile->Get("mass_ScRawES_data") );
   TH1F *mass_corrEcEnergy_data = (TH1F*)tfile->Get("mass_corrEcEnergy_data");
 
-  mass_corrEcEnergy_data->SetLineColor(kBlue+1);
+  mass_corrEcEnergy_data->SetLineColor(kBlack);
   mass_corrEcEnergy_data->SetLineWidth(2);
   mass_corrEcEnergy_data->SetFillColor(kBlue+2);
   mass_corrEcEnergy_data->SetFillStyle(3002);
   mass_corrEcEnergy_data->GetXaxis()->SetTitle("m(e^{+}e^{-}) [GeV]");
   mass_corrEcEnergy_data->GetYaxis()->SetTitle("Events / GeV");
   mass_corrEcEnergy_data->GetYaxis()->SetTitleOffset(1.3);
+  mass_corrEcEnergy_data->GetYaxis()->SetLabelSize(0.045);
 
   mass_ScRaw_data->SetLineColor(kTeal+9);
   mass_ScRaw_data->SetLineWidth(2);
@@ -117,11 +118,12 @@ void plotMasses(const char* file, bool iseb, const char *plotpref) {
   TLegend *leg = doLegend(pmap,style);
   leg->Draw();
 
-  if(iseb) doSpam("Barrel-Barrel", .25, .80, .50, .90, 12);
-  else doSpam("Endcap-Endcap", .25, .80, .50, .90, 12);
+  doSpam("ECAL", .25, .87, .50, .92, 12);
+  if(iseb) doSpam("Barrel-Barrel", .25, .80, .50, .92, 12);
+  else doSpam("Endcap-Endcap", .25, .80, .50, .92, 12);
   
 
-  doTinyCmsPrelim("CMS Preliminary","#sqrt{s} = 13 TeV, L = 2.1 fb^{-1}");
+  doTinyCmsPrelim("CMS Preliminary","#sqrt{s} = 13 TeV, L = 2.2 fb^{-1}");
 
   c1->SaveAs(Form("%s.png",plotpref));
   c1->SaveAs(Form("%s.pdf",plotpref));
@@ -145,7 +147,8 @@ void plotDataMC(const char* file, bool iseb) {
   TCanvas *cheppy = (TCanvas*)tfile->Get("mass_corrEcEnergy_calib_canvas");
 
   cheppy->Draw();
-  if(iseb) doSpam("Barrel-Barrel", .25, .80, .50, .90, 12);
-  else doSpam("Not Barrel-Barrel", .25, .80, .50, .90, 12);
+  doSpam("ECAL", .25, .87, .50, .92, 12);
+  if(iseb) doSpam("Barrel-Barrel", .25, .80, .50, .92, 12);
+  else doSpam("Not Barrel-Barrel", .25, .80, .50, .92, 12);
   
 }
