@@ -11,7 +11,8 @@
 #include "TString.h"
 #include "TLegend.h"
 #include "TPaveText.h"
-#include "/Users/emanuele/Scripts/RooHZZStyle.C"
+#include "TChain.h"
+#include "RooHZZStyle.C"
 
 struct rechit {
   double time;
@@ -275,11 +276,40 @@ TH1D* fitTemplate(TH1D *templateh, bool doEB, double pedestal=0, TH1D* simTempla
   return shifted_temp;
 }
 
+
+TChain* getChain(const char *inputFileName) {
+  // -------------------------
+  // Loading the file
+  TChain *theChain = new TChain("pulseDump/pulse_tree");
+  char Buffer[500];
+  char MyRootFile[2000];
+  std::cout << "input: " << inputFileName << std::endl;
+  ifstream *inputFile = new ifstream(inputFileName);
+  char tmpFileName[256];
+  vector<string> filesToRemove;
+  while( !(inputFile->eof()) ){
+    inputFile->getline(Buffer,500);
+    if (!strstr(Buffer,"#") && !(strspn(Buffer," ") == strlen(Buffer)))
+      {
+        sscanf(Buffer,"%s",MyRootFile);
+        // theChain->Add("root://castorcms/"+TString(MyRootFile)); 
+        // theChain->Add("rfio:"+TString(MyRootFile));
+        theChain->Add(TString(MyRootFile));
+        std::cout << "chaining " << MyRootFile << std::endl;
+      }
+  }
+  inputFile->close();
+  delete inputFile;
+  return theChain;
+}
+
 void saveTemplates(bool dobarrel) {
 
-  TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_dynped_rawid.root"); // 2013 low PU runs
+  TChain *tree = getChain("loneBunch2016B.txt");
+  
+  //  TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_dynped_rawid.root"); // 2013 low PU runs
   // TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_tree_pi0_2015C_lowPU.root"); // 2015 low PU runs
-  TTree *tree = (TTree*)file->Get("pulseDump/pulse_tree");
+  //TTree *tree = (TTree*)file->Get("pulseDump/pulse_tree");
 
   Long64_t nentries = tree->GetEntries();
   std::cout << "The tree has " << nentries << " entries" << std::endl;
