@@ -27,7 +27,7 @@ process.load('Configuration.StandardSequences.RawToDigi_cff')
 process.load('Configuration.StandardSequences.Reconstruction_cff')
 
 process.maxEvents = cms.untracked.PSet(  input = cms.untracked.int32(5000) )
-process.MessageLogger.cerr.FwkReport.reportEvery = 1
+process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 
 process.GlobalTag.globaltag = '80X_dataRun2_Prompt_v5'
 
@@ -54,7 +54,7 @@ process.ecalRecHit.recoverEEFE = False
 
 # TRIGGER RESULTS FILTER
 process.triggerSelectionLoneBunch = cms.EDFilter( "TriggerResultsFilter",
-                                                  triggerConditions = cms.vstring('L1_AlwaysTrue'),
+                                                  triggerConditions = cms.vstring('L1_AlwaysTrue','L1_IsolatedBunch'),
                                                   hltResults = cms.InputTag( "TriggerResults", "", "HLT" ),
                                                   l1tResults = cms.InputTag( "hltGtDigis" ),
                                                   l1tIgnoreMask = cms.bool( False ),
