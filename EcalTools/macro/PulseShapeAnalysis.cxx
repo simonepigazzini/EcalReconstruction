@@ -3,16 +3,20 @@
 #include <string>
 #include <fstream>
 
+#include "TStyle.h"
 #include "TFile.h"
 #include "TTree.h"
+#include "TChain.h"
 #include "THashList.h"
 #include "TH2D.h"
 #include "TCanvas.h"
 #include "TString.h"
 #include "TLegend.h"
 #include "TPaveText.h"
-#include "TChain.h"
-#include "RooHZZStyle.C"
+#include "TMath.h"
+#include "TF1.h"
+#include "TProfile.h"
+//#include "/Users/emanuele/Scripts/RooHZZStyle.C"
 
 struct rechit {
   double time;
@@ -157,8 +161,7 @@ Double_t alphabeta( Double_t *x, Double_t * par)
   double fcn;
   if(deltat>-alphabeta) fcn = par[0] * power_term * decay_term + par[4];
   else fcn = par[4];
-  return fcn;
-}
+  return fcn;}
 
 double ALPHABETAT[3];
 double ERR_ALPHABETAT[3];
@@ -172,6 +175,14 @@ rechit makeRecHit(TH1D *pulse, bool doEB, double pedestal) {
   double alpha = doEB ? 1.250 : 1.283;
   double beta = doEB ? 1.600 : 1.674;
 
+  // do not use effectively the tail of the PS
+  double maxSampli = pulse->GetBinContent(6)-pedestal;
+
+  for(int iBin=1; iBin <= pulse->GetNbinsX(); ++iBin) {
+    if(iBin<5 || iBin>9) pulse->SetBinError(iBin,1000000);
+    else pulse->SetBinError(iBin,0.022*pulse->GetBinContent(iBin));
+  }
+
   TF1 *fitF = new TF1("alphabeta",alphabeta,0,10,5);
   fitF->SetParNames("norm","#alpha","#beta","tmax","pedestal");
   fitF->SetParLimits(0,0,10000); // normalization
@@ -179,30 +190,66 @@ rechit makeRecHit(TH1D *pulse, bool doEB, double pedestal) {
   fitF->FixParameter(2,beta);
   fitF->SetParameter(3,5.5);
   fitF->SetParLimits(3,4,7); // tmax
-  fitF->FixParameter(5,pedestal);
+  fitF->FixParameter(4,pedestal);
 
-  pulse->Fit("alphabeta","Q WW M","",0,10);
+  pulse->Fit("alphabeta","Q","",0,10);
 
   rh.amplitude = fitF->GetParameter(0);
   rh.time = fitF->GetParameter(3);
   rh.chi2 = fitF->GetChisquare();
 
   // plotting (for debug only: 1 plot / rechit
-  /*  
-  TCanvas c1("c1","");
+  /*
+  TCanvas c2("c2","");
   pulse->SetLineColor(kBlue+2);
   pulse->SetLineWidth(2);
   fitF->SetLineColor(kRed+1);
 
   pulse->GetXaxis()->SetTitle("Sample");
   pulse->GetYaxis()->SetTitle("Ped. Subtracted Amplitude (a.u.)");
-  pulse->Draw("hist E2");
-  pulse->Fit("alphabeta","Q WW M","same",0,10);
+  pulse->Draw("hist");
   fitF->Draw("same");
-  c1.SaveAs(Form("pulse_a%f_t%f_chisq%f.pdf",rh.amplitude,rh.time,rh.chi2));
+  c2.SaveAs(Form("pulse_a%f_t%f_chisq%f.png",rh.amplitude,rh.time,rh.chi2));
   */
 
   delete fitF;
+  return rh;
+
+}
+
+rechit makeRecHitMaxSample(TH1D *pulse, std::vector<float> itemplate) {
+
+  rechit rh;
+
+  int maxsample=-1;
+  double max=-1000;
+  for(int s=1; s<=pulse->GetNbinsX(); s++) {
+    double val = pulse->GetBinContent(s);
+    if(val > max) {
+      maxsample = s;
+      max = val;
+    }
+  }
+
+  rh.amplitude = max;
+  
+  rh.time = 5.5;
+
+  double const_A = 0.022;
+
+  rh.chi2 = 0;
+
+  // do not use the first and last samples, which are affected by variations
+  for(int s=4; s<pulse->GetNbinsX()-1; s++) {
+    double val = pulse->GetBinContent(s+1);
+    double R_s = val - itemplate[s-3]*rh.amplitude;
+    // std::cout << "\t\t MaxSample Algo: is = " << s << "   val = " << val << "  expected: " << itemplate[s-3]*rh.amplitude << "   residual = " << R_s << std::endl;
+    double R_sErrorSquare = const_A*const_A*rh.amplitude*rh.amplitude;
+
+    rh.chi2 += R_s*R_s/R_sErrorSquare;
+  }
+
+
   return rh;
 
 }
@@ -276,15 +323,14 @@ TH1D* fitTemplate(TH1D *templateh, bool doEB, double pedestal=0, TH1D* simTempla
   return shifted_temp;
 }
 
-
-TChain* getChain(const char *inputFileName) {
+TChain *getChain(const char *file) {
   // -------------------------
   // Loading the file
   TChain *theChain = new TChain("pulseDump/pulse_tree");
   char Buffer[500];
   char MyRootFile[2000];
-  std::cout << "input: " << inputFileName << std::endl;
-  ifstream *inputFile = new ifstream(inputFileName);
+  std::cout << "input: " << file << std::endl;
+  ifstream *inputFile = new ifstream(file);
   char tmpFileName[256];
   vector<string> filesToRemove;
   while( !(inputFile->eof()) ){
@@ -303,13 +349,41 @@ TChain* getChain(const char *inputFileName) {
   return theChain;
 }
 
-void saveTemplates(bool dobarrel) {
+void saveTemplates(bool dobarrel, int min_run=1, int max_run=999999) {
+
+  // this is the reference template file. It is used only to put constraints on single hit timing information in a robust way
+  // based on the ratio S_max / S_max-1
+  typedef std::map<unsigned int, std::vector<float> > tempmap;
+  tempmap templates_ref;
+
+  int iseb;
+  unsigned int detid;
+
+  ifstream myfile;
+  myfile.open("/afs/cern.ch/work/e/emanuele/public/ecal/pulseshapes_db/template_histograms_ECAL_Run2015C_lowPU.txt");
+  if (myfile.is_open()) {
+    while ( !myfile.eof() ) {
+      myfile >> iseb;
+      myfile >> detid;
+      std::vector<float> samples;
+      samples.resize(12);
+      for(int s=0; s<12; ++s) myfile >> samples[s];
+      if((dobarrel && iseb==1) || (!dobarrel && iseb==0)) templates_ref[detid] = samples;
+    }
+    myfile.close();
+  }
+  else cout << "Unable to open file"; 
+
+  std::cout << "Read the previous tag file. Now loop over the events" << std::endl;
+
+  // TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_dynped_rawid.root"); // 2013 low PU runs
+  // TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_tree_pi0_2015C_lowPU.root"); // 2015 low PU runs
+  //  TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_alcap0_runs_257394_259686.root"); // 2015 lone bunch triggers on pi0 stream
+  // TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_phisymm_lonebunch.root"); // 2015 lone bunch triggers on phi-symmetry stream
+  // TFile *file = TFile::Open("/data1/emanuele/ecal/localreco/multifit/templates_phisymm_runs_Oct2015.root");
+  // TTree *tree = (TTree*)file->Get("pulseDump/pulse_tree");
 
   TChain *tree = getChain("loneBunch2016B.txt");
-  
-  //  TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_dynped_rawid.root"); // 2013 low PU runs
-  // TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_tree_pi0_2015C_lowPU.root"); // 2015 low PU runs
-  //TTree *tree = (TTree*)file->Get("pulseDump/pulse_tree");
 
   Long64_t nentries = tree->GetEntries();
   std::cout << "The tree has " << nentries << " entries" << std::endl;
@@ -323,7 +397,17 @@ void saveTemplates(bool dobarrel) {
   Int_t           iz;
   Double_t        pulse[10];
   UInt_t          rawid;
-  
+  Int_t           run = 2; // define like that to cope with the trees where run branch was not present
+  Int_t           lumi;
+  Double_t        ene;
+  Double_t        time;
+  Double_t        chi2;
+  Int_t           flag_kweird;
+  Int_t           flag_kdiweird;
+
+
+  tree->SetBranchAddress("run", &run);
+  tree->SetBranchAddress("lumi", &lumi);
   tree->SetBranchAddress("barrel", &barrel);
   tree->SetBranchAddress("gain", &gain);
   tree->SetBranchAddress("pedrms", &pedrms);
@@ -333,19 +417,34 @@ void saveTemplates(bool dobarrel) {
   tree->SetBranchAddress("iz", &iz);
   tree->SetBranchAddress("pulse", pulse);
   tree->SetBranchAddress("rawid", &rawid); 
+  tree->SetBranchAddress("ene", &ene);
+  tree->SetBranchAddress("time", &time);
+  tree->SetBranchAddress("chi2", &chi2);
+  tree->SetBranchAddress("flag_kweird", &flag_kweird);
+  tree->SetBranchAddress("flag_kdiweird", &flag_kdiweird);
 
   std::map<int, std::vector<double> > templates;
   std::map<int, std::vector<double> > templates_weight;
   std::map<int, double> norm_average;
   std::map<int, double> norm_counts;
   std::map<int, unsigned int> rawIds;
+  std::map<int, int> iXs;
+  std::map<int, int> iYs;
+  std::map<int, int> iZs;
 
   // to reject noise" better in ADC not to make eta-dependent cuts
   // ~10 sigma from the 2012 plots: https://twiki.cern.ch/twiki/bin/view/CMSPublic/EcalDPGResultsCMSDP2013007
-  float minAmplitude = dobarrel ? 14 : 26; 
+  float minAmplitude = dobarrel ? 25 : 50; 
+  float minEnergy = dobarrel ? 1. : 3.;
   // to reject spikes
-  float maxTimeShift = 8.0/25.; // ns
-  float maxChi2 = 25.188; 
+  float currecntTimeBiasNs = -0.500;
+  float avgtime = 5.5 + currecntTimeBiasNs / 25.;
+  float maxTimeShift = 5.0; // ns
+  float maxChi2 = 20.0;
+  //  float maxChi2 = 2.167;  
+  float maxAmplitude = dobarrel ? 100000 : 100000;
+  float maxEnergy = 100.; 
+  float maxDevRef = 10000.; // is relative deviation
   int minNhits = 2;
 
   // float adcToGeV = dobarrel ? 0.035 : 0.06;
@@ -359,9 +458,14 @@ void saveTemplates(bool dobarrel) {
     if (ientry < 0) break;
     nb = tree->GetEntry(jentry);   nbytes += nb;
 
-    if(jentry%100000==0) std::cout << "Processing entry " << jentry << std::endl;
+    if(jentry%100000==0) std::cout << "Processing entry " << jentry/1000 << "K" << std::endl;
+    if(jentry%1000000==0) std::cout << "\t***Processed " << jentry/1000000 << "M hits***" << std::endl;
+
+    if(run < min_run || run > max_run) continue;
 
     if((dobarrel && (!barrel)) || (!dobarrel && barrel)) continue;
+
+    if(gain<12 || flag_kweird==1 || flag_kdiweird==1) continue;
 
     int offset;
     if(barrel) offset = (ietaix > 0) ? 1000 * ietaix : 1000 * (abs(ietaix)+85);
@@ -370,14 +474,14 @@ void saveTemplates(bool dobarrel) {
     
     //    std::cout << "ietaix = " << ietaix << "\toffset = " << offset << "\tic = " << ic << std::endl;
 
-    TH1D *digis = (TH1D*)htempl->Clone(Form("rh_%d",ic));
-    for(int iSample(0); iSample < 10; iSample++) digis->SetBinContent(iSample+1,pulse[iSample]);
-    rechit rh = makeRecHit(digis,barrel,pedval);
+    //    TH1D *digis = (TH1D*)htempl->Clone(Form("rh_%d",ic));
+    //    for(int iSample(0); iSample < 10; iSample++) digis->SetBinContent(iSample+1,pulse[iSample]);
+    //    rechit rh = makeRecHit(digis,barrel,0.0);
 
     // std::cout << "\t Rechit has A = " << rh.amplitude << "   t = " << rh.time << "   chi2 = " << rh.chi2 
-    // 	      << "   A_maxsample = " << pulse[5] << std::endl;
+    //   	      << "   A_maxsample = " << rh2.amplitude << "   chi2 maxs = " << rh2.chi2 << std::endl;
 
-    delete digis;
+    //delete digis;
 
 
     // calc the max-sample
@@ -391,10 +495,22 @@ void saveTemplates(bool dobarrel) {
       }
     }
 
-    // double weight = 1.0;
-    double weight = pow(rh.amplitude,2);
+    // check the max deviation wrt the reference tag (exclude the lat one which can fluctuate)
+    double max_dev_ref=0;
+    for(int iSample(4);iSample<8;++iSample) {
+      if(templates_ref.count(rawid)>0) {
+	double templVal = (templates_ref[rawid])[iSample-3];
+	double dev = fabs(pulse[iSample]/maxval - templVal)/templVal;
+	if(dev > max_dev_ref) max_dev_ref = dev;
+      } else break;
+    }
 
-    if(rh.amplitude<minAmplitude || fabs(rh.time-5.5)>maxTimeShift || rh.chi2>maxChi2) continue;
+    //double weight = 1.0;
+    double weight = pow(ene,2);
+
+    //    if(rh.amplitude<minAmplitude || rh.amplitude>maxAmplitude || fabs(rh.time-avgtime)>maxTimeShift || rh.chi2>maxChi2 || max_dev_ref > maxDevRef) continue;
+
+    if(ene < minEnergy || ene > maxEnergy || fabs(time-currecntTimeBiasNs) > maxTimeShift || chi2 > maxChi2) continue;
 
     if(templates.count(ic)==0) {
       std::vector<double> templ;
@@ -405,6 +521,7 @@ void saveTemplates(bool dobarrel) {
       norm_counts[ic] = 1;
       // std::cout << "inserting new ped for DetId = " << ic << std::endl;
       rawIds[ic] = rawid;
+      iXs[ic] = ietaix;       iYs[ic] = iphiiy;        iZs[ic] = iz;
     } else {
       std::vector<double> &templ = templates[ic];
       for(int iSample(0); iSample < 10; iSample++) templ[iSample] += pulse[iSample]/maxval * weight;
@@ -417,21 +534,23 @@ void saveTemplates(bool dobarrel) {
   TH1D *simTemplate = simPulseShapeTemplate(dobarrel);
 
   /// output
-  TString nameoutput = dobarrel ? "template_histograms_EB.root" : "template_histograms_EE.root";
+  TString nameoutput = dobarrel ? "template_histograms_EB" : "template_histograms_EE";
+  nameoutput += Form("_runs_%d_%d.root",min_run,max_run);
   TFile *outfile = TFile::Open(nameoutput.Data(),"recreate");
   TH1D *htemplAverage =  (TH1D*)htempl->Clone("templates_average");
   int nCry(0);
 
   // text file to fill the DB objects with templates
   ofstream txtdumpfile;  
-  TString nametxtoutput = dobarrel ? "template_histograms_EB.txt" : "template_histograms_EE.txt";
+  TString nametxtoutput = dobarrel ? "template_histograms_EB" : "template_histograms_EE";
+  nametxtoutput += Form("_runs_%d_%d.txt",min_run,max_run);
   txtdumpfile.open (nametxtoutput.Data(), ios::out | ios::trunc);
 
   for(std::map<int, std::vector<double> >::iterator it=templates.begin(); it!=templates.end(); ++it) {
     unsigned int rawId = rawIds[it->first];
     txtdumpfile.unsetf ( std::ios::floatfield ); 
     txtdumpfile << ( dobarrel ? 1 : 0 ) << "\t";
-    txtdumpfile << rawId << "\t";
+    txtdumpfile << iXs[it->first] << "\t" << iYs[it->first] << "\t" << iZs[it->first] << "\t" << rawId << "\t";
     txtdumpfile.precision(6);
     txtdumpfile.setf( std::ios::fixed, std:: ios::floatfield ); // floatfield set to fixed
     
@@ -497,9 +616,9 @@ void plotTemplates (int ixmin, int ixmax, int iymin, int iymax, bool doEB=true, 
 
   int maxCryToBePlotted = 10;
   
-  TStyle *mystyle = RooHZZStyle("ZZ");
-  mystyle->cd();
-  mystyle->SetPalette(1);
+  //  TStyle *mystyle = RooHZZStyle("ZZ");
+  //  mystyle->cd();
+  gStyle->SetPalette(1);
 
   TFile *tfile;
   if(shifted) tfile = TFile::Open((doEB ? "shifted_template_histograms_EB.root" : "shifted_template_histograms_EE.root"));
@@ -613,9 +732,9 @@ TH1D *s4s5_raw, *s4s5_fit, *val4val5_fit;
 
 void fitTemplates (int ixmin, int ixmax, int iymin, int iymax, bool doEB=true) {
 
-  TStyle *mystyle = RooHZZStyle("ZZ");
-  mystyle->cd();
-  mystyle->SetPalette(1);
+  //  TStyle *mystyle = RooHZZStyle("ZZ");
+  //  mystyle->cd();
+  gStyle->SetPalette(1);
 
   float xlow = 0;
   float xup = doEB ? 85 : 50;
@@ -698,9 +817,9 @@ void fitTemplates (int ixmin, int ixmax, int iymin, int iymax, bool doEB=true) {
 
 void FitAllTemplatesSubdet(bool doEB) {
 
-  TStyle *mystyle = RooHZZStyle("ZZ");
-  mystyle->cd();
-  mystyle->SetPalette(1);
+  // TStyle *mystyle = RooHZZStyle("ZZ");
+  // mystyle->cd();
+  gStyle->SetPalette(1);
 
   TString subdet = doEB ? "EB" : "EE";
   TFile *resultfile = TFile::Open(Form("shape_results_%s.root",subdet.Data()), "recreate");
@@ -731,7 +850,7 @@ void FitAllTemplatesSubdet(bool doEB) {
   results_hist.push_back(val4val5_fit);
 
   for(int i=0; i<(int)results_prof.size(); ++i) {
-    mystyle->SetOptStat(1111111);
+    gStyle->SetOptStat(1111111);
     resultfile->cd();
     TProfile *prof = results_prof[i];
     if(doEB) prof->GetXaxis()->SetTitle("i #eta");
@@ -778,9 +897,10 @@ void FitAllTemplates() {
 // ===========================================
 
 
-void saveCovariances(bool dobarrel) {
+void saveCovariances(bool dobarrel, int min_run=1, int max_run=999999) {
 
-  TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_tree_pi0_2015C_lowPU.root");
+  TFile *file = TFile::Open("/data1/emanuele/ecal/localreco/multifit/templates_phisymm_runs_Oct2015.root");
+  //  TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_tree_pi0_2015C_lowPU.root");
   TTree *tree = (TTree*)file->Get("pulseDump/pulse_tree");
 
   Long64_t nentries = tree->GetEntries();
@@ -795,7 +915,16 @@ void saveCovariances(bool dobarrel) {
   Int_t           iz;
   Double_t        pulse[10];
   UInt_t          rawid;
+  Int_t           run = 2; // define like that to cope with the trees where run branch was not present
+  Int_t           lumi;
+  Double_t        ene;
+  Double_t        time;
+  Double_t        chi2;
+  Int_t           flag_kweird;
+  Int_t           flag_kdiweird;
 
+  tree->SetBranchAddress("run", &run);
+  tree->SetBranchAddress("lumi", &lumi);
   tree->SetBranchAddress("barrel", &barrel);
   tree->SetBranchAddress("gain", &gain);
   tree->SetBranchAddress("pedrms", &pedrms);
@@ -805,7 +934,12 @@ void saveCovariances(bool dobarrel) {
   tree->SetBranchAddress("iz", &iz);
   tree->SetBranchAddress("pulse", pulse);
   tree->SetBranchAddress("rawid", &rawid); 
-  
+  tree->SetBranchAddress("ene", &ene);
+  tree->SetBranchAddress("time", &time);
+  tree->SetBranchAddress("chi2", &chi2);
+  tree->SetBranchAddress("flag_kweird", &flag_kweird);
+  tree->SetBranchAddress("flag_kdiweird", &flag_kdiweird);
+
   std::map<int, std::vector<double> > xy, x, xx;
   std::map<int, std::vector<double> > noise_xy, noise_x, noise_xx;
   std::map<int, std::vector<double> > templates_weight;
@@ -815,10 +949,17 @@ void saveCovariances(bool dobarrel) {
 
   // to reject noise" better in ADC not to make eta-dependent cuts
   // ~10 sigma from the 2012 plots: https://twiki.cern.ch/twiki/bin/view/CMSPublic/EcalDPGResultsCMSDP2013007
-  float minAmplitude = dobarrel ? 14 : 26; 
+  float minAmplitude = dobarrel ? 25 : 50; 
+  float minEnergy = dobarrel ? 1. : 3.;
   // to reject spikes
-  float maxTimeShift = 8.0/25.; // ns
-  float maxChi2 = 25.188; 
+  float currecntTimeBiasNs = -0.500;
+  float avgtime = 5.5 + currecntTimeBiasNs / 25.;
+  float maxTimeShift = 5.0; // ns
+  float maxChi2 = 20.0;
+  //  float maxChi2 = 2.167;  
+  float maxAmplitude = dobarrel ? 100000 : 100000;
+  float maxEnergy = 100.; 
+  float maxDevRef = 10000.; // is relative deviation
   int minNhits = 2;
 
   TH1D *htempl = new TH1D("htempl","",10,0,10);
@@ -829,9 +970,14 @@ void saveCovariances(bool dobarrel) {
     if (ientry < 0) break;
     nb = tree->GetEntry(jentry);   nbytes += nb;
 
-    if(jentry%100000==0) std::cout << "Processing entry " << jentry << std::endl;
+    if(jentry%100000==0) std::cout << "Processing entry " << jentry/1000 << "K" << std::endl;
+    if(jentry%1000000==0) std::cout << "\t***Processed " << jentry/1000000 << "M hits***" << std::endl;
+
+    if(run < min_run || run > max_run) continue;
 
     if((dobarrel && (!barrel)) || (!dobarrel && barrel)) continue;
+
+    if(gain<12 || flag_kweird==1 || flag_kdiweird==1) continue;
 
     int offset;
     if(barrel) offset = (ietaix > 0) ? 1000 * ietaix : 1000 * (abs(ietaix)+85);
@@ -840,11 +986,11 @@ void saveCovariances(bool dobarrel) {
     
     //    std::cout << "ietaix = " << ietaix << "\toffset = " << offset << "\tic = " << ic << std::endl;
 
-    TH1D *digis = (TH1D*)htempl->Clone(Form("rh_%d",ic));
-    for(int iSample(0); iSample < 10; iSample++) digis->SetBinContent(iSample+1,pulse[iSample]);
-    rechit rh = makeRecHit(digis,barrel,pedval);
+    // TH1D *digis = (TH1D*)htempl->Clone(Form("rh_%d",ic));
+    // for(int iSample(0); iSample < 10; iSample++) digis->SetBinContent(iSample+1,pulse[iSample]);
+    // rechit rh = makeRecHit(digis,barrel,0.0);
 
-    delete digis;
+    // delete digis;
 
     // calc the max-sample
     int maxsample=5;
@@ -860,7 +1006,7 @@ void saveCovariances(bool dobarrel) {
     double weight = 1.0;
     //double weight = pow(rh.amplitude,2);
 
-    if(rh.amplitude<minAmplitude || fabs(rh.time-5.5)>maxTimeShift || rh.chi2>maxChi2) continue;
+    if(ene < minEnergy || ene > maxEnergy || fabs(time-currecntTimeBiasNs) > maxTimeShift || chi2 > maxChi2) continue;
     
     if(xy.count(ic)==0) {
       std::vector<double> this_xy, this_x, this_xx;
@@ -921,7 +1067,8 @@ void saveCovariances(bool dobarrel) {
   TH2D *simCovariance = simPulseShapeCovariance(dobarrel);
   
   /// output
-  TString nameoutput = dobarrel ? "templatecov_histograms_EB.root" : "templatecov_histograms_EE.root";
+  TString nameoutput = dobarrel ? "templatecov_histograms_EB" : "templatecov_histograms_EE";
+  nameoutput += Form("_runs_%d_%d.root",min_run,max_run);
   TFile *outfile = TFile::Open(nameoutput.Data(),"recreate");
   TH2D *hcov = new TH2D("htempl","",10,0,10,10,0,10);
   TH2D *hcovAverage =  (TH2D*)hcov->Clone("covariance_average");
@@ -929,7 +1076,8 @@ void saveCovariances(bool dobarrel) {
 
   // text file to fill the DB objects with templates
   ofstream txtdumpfile;  
-  TString nametxtoutput = dobarrel ? "template_covariances_EB.txt" : "template_covariances_EE.txt";
+  TString nametxtoutput = dobarrel ? "template_histograms_EB" : "template_histograms_EE";
+  nametxtoutput += Form("_runs_%d_%d.txt",min_run,max_run);
   txtdumpfile.open (nametxtoutput.Data(), ios::out | ios::trunc);
 
   int minHits = 50;
@@ -947,7 +1095,7 @@ void saveCovariances(bool dobarrel) {
     if(dobarrel && ix >= 85) ix = -1*(ix-85);
     if((!dobarrel) && ix >= 100) ix = -1*(ix-100);
     int iy = it->first % 1000;
-    // std::cout << "Writing templates histogram. ix = " << ix << "  iy = " << iy << " got " << nevts[it->first] << " events" << std::endl;
+    std::cout << "Writing templates histogram. ix = " << ix << "  iy = " << iy << " got " << norm_counts[it->first] << " events" << std::endl;
     TH2D *ch = (TH2D*)hcov->Clone(Form("templatecov_%d_%d",ix,iy));
     TH2D *chNotNorm = (TH2D*)hcov->Clone(Form("templatecovNotNorm_%d_%d",ix,iy));
     for(int index=0; index<100; ++index) {
@@ -1023,9 +1171,9 @@ void saveCovariances(bool dobarrel) {
 
 void plotCovarianceElements(bool doEB, bool diagonal=false) {
 
-  TStyle *mystyle = RooHZZStyle("ZZ");
-  mystyle->cd();
-  mystyle->SetPalette(1);
+  // TStyle *mystyle = RooHZZStyle("ZZ");
+  // mystyle->cd();
+  gStyle->SetPalette(1);
 
   int ixmin = doEB ? -85 : -100;
   int ixmax = doEB ?  85 :  100;
@@ -1290,7 +1438,7 @@ void saveNoiseCovariances(bool dobarrel) {
 
 
 void draw1DSamples(bool dobarrel, const char *txtdumpfile = "template_histograms_ECAL.txt") {
-
+  
   ifstream myfile;
   myfile.open(txtdumpfile);
   float samples[12];
@@ -1298,19 +1446,19 @@ void draw1DSamples(bool dobarrel, const char *txtdumpfile = "template_histograms
   TH1F *h_1d = new TH1F("h_1d","",1000,0.,1.);
   TH1F *h_samples[12];
   for(int s=0; s<12; ++s) h_samples[s] = (TH1F*)h_1d->Clone(Form("h_1d_sample%d",s));
-
- if (myfile.is_open()) {
-   while ( !myfile.eof() ) {
-     myfile >> iseb;
-     myfile >> detid;
-     for(int s=0; s<12; ++s) {
-       myfile >> samples[s];
-       if((dobarrel && iseb==1) || (!dobarrel && iseb==0)) h_samples[s]->Fill(samples[s]);
-     }
-   }
+  
+  if (myfile.is_open()) {
+    while ( !myfile.eof() ) {
+      myfile >> iseb;
+      myfile >> detid;
+      for(int s=0; s<12; ++s) {
+	myfile >> samples[s];
+	if((dobarrel && iseb==1) || (!dobarrel && iseb==0)) h_samples[s]->Fill(samples[s]);
+      }
+    }
     myfile.close();
-  }
-  else cout << "Unable to open file"; 
+  } else cout << "Unable to open file"; 
+    
 
  TCanvas *c1 = new TCanvas("c1","",1200,1200);
  c1->SetLogy();
@@ -1319,5 +1467,314 @@ void draw1DSamples(bool dobarrel, const char *txtdumpfile = "template_histograms
    c1->SaveAs(Form("h_1d_sample%d.pdf",s));
    c1->SaveAs(Form("h_1d_sample%d.png",s));
  }
+
+}
+
+void compareDataTemplate(bool dobarrel, const char *txtdumpfile, int min_run, int max_run, int maxPlots=10, const char *txtdumpfile2="") {
+
+  gStyle->SetOptStat(0);
+
+  std::vector<std::string> files;
+  files.push_back(std::string(txtdumpfile));
+
+  typedef std::map<unsigned int, std::vector<float> > tempmap;
+  tempmap templates1;
+  tempmap templates2;
+  std::vector<tempmap> templatemaps;
+  templatemaps.push_back(templates1);
+
+  int nfiles=1;
+  if(!string(txtdumpfile2).empty()) {
+    files.push_back(std::string(txtdumpfile2));
+    templatemaps.push_back(templates2);
+    nfiles=2;
+  }
+
+  int iseb;
+  unsigned int detid;
+
+  std::cout << "now filling the maps..." << std::endl;
+  for(int ifile=0;ifile<nfiles;++ifile) {
+    ifstream myfile;
+    myfile.open(files[ifile]);
+
+    if (myfile.is_open()) {
+      while ( !myfile.eof() ) {
+	myfile >> iseb;
+	myfile >> detid;
+	std::vector<float> samples;
+	samples.resize(12);
+	for(int s=0; s<12; ++s) myfile >> samples[s];
+	if((dobarrel && iseb==1) || (!dobarrel && iseb==0)) (templatemaps[ifile])[detid] = samples;
+      }
+      myfile.close();
+    }
+    else cout << "Unable to open file"; 
+  }
+
+  std::cout << "Maps filled. Now loop over the events" << std::endl;
+
+
+
+  //--- now loop over rechits ---
+  // now draw the first templates
+  int nPlots(0);
+  TCanvas *c1 = new TCanvas("c1","",1200,1200);
+ 
+  TFile *file = TFile::Open("/Users/emanuele/Work/data/ecalreco/multifit/templates_alcap0_runs_257394_259686.root"); // 2015 lone bunch triggers on pi0 stream
+  TTree *tree = (TTree*)file->Get("pulseDump/pulse_tree");
+  
+  Long64_t nentries = tree->GetEntries();
+  std::cout << "The tree has " << nentries << " entries" << std::endl;
+  
+  Bool_t          barrel;
+  UInt_t          gain;
+  Double_t        pedrms;
+  Double_t        pedval;
+  Int_t           ietaix;
+  Int_t           iphiiy;
+  Int_t           iz;
+  Double_t        pulse[10];
+  UInt_t          rawid;
+  Int_t           run = 2; // define like that to cope with the trees where run branch was not present
+  Int_t           lumi;
+
+  tree->SetBranchAddress("run", &run);
+  tree->SetBranchAddress("lumi", &lumi);
+  tree->SetBranchAddress("barrel", &barrel);
+  tree->SetBranchAddress("gain", &gain);
+  tree->SetBranchAddress("pedrms", &pedrms);
+  tree->SetBranchAddress("pedval", &pedval);
+  tree->SetBranchAddress("ietaix", &ietaix);
+  tree->SetBranchAddress("iphiiy", &iphiiy);
+  tree->SetBranchAddress("iz", &iz);
+  tree->SetBranchAddress("pulse", pulse);
+  tree->SetBranchAddress("rawid", &rawid); 
+
+  std::map<int, std::vector<double> > templates;
+  std::map<int, std::vector<double> > templates_weight;
+  std::map<int, double> norm_average;
+  std::map<int, double> norm_counts;
+  std::map<int, unsigned int> rawIds;
+  std::map<int, int> iXs;
+  std::map<int, int> iYs;
+  std::map<int, int> iZs;
+
+  // to reject noise" better in ADC not to make eta-dependent cuts
+  // ~10 sigma from the 2012 plots: https://twiki.cern.ch/twiki/bin/view/CMSPublic/EcalDPGResultsCMSDP2013007
+  float minAmplitude = dobarrel ? 25 : 50; 
+  // to reject spikes
+  float currecntTimeBiasNs = -0.500;
+  float avgtime = 5.5 + currecntTimeBiasNs / 25.;
+  float maxTimeShift = 7.0/25.; // ns
+  //  float maxChi2 = 25.188; 
+  float maxChi2 = 20.0;
+  float maxAmplitude = dobarrel ? 125 : 200;
+  float maxEnergy = 100.;
+  float maxDevRef = 0.10; // is relative deviation
+  int minNhits = 2;
+
+  // float adcToGeV = dobarrel ? 0.035 : 0.06;
+  // float minAmplitude = minEnergy / adcToGeV;
+
+  TH1D *htempl = new TH1D("htempl","",10,0,10);
+
+  Long64_t nbytes = 0, nb = 0;
+  for (Long64_t jentry=0; jentry<nentries;jentry++) {
+    Long64_t ientry = tree->LoadTree(jentry);
+    if (ientry < 0) break;
+    nb = tree->GetEntry(jentry);   nbytes += nb;
+
+    if(jentry%100000==0) std::cout << "Processing entry " << jentry << std::endl;
+
+    if(run < min_run || run > max_run) continue;
+
+    if((dobarrel && (!barrel)) || (!dobarrel && barrel)) continue;
+
+    int offset;
+    if(barrel) offset = (ietaix > 0) ? 1000 * ietaix : 1000 * (abs(ietaix)+85);
+    else offset = (iz > 0) ? 1000 * ietaix : 1000 * (ietaix+100);
+    int ic = offset + iphiiy;
+    
+    //    std::cout << "ietaix = " << ietaix << "\toffset = " << offset << "\tic = " << ic << std::endl;
+
+    TH1D *digis = (TH1D*)htempl->Clone(Form("rh_%d",ic));
+    for(int iSample(0); iSample < 10; iSample++) digis->SetBinContent(iSample+1,pulse[iSample]);
+    rechit rh = makeRecHit(digis,barrel,0.0);
+    //    rechit rh = makeRecHitMaxSample(digis,(templatemaps[1])[rawid]);
+
+    // std::cout << "\t Rechit has A = " << rh.amplitude << "   t = " << rh.time << "   chi2 = " << rh.chi2 
+    //   	      << "   A_maxsample = " << pulse[5] << std::endl;
+
+
+
+    // calc the max-sample
+    int maxsample=5;
+    double maxval=0;
+    for(int iSample=2;iSample<10;++iSample) {
+      double val = pulse[iSample];
+      if(val>maxval) {
+	maxval=val;
+	maxsample=iSample;
+      }
+    }
+
+    // check the max deviation wrt the reference tag (exclude the first and last ones which can fluctuate)
+    double max_dev_ref=0;
+    for(int iSample(4);iSample<5;++iSample) {
+      double templVal = ((templatemaps[1])[rawid])[iSample-3];
+      double dev = fabs(pulse[iSample]/maxval - templVal)/templVal;
+      //      std::cout << "isample = " << iSample << "    dev = " << dev;
+      if(dev > max_dev_ref) max_dev_ref = dev;
+    } //std::cout << " " << std::endl;
+    
+
+    if(rh.amplitude<minAmplitude || rh.amplitude>maxAmplitude || fabs(rh.time-avgtime)>maxTimeShift) continue;
+
+    //    if(max_dev_ref > maxDevRef) continue;
+
+
+    TH1D* templ = (TH1D*)digis->Clone("templ");
+    TH1D* templ2 = (TH1D*)digis->Clone("templ2");
+    digis->Reset();
+    for(int iSample(0); iSample < 10; iSample++) {
+      digis->SetBinContent(iSample+1,pulse[iSample]/maxval);
+      if(iSample<3) templ->SetBinContent(iSample+1,0.);
+      else templ->SetBinContent(iSample+1,((templatemaps[0])[rawid])[iSample-3]);
+      if(nfiles==2) templ2->SetBinContent(iSample+1,((templatemaps[1])[rawid])[iSample-3]);
+    }
+
+    templ->SetLineColor(kBlue);
+    templ2->SetLineColor(kRed);
+    digis->SetMarkerStyle(kFullCircle);
+
+    templ->Draw("hist");
+    if(nfiles==2) templ2->Draw("hist same");
+    digis->Draw("ap same");
+
+    c1->SaveAs(Form("hit_id%d_ampl%f_chi%f_time%f.png",rawid,rh.amplitude,rh.chi2,rh.time));
+
+    delete templ;
+    delete digis;
+
+    nPlots++;
+    if(nPlots>maxPlots) break;
+    
+  }
+
+
+}
+
+
+
+
+void compareTemplates(bool dobarrel, const char *txtdumpfile1 = "template_histograms_ECAL_1.txt", const char *txtdumpfile2 = "template_histograms_ECAL_2.txt", int maxPlots=10) {
+
+  gStyle->SetOptStat(0);
+
+  std::vector<std::string> files;
+  files.push_back(std::string(txtdumpfile1));
+  files.push_back(std::string(txtdumpfile2));
+
+  typedef std::map<unsigned int, std::vector<float> > tempmap;
+  tempmap templates1;
+  tempmap templates2;
+  std::vector<tempmap> templatemaps;
+  templatemaps.push_back(templates1);
+  templatemaps.push_back(templates2);
+
+  int iseb;
+  unsigned int detid;
+
+  std::cout << "now filling the maps..." << std::endl;
+  for(int ifile=0;ifile<2;++ifile) {
+    ifstream myfile;
+    myfile.open(files[ifile]);
+
+    if (myfile.is_open()) {
+      while ( !myfile.eof() ) {
+	myfile >> iseb;
+	myfile >> detid;
+	std::vector<float> samples;
+	samples.resize(12);
+	for(int s=0; s<12; ++s) myfile >> samples[s];
+	if((dobarrel && iseb==1) || (!dobarrel && iseb==0)) (templatemaps[ifile])[detid] = samples;
+      }
+      myfile.close();
+    }
+    else cout << "Unable to open file"; 
+  }
+
+  std::cout << "Maps filled. Now do the plots" << std::endl;
+  
+
+  // now draw the first templates
+  TCanvas *c1 = new TCanvas("c1","",1200,1200);
+  TH1F *shape1 = new TH1F("shape1","",12,0,12);
+  TH1F *shape2 = new TH1F("shape2","",12,0,12);
+
+  shape1->SetLineColor(kBlue);
+  shape2->SetMarkerStyle(kFullCircle);
+
+  int nPlots = 0;
+  for(tempmap::iterator it=templatemaps[0].begin(); it != templatemaps[0].end(); ++it) {
+    unsigned int detid = it->first;
+    std::vector<float> samples1 = it->second;
+    tempmap::iterator it2 = templatemaps[1].find(detid);
+    if(it2==templatemaps[1].end()) {
+      std::cout << "detid not found in the second templates file. Skipping... " << std::endl;
+      continue;
+    } 
+
+    std::vector<float> samples2 = it2->second;
+
+    // fill the histograms now
+    shape1->Reset();
+    shape2->Reset();
+    for(int s=0; s<12; ++s) {
+      shape1->SetBinContent(s+1,samples1[s]);
+      shape2->SetBinContent(s+1,samples2[s]);
+      shape2->SetBinError(s+1,0.);
+    }
+
+    shape1->Draw("hist");
+    shape2->Draw("pe4 same");
+
+    c1->SaveAs(Form("shape_id%d.png",detid));
+
+    nPlots++;
+    if(nPlots>maxPlots) break;
+  }
+
+}
+
+
+void saveAllTemplatesByRunRanges() {
+  
+  std::vector< std::pair<int,int> > ranges;
+  ranges.push_back(std::make_pair(257394,258215)); // 27 Sep - 04 Oct
+  ranges.push_back(std::make_pair(258287,258714)); // 05 Oct - 09 Oct
+  ranges.push_back(std::make_pair(258741,258750)); // 11 Oct
+
+  std::vector< std::pair<int,int> >::const_iterator it;
+  for(it=ranges.begin(); it!=ranges.end(); ++it) {
+    for(int iecal=1; iecal>-1; --iecal) saveTemplates(iecal,it->first,it->second);
+  }
+
+}
+
+// to parallelise things
+void saveAllTemplatesOneRange(int firstRun, int lastRun) {
+
+  std::cout << "Analysing runs between [ " << firstRun << " , " << lastRun << " ] " << std::endl; 
+  for(int iecal=1; iecal>-1; --iecal) saveTemplates(iecal, firstRun, lastRun);
+
+}
+
+// to parallelise things
+void saveAllCovariancesOneRange(int firstRun, int lastRun) {
+
+  std::cout << "Analysing runs between [ " << firstRun << " , " << lastRun << " ] " << std::endl; 
+  for(int iecal=1; iecal>-1; --iecal) saveCovariances(iecal, firstRun, lastRun);
 
 }
