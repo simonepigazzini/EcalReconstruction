@@ -7,6 +7,7 @@ rt.gROOT.SetBatch(True)
 
 from ecalDetId import EcalDetId
 from PlotUtils import customROOTstyle, customPalette
+from AlphaBetaFitter import AlphaBetaFitter
 
 class TagValidation:
 
@@ -18,6 +19,7 @@ class TagValidation:
     
     def __init__(self,files,options):
         self._options = options
+        self.timeICs = {}
         keys = ["current","ref"]
         tags = dict(zip(keys,files))
         self._allData = {}
@@ -106,31 +108,88 @@ class TagValidation:
                 canv.SaveAs('%s_diff_2d_sample%d.pdf' % (k,s))
         
 
+    def loadTimeICs(self,txtfile):
+        for line in open(txtfile,'r'):
+            item = line.split()
+            (key,val) = (item[0],item[1])
+            self.timeICs[key] = val
+
+    def do2dTime(self,doEB,diffTimeICs=False):
+        part = 'eb' if doEB else 'ee'
+        customROOTstyle()
+        refData = self.parseDic(self._allData["ref"])
+        newData = self.parseDic(self._allData["current"])
+        histos = []
+        if doEB: 
+            h = rt.TProfile2D(('%s_time' % part),"",360,1,360,170,-85,85)
+            h.GetXaxis().SetTitle('i#phi')
+            h.GetYaxis().SetTitle('i#eta')
+            h.SetTitle('Time (ns)')
+            h.GetZaxis().SetRangeUser(-1,1)
+            histos.append(h)
+        else: 
+            hplus = rt.TProfile2D(('%s_time' % part),"",100,1,100,100,1,100)
+            hplus.GetXaxis().SetTitle('ix')
+            hplus.GetYaxis().SetTitle('iy')
+            hplus.SetTitle('Time (ns)')
+            hplus.GetZaxis().SetRangeUser(-1,1)
+            histos.append(hplus)
+            hminus = hplus.Clone('%s_time' % part)
+            histos.append(hminus)
+
+        detids = EcalDetId('/afs/cern.ch/work/e/emanuele/public/ecal/pulseshapes_db/detids_ECAL.txt')
+
+        abfit = AlphaBetaFitter(doEB)
+        histo = rt.TH1F("histo","",15,0,15)
+        for (partition,detid),samples in newData.iteritems():
+            key = (partition,detid)
+            (x,y,z) = detids.xyz(detid)
+
+            if diffTimeICs and key not in self.timeICs: continue
+            if ((doEB and int(partition)==0) or (not doEB and int(partition)==1)): continue
+            if z==0 or z==1: htofill = histos[0]
+            else: htofill = histos[1]
+            (ix,iy) = (y,x) if doEB else (x,y)
+
+            # fill the template and fit it
+            for s in range(3): histo.SetBinContent(s+1,0)
+            for s in range(12): histo.SetBinContent(s+4,float((newData[key])[s]))
+            abfit.fit(histo)
+            time = 25.*(abfit.fitpars[2]-5.5)
+            if not diffTimeICs: htofill.Fill(ix,iy,time)
+
+        xsize = 1200
+        ysize = int(xsize*170/360+0.1*xsize) if doEB else int(xsize*0.9)
+        canv = rt.TCanvas("c","",xsize,ysize)
+        for h in histos:
+            h.Draw("colz")
+            canv.SaveAs('%s_time.pdf' % part)
+
 
 if __name__ == "__main__":
     from optparse import OptionParser
-    parser = OptionParser(usage="%prog [options] tag1.txt tag2.txt")
-    parser.add_option("-p","--partition",  dest="partition",  type="string", default="ALL", help="partitions to be analysed: EB,EE,ALL")
-    parser.add_option(     "--do1Ddiff",   dest="do1Ddiff",   action="store_true", help="make the 1D differences of the samples in the two tags")
-    parser.add_option(     "--do2Ddiff",   dest="do2Ddiff",   action="store_true", help="make the 2D differences of the samples in the two tags")
+    parser = OptionParser(usage="%prog [options] tag1.txt tag2.txt [tagTimeIC.txt]")
+    parser.add_option("-p","--partition", dest="partition",  type="string", default="EB", help="partitions to be analysed: EB,EE")
+    parser.add_option(     "--do1Ddiff",  dest="do1Ddiff",   action="store_true", help="make the 1D differences of the samples in the two tags")
+    parser.add_option(     "--do2Ddiff",  dest="do2Ddiff",   action="store_true", help="make the 2D differences of the samples in the two tags")
+    parser.add_option(     "--do2Dtime",  dest="do2Dtime",   action="store_true", help="make the 2D time map")
+    parser.add_option("-t","--timeICs",   dest="timeICs",    type="string", default="", help="the file containing the time ICs")
 
     (options, args) = parser.parse_args()
     if len(args) < 2: raise RuntimeError, 'Expecting at least two arguments'
-        
+
     tv = TagValidation(args,options)
     
     if options.do1Ddiff:
-        if options.partition=='ALL': 
-             tv.do1dDiff(True)
-             tv.do1dDiff(False)
-        else:
-            doEB = True if options.partition=='EB' else False
-            tv.do1dDiff(doEB)
+        doEB = True if options.partition=='EB' else False
+        tv.do1dDiff(doEB)
 
     if options.do2Ddiff:
-        if options.partition=='ALL': 
-             tv.do2dDiff(True)
-             tv.do2dDiff(False)
-        else:
-            doEB = True if options.partition=='EB' else False
-            tv.do2dDiff(doEB)
+        doEB = True if options.partition=='EB' else False
+        tv.do2dDiff(doEB)
+
+    if options.do2Dtime:
+        diff = True if len(options.timeICs)>0 else False
+        doEB = True if options.partition=='EB' else False
+        if len(options.timeICs)>0: tv.loadTimeICs(options.timeICs)
+        tv.do2dTime(doEB,diff)
