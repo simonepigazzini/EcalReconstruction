@@ -7,7 +7,7 @@ rt.gROOT.SetBatch(True)
 
 from ecalDetId import EcalDetId
 from PlotUtils import customROOTstyle, customPalette
-from AlphaBetaFitter import AlphaBetaFitter
+from AlphaBetaFitter import *
 
 class TagValidation:
 
@@ -20,11 +20,16 @@ class TagValidation:
     def __init__(self,files,options):
         self._options = options
         self.timeICs = {}
+        self.timeOffsets = {}
         keys = ["current","ref"]
         tags = dict(zip(keys,files))
         self._allData = {}
         for k,v in tags.iteritems():
             self._allData[k] = self.loadTemplates(v)
+    
+    def setTimeOffset(self,ebval,eeval):
+        self.timeOffsets['EB'] = ebval
+        self.timeOffsets['EE'] = eeval
             
     def parseDic(self,rawdata):
         mydata = {}
@@ -109,17 +114,21 @@ class TagValidation:
         
 
     def loadTimeICs(self,txtfile):
+        ret = {}
         for line in open(txtfile,'r'):
             item = line.split()
             (key,val) = (item[0],item[1])
-            self.timeICs[key] = val
+            ret[key] = val
+        return ret
 
-    def do2dTime(self,doEB,diffTimeICs=False):
-        part = 'eb' if doEB else 'ee'
+    def do2dTime(self,currentTimeIC,doEB,newTimeIC=''):
+        part = 'EB' if doEB else 'EE'
         customROOTstyle()
         refData = self.parseDic(self._allData["ref"])
         newData = self.parseDic(self._allData["current"])
+        of = rt.TFile.Open('timeVals.root','recreate')
         histos = []
+        histosDiff = []
         if doEB: 
             h = rt.TProfile2D(('%s_time' % part),"",360,1,360,170,-85,85)
             h.GetXaxis().SetTitle('i#phi')
@@ -127,44 +136,73 @@ class TagValidation:
             h.SetTitle('Time (ns)')
             h.GetZaxis().SetRangeUser(-1,1)
             histos.append(h)
+            histosDiff.append(h.Clone(('%s_time_diff' % part)))
         else: 
-            hplus = rt.TProfile2D(('%s_time' % part),"",100,1,100,100,1,100)
+            hplus = rt.TProfile2D(('%splus_time' % part),"",100,1,100,100,1,100)
             hplus.GetXaxis().SetTitle('ix')
             hplus.GetYaxis().SetTitle('iy')
             hplus.SetTitle('Time (ns)')
             hplus.GetZaxis().SetRangeUser(-1,1)
             histos.append(hplus)
+            histosDiff.append(hplus.Clone(('%splus_time_diff' % part)))
             hminus = hplus.Clone('%s_time' % part)
             histos.append(hminus)
+            histosDiff.append(hminus.Clone(('%sminus_time_diff' % part)))
 
         detids = EcalDetId('/afs/cern.ch/work/e/emanuele/public/ecal/pulseshapes_db/detids_ECAL.txt')
 
-        abfit = AlphaBetaFitter(doEB)
+        # load the current time ICs (dump of the tag)
+        self.timeICs = self.loadTimeICs(currentTimeIC)
+        if len(newTimeIC)>0: newTimeICs = self.loadTimeICs(newTimeIC)
+
         histo = rt.TH1F("histo","",15,0,15)
+        fitter = AlphaBetaFitter( rt.TF1("alphabeta",alphabeta,0,10,5), doEB)
+        cryfit = 0
         for (partition,detid),samples in newData.iteritems():
             key = (partition,detid)
             (x,y,z) = detids.xyz(detid)
 
-            if diffTimeICs and key not in self.timeICs: continue
+            if detid not in self.timeICs: continue
             if ((doEB and int(partition)==0) or (not doEB and int(partition)==1)): continue
-            if z==0 or z==1: htofill = histos[0]
-            else: htofill = histos[1]
+            if z==0 or z==1: 
+                htofill = histos[0]
+                hdifftofill = histosDiff[0]
+            else: 
+                htofill = histos[1]
+                hdifftofill = histosDiff[1]
             (ix,iy) = (y,x) if doEB else (x,y)
 
             # fill the template and fit it
-            for s in range(3): histo.SetBinContent(s+1,0)
+            for s in range(3):  histo.SetBinContent(s+1,0)
             for s in range(12): histo.SetBinContent(s+4,float((newData[key])[s]))
-            abfit.fit(histo)
-            time = 25.*(abfit.fitpars[2]-5.5)
-            if not diffTimeICs: htofill.Fill(ix,iy,time)
+            # results = fitter.fit(histo,doEB,('pulse_%d_%d_%d.png' % (x,y,z)))
+            results = fitter.fit(histo,doEB)
+            currentCorr = float(self.timeICs[detid]) + self.timeOffsets[part]
+            time = 25.*((results['pars'])[2]-5.5)
+            correctedTime = time + currentCorr
+            # print "detid = ",key," has time from fit [IC] = ",time, " [",currentCorr,"]"
+            htofill.Fill(ix,iy,correctedTime)
+
+            if len(newTimeIC)>0: 
+                if detid not in newTimeICs: continue
+                newCorr = float(newTimeICs[detid])
+                # print '    correctedTime = ',correctedTime,"   newCorr = ",newCorr,"  diff = ", correctedTime - newCorr
+                hdifftofill.Fill(ix,iy,correctedTime - newCorr)
+
+            if cryfit % 1000 == 0: print 'fitted ',cryfit,' templates'
+            cryfit += 1
 
         xsize = 1200
         ysize = int(xsize*170/360+0.1*xsize) if doEB else int(xsize*0.9)
+        of.cd()
         canv = rt.TCanvas("c","",xsize,ysize)
         for h in histos:
             h.Draw("colz")
             canv.SaveAs('%s_time.pdf' % part)
-
+            h.Write()
+        for h in histosDiff:
+            h.Write()
+        of.Close()
 
 if __name__ == "__main__":
     from optparse import OptionParser
@@ -188,8 +226,9 @@ if __name__ == "__main__":
         doEB = True if options.partition=='EB' else False
         tv.do2dDiff(doEB)
 
+    currentTimeICs = '/afs/cern.ch/work/e/emanuele/public/ecal/timeICs_dump_EcalTimeCalibConstants__since_00253984_till_Run2016A.txt'
     if options.do2Dtime:
-        diff = True if len(options.timeICs)>0 else False
         doEB = True if options.partition=='EB' else False
-        if len(options.timeICs)>0: tv.loadTimeICs(options.timeICs)
-        tv.do2dTime(doEB,diff)
+        # values in the GT 80X_dataRun2_Prompt_v8
+        tv.setTimeOffset(-0.964168,0.347665)
+        tv.do2dTime(currentTimeICs,doEB,options.timeICs)
