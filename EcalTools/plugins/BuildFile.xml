@@ -1,0 +1,7 @@
+<use   name="EcalReconstruction/EcalTools"/>
+<use   name="CommonTools/UtilAlgos"/>
+<use   name="DataFormats/PatCandidates"/>
+<use   name="RecoEgamma/ElectronIdentification"/>
+<library   file="*.cc" name="EcalReconstructionEcalToolsPlugins">
+  <flags   EDM_PLUGIN="1"/>
+</library>
