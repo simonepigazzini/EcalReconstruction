@@ -126,7 +126,7 @@ class TagValidation:
         customROOTstyle()
         refData = self.parseDic(self._allData["ref"])
         newData = self.parseDic(self._allData["current"])
-        of = rt.TFile.Open('timeVals.root','recreate')
+        of = rt.TFile.Open('%s_timeVals.root' % part,'recreate')
         histos = []
         histosDiff = []
         if doEB: 
@@ -145,7 +145,7 @@ class TagValidation:
             hplus.GetZaxis().SetRangeUser(-1,1)
             histos.append(hplus)
             histosDiff.append(hplus.Clone(('%splus_time_diff' % part)))
-            hminus = hplus.Clone('%s_time' % part)
+            hminus = hplus.Clone('%sminus_time' % part)
             histos.append(hminus)
             histosDiff.append(hminus.Clone(('%sminus_time_diff' % part)))
 
@@ -198,7 +198,7 @@ class TagValidation:
         canv = rt.TCanvas("c","",xsize,ysize)
         for h in histos:
             h.Draw("colz")
-            canv.SaveAs('%s_time.pdf' % part)
+            canv.SaveAs(h.GetName()+'.pdf')
             h.Write()
         for h in histosDiff:
             h.Write()
