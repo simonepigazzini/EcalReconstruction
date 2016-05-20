@@ -349,7 +349,7 @@ TChain *getChain(const char *file) {
   return theChain;
 }
 
-void saveTemplates(bool dobarrel, int min_run=1, int max_run=999999) {
+void saveTemplates(const char *filelist, bool dobarrel, int min_run=1, int max_run=999999) {
 
   // this is the reference template file. It is used only to put constraints on single hit timing information in a robust way
   // based on the ratio S_max / S_max-1
@@ -383,7 +383,7 @@ void saveTemplates(bool dobarrel, int min_run=1, int max_run=999999) {
   // TFile *file = TFile::Open("/data1/emanuele/ecal/localreco/multifit/templates_phisymm_runs_Oct2015.root");
   // TTree *tree = (TTree*)file->Get("pulseDump/pulse_tree");
 
-  TChain *tree = getChain("loneBunch2016B.txt");
+  TChain *tree = getChain(filelist);
 
   Long64_t nentries = tree->GetEntries();
   std::cout << "The tree has " << nentries << " entries" << std::endl;
@@ -1749,7 +1749,7 @@ void compareTemplates(bool dobarrel, const char *txtdumpfile1 = "template_histog
 }
 
 
-void saveAllTemplatesByRunRanges() {
+void saveAllTemplatesByRunRanges(const char *filelist) {
   
   std::vector< std::pair<int,int> > ranges;
   ranges.push_back(std::make_pair(257394,258215)); // 27 Sep - 04 Oct
@@ -1758,16 +1758,16 @@ void saveAllTemplatesByRunRanges() {
 
   std::vector< std::pair<int,int> >::const_iterator it;
   for(it=ranges.begin(); it!=ranges.end(); ++it) {
-    for(int iecal=1; iecal>-1; --iecal) saveTemplates(iecal,it->first,it->second);
+    for(int iecal=1; iecal>-1; --iecal) saveTemplates(filelist,iecal,it->first,it->second);
   }
 
 }
 
 // to parallelise things
-void saveAllTemplatesOneRange(int firstRun, int lastRun) {
+void saveAllTemplatesOneRange(const char* filelist, int firstRun, int lastRun) {
 
   std::cout << "Analysing runs between [ " << firstRun << " , " << lastRun << " ] " << std::endl; 
-  for(int iecal=1; iecal>-1; --iecal) saveTemplates(iecal, firstRun, lastRun);
+  for(int iecal=1; iecal>-1; --iecal) saveTemplates(filelist, iecal, firstRun, lastRun);
 
 }
 
