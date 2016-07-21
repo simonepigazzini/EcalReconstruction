@@ -14,7 +14,9 @@ class EcalDetId:
         return int((self.geometry[detid])[0])
 
     def xyz(self,detid):
-        if detid not in self.geometry: return(-999,-999,-999)
+        if detid not in self.geometry: 
+            print "WARNING! DetId not in the geometry file. Not used in validation. Please check inputs."
+            return(-999,-999,-999)
         coordinates = (self.geometry[detid])[-3:]
         return [int(i) for i in coordinates]
 
