@@ -1,6 +1,6 @@
 #! /bin/bash
 
-ranges="257826_258600 258601_259896"
+ranges="274958_275659 275757_275931 276315_276587"
 for r in $ranges ; do
     echo "considering range = " $r
     bash scripts/mergeFiles.sh $r

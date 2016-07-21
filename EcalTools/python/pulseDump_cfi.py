@@ -25,7 +25,7 @@ pulseDump = cms.EDAnalyzer("PulseDump",
     endcapDigis = cms.InputTag("hltEcalPhiSymFilter","phiSymEcalDigisEE"),
     EBRecHitCollection = cms.InputTag("ecalRecHit","EcalRecHitsEB"),
     EERecHitCollection = cms.InputTag("ecalRecHit","EcalRecHitsEE"),
-    minAmplitudeBarrel = cms.double(25),
-    minAmplitudeEndcap = cms.double(50),
+    minAmplitudeBarrel = cms.double(50),
+    minAmplitudeEndcap = cms.double(100),
     pedestalAnalysis = cms.bool(False)
 )

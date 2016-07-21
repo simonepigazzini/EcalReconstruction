@@ -3,11 +3,11 @@ import os
 import sys
 import re
 
-ranges = [ "248036_257615", "257616_258600", "258601_999999" ]
+ranges = [ "274958_275659", "275757_275931", "276315_276587" ]
 
 for r in ranges:
     print "processing run range ",r
     
-    label="runs_"+r
+    label="_runs_"+r
     
     os.system("cmsRun Ecal_PulseShapes_argv_cfg.py "+label+" "+label)

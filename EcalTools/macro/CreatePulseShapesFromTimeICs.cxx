@@ -10,8 +10,7 @@
 #include "TString.h"
 #include "TLegend.h"
 #include "TPaveText.h"
-#include "TF1.h"
-#include "TMath.h"
+#include "/Users/emanuele/Scripts/RooHZZStyle.C"
 
 Double_t alphabeta( Double_t *x, Double_t * par)
 {
@@ -54,26 +53,6 @@ TH1D *simPulseShapeTemplate(bool barrel) {
 
 }
 
-void fitSingleTemplate(bool EB) {
-
-  TH1D *tempH = simPulseShapeTemplate(EB);
-  TF1 *fitF = new TF1("alphabeta",alphabeta,0,15,5);
-
-  double alpha = EB ? 1.250 : 1.283;
-  double beta = EB ? 1.600 : 1.674;
-
-  fitF->SetParNames("norm","#alpha","#beta","tmax","pedestal","raiset");
-  fitF->FixParameter(0,1); // normalization
-  fitF->SetParameter(1,alpha); // alpha
-  fitF->SetParameter(2,beta); // beta
-  fitF->SetParLimits(1,1.,2.); // alpha
-  fitF->SetParLimits(2,1.,2.); // beta
-  fitF->FixParameter(3,5.5); // tmax
-  fitF->FixParameter(4,0); // pedestal
-
-  tempH->Fit("alphabeta","W","same",3.2,15.0);
-
-}
 
 TH1D* makeSingleTemplate(float dt, bool EB) {
 
@@ -94,24 +73,11 @@ TH1D* makeSingleTemplate(float dt, bool EB) {
   fitF->FixParameter(3,5.5 + unitdt); // tmax
   fitF->FixParameter(4,0); // pedestal
 
-  int firstNonPed = EB ? 2 : 2;
-
-  // calc the max-sample
-  int maxsample=5;
-  double maxval=0;
-  for(int i=firstNonPed;i<15;++i) {
-    double val = fitF->Eval(i+0.5);
-    if(val>maxval) {
-      maxval=val;
-      maxsample=i;
-    }
-  }
-
-  // calc the normalized pulse shape
   for(int i=0;i<15;++i) {
     double val = 0.0; 
+    int firstNonPed = EB ? 2 : 2;
     if(i>firstNonPed) { 
-      val = fitF->Eval(i+0.5)/maxval;
+      val = fitF->Eval(i+0.5)/fitF->Eval(5.5);
     } else  tempH->SetBinContent(i+1, 0.0);
     tempH->SetBinContent(i+1, val); 
   }
@@ -136,7 +102,7 @@ void testIT(bool EB) {
 
 }
 
-void makeTimeCalibratedTemplates(const char* timeICDump="/afs/cern.ch/cms/CAF/CMSALCA/ALCA_ECALCALIB/RunII-time/Run2015B_WF2/EcalTimeCalibConstants_newIOV.dat") {
+void makeTimeCalibratedTemplates(const char* timeICDump="EcalTimeCalibConstants_newIOV.dat") {
 
   ifstream icdump;
   icdump.open(timeICDump, std::ifstream::in);
@@ -146,9 +112,7 @@ void makeTimeCalibratedTemplates(const char* timeICDump="/afs/cern.ch/cms/CAF/CM
   unsigned int rawId;
   int ix,iy,iz;
   double time, boh;
-
-  double offsetEB = -9.641680121e-01;
-  double offsetEE = 3.476650119e-01;
+    
   
   while (icdump.good()) {
     icdump.get();
@@ -163,14 +127,9 @@ void makeTimeCalibratedTemplates(const char* timeICDump="/afs/cern.ch/cms/CAF/CM
     outtxt << rawId << "\t";
     outtxt.precision(6);
     outtxt.setf( std::ios::fixed, std:: ios::floatfield ); // floatfield set to fixed
-
-    time = time + (iz==0 ? offsetEB : offsetEE);
-    time = std::max(-12.5,time);
-    time = std::min(12.5,time);
-
+    
     float pdfval[12];
-    // the IC is - measured time, so invert it
-    TH1D *shiftedTemp = makeSingleTemplate(-time,(iz==0));
+    TH1D *shiftedTemp = makeSingleTemplate(time,(iz==0));
     for(int iSample=3; iSample<15; iSample++) {
       pdfval[iSample-3] = shiftedTemp->GetBinContent(iSample+1);
       outtxt << pdfval[iSample-3] << "\t";

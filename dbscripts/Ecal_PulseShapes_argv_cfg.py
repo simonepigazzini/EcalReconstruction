@@ -16,7 +16,7 @@ print "writing into ",suffix
 
 process = cms.Process("ProcessOne")
 process.load("CondCore.DBCommon.CondDBCommon_cfi")
-process.CondDBCommon.connect = 'sqlite_file:ecaltemplates_popcon_'+suffix+'.db'
+process.CondDBCommon.connect = 'sqlite_file:ecaltemplates_popcon'+suffix+'.db'
 process.CondDBCommon.DBParameters.authenticationPath = '.'
 process.CondDBCommon.DBParameters.messageLevel=cms.untracked.int32(1)
 
@@ -34,7 +34,7 @@ process.source = cms.Source("EmptyIOVSource",
 
 process.PoolDBOutputService = cms.Service("PoolDBOutputService",
     process.CondDBCommon,
-    logconnect = cms.untracked.string('sqlite_file:logecaltemplates_popcon_'+suffix+'.db'),
+    logconnect = cms.untracked.string('sqlite_file:logecaltemplates_popcon'+suffix+'.db'),
     timetype = cms.untracked.string('runnumber'),
     toPut = cms.VPSet(cms.PSet(
         record = cms.string('EcalPulseShapesRcd'),
@@ -42,7 +42,8 @@ process.PoolDBOutputService = cms.Service("PoolDBOutputService",
     ))
 )
 
-txtfile = "iov_templates_"+suffixorig+".txt"
+basedir = "/afs/cern.ch/work/e/emanuele/public/ecal/pulseshapes_db/"
+txtfile = basedir+"/template_histograms_ECAL_Run2016"+suffixorig+".txt"
 if os.path.isfile(txtfile)==False:
     print "WARNING: file ",txtfile," does not exist. Exiting... "
     exit

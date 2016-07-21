@@ -49,3 +49,36 @@ def customPalette(zeropoint = 0.5):
     Length = np.array([0.0,  zeropoint, 1.0], dtype=float)
     nb=100;
     rt.TColor.CreateGradientColorTable(Number,Length,Red,Green,Blue,nb)
+
+def doSpam(text,x1,y1,x2,y2,align=12,fill=False,textSize=0.033,_noDelete={}):
+    cmsprel = ROOT.TPaveText(x1,y1,x2,y2,"NDC");
+    cmsprel.SetTextSize(textSize);
+    cmsprel.SetFillColor(0);
+    cmsprel.SetFillStyle(1001 if fill else 0);
+    cmsprel.SetLineStyle(2);
+    cmsprel.SetLineColor(0);
+    cmsprel.SetTextAlign(align);
+    cmsprel.SetTextFont(42);
+    cmsprel.AddText(text);
+    cmsprel.Draw("same");
+    _noDelete[text] = cmsprel; ## so it doesn't get deleted by PyROOT                                                                                                             
+    return cmsprel
+
+def doTinyCmsPrelim(textLeft="_default_",textRight="_default_",hasExpo=False,textSize=0.033,lumi=None, xoffs=0):
+    global options
+    if textLeft  == "_default_": textLeft  = "CMS Preliminary"
+    if textRight == "_default_": textRight = "(13 TeV)"
+    if lumi      == None       : lumi      = options.lumi
+    if   lumi > 3.54e+1: lumitext = "%.0f fb^{-1}" % lumi
+    elif lumi > 3.54e+0: lumitext = "%.1f fb^{-1}" % lumi
+    elif lumi > 3.54e-1: lumitext = "%.2f fb^{-1}" % lumi
+    elif lumi > 3.54e-2: lumitext = "%.0f pb^{-1}" % (lumi*1000)
+    elif lumi > 3.54e-3: lumitext = "%.1f pb^{-1}" % (lumi*1000)
+    else               : lumitext = "%.2f pb^{-1}" % (lumi*1000)
+    textLeft = textLeft.replace("%(lumi)",lumitext)
+    textRight = textRight.replace("%(lumi)",lumitext)
+    if textLeft not in ['', None]:
+        doSpam(textLeft, (.28 if hasExpo else .17)+xoffs, .955, .60+xoffs, .995, align=12, textSize=textSize)
+    if textRight not in ['', None]:
+        doSpam(textRight,.68+xoffs, .955, .99+xoffs, .995, align=32, textSize=textSize)
+
