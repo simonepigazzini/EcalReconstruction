@@ -39,6 +39,22 @@ class TagValidation:
             mydata[key] = val
         return mydata
 
+    def printOnePlot(self, plot, canvas, outputName):
+        fdir = self._options.printDir
+        if not os.path.exists(fdir):
+            os.makedirs(fdir);
+        if os.path.exists("/afs/cern.ch"): os.system("cp /afs/cern.ch/user/g/gpetrucc/php/index.php "+fdir)
+        canvas.cd()
+        if "TH2" in plot.ClassName() or "TProfile2D" in plot.ClassName():
+            canvas.SetRightMargin(0.20)
+            plot.SetContour(100)
+            plot.Draw("colz")
+        else:
+            plot.Draw()
+        for ext in self._options.printPlots.split(","):
+            canvas.Print("%s/%s.%s" % (fdir, outputName, ext))
+
+
     def do1dDiff(self,doEB):
         part = 'eb' if doEB else 'ee'
         rt.gStyle.SetOptStat(111111)
@@ -58,8 +74,7 @@ class TagValidation:
         canv = rt.TCanvas("c","",1200,1200)
         canv.SetLogy()
         for s in range(12):
-            histos[s].Draw()
-            canv.SaveAs('%s_diff_1d_sample%d.pdf' % (part,s))
+            self.printOnePlot(histos[s],canv,'%s_diff_1d_sample%d' % (part,s))
 
     def do2dDiff(self,doEB):
         part = 'eb' if doEB else 'ee'
@@ -97,6 +112,7 @@ class TagValidation:
 
             if key not in newData: continue
             if ((doEB and int(partition)==0) or (not doEB and int(partition)==1)): continue
+            if z==-999: continue
             if z==0: htofill = histos['eb']
             elif z==1: htofill = histos['eeplus']
             else: htofill = histos['eeminus']
@@ -109,9 +125,9 @@ class TagValidation:
         canv = rt.TCanvas("c","",xsize,ysize)
         for k,v in histos.iteritems():
             for s in range(12):
-                (histos[k])[s].Draw("colz")
-                canv.SaveAs('%s_diff_2d_sample%d.pdf' % (k,s))
-        
+                #(histos[k])[s].Draw("colz")
+                #canv.SaveAs('%s_diff_2d_sample%d.pdf' % (k,s))
+                self.printOnePlot( (histos[k])[s], canv, '%s_diff_2d_sample%d' % (k,s) )
 
     def loadTimeICs(self,txtfile):
         ret = {}
@@ -197,8 +213,9 @@ class TagValidation:
         of.cd()
         canv = rt.TCanvas("c","",xsize,ysize)
         for h in histos:
-            h.Draw("colz")
-            canv.SaveAs(h.GetName()+'.pdf')
+            #h.Draw("colz")
+            #canv.SaveAs(h.GetName()+'.pdf')
+            self.printOnePlot(h,canv,h.GetName())
             h.Write()
         for h in histosDiff:
             h.Write()
@@ -212,6 +229,8 @@ if __name__ == "__main__":
     parser.add_option(     "--do2Ddiff",  dest="do2Ddiff",   action="store_true", help="make the 2D differences of the samples in the two tags")
     parser.add_option(     "--do2Dtime",  dest="do2Dtime",   action="store_true", help="make the 2D time map")
     parser.add_option("-t","--timeICs",   dest="timeICs",    type="string", default="", help="the file containing the time ICs")
+    parser.add_option("--print", dest="printPlots", type="string", default="png,pdf,txt", help="print out plots in this format or formats (e.g. 'png,pdf,txt')");
+    parser.add_option("--pdir", "--print-dir", dest="printDir", type="string", default="plots", help="print out plots in this directory");
 
     (options, args) = parser.parse_args()
     if len(args) < 2: raise RuntimeError, 'Expecting at least two arguments'
