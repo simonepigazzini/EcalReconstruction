@@ -10,9 +10,7 @@ if __name__ == "__main__":
 
 # CUSTOMIZE THE RUN RANGES HERE
 ranges = {
-    274958:275659,
-    275757:275931,
-    276315:276587
+    280249:280251
     }
 
 pwd = os.getcwd()
