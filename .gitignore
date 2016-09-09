@@ -4,3 +4,6 @@
 *.pcm
 *ACLiC*
 *.log
+*.txt
+*.db
+*.list
