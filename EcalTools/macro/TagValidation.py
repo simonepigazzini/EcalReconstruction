@@ -2,12 +2,17 @@
 import os
 import sys
 import math
+import numpy as np
 import ROOT as rt
 rt.gROOT.SetBatch(True)
 
 from ecalDetId import EcalDetId
 from PlotUtils import customROOTstyle, customPalette
 from AlphaBetaFitter import *
+
+SAFE_COLOR_LIST=[
+rt.kBlack, rt.kRed, rt.kGreen+2, rt.kBlue, rt.kMagenta+1, rt.kOrange+7, rt.kCyan+1, rt.kGray+2, rt.kViolet+5, rt.kSpring+5, rt.kAzure+1, rt.kPink+7, rt.kOrange+3, rt.kBlue+3, rt.kMagenta+3, rt.kRed+2,
+]+range(11,40)
 
 class TagValidation:
 
@@ -39,18 +44,22 @@ class TagValidation:
             mydata[key] = val
         return mydata
 
-    def printOnePlot(self, plot, canvas, outputName):
+    def printOnePlot(self, plot, canvas, outputName, drawopt=""):
         fdir = self._options.printDir
         if not os.path.exists(fdir):
             os.makedirs(fdir);
         if os.path.exists("/afs/cern.ch"): os.system("cp /afs/cern.ch/user/g/gpetrucc/php/index.php "+fdir)
         canvas.cd()
-        if "TH2" in plot.ClassName() or "TProfile2D" in plot.ClassName():
+        if "TGraph" in plot.ClassName():
+            canvas.SetLeftMargin(0.20)
+            plot.GetYaxis().SetTitleOffset(2)
+            plot.Draw(drawopt if len(drawopt)>0 else "AP")
+        elif "TH2" in plot.ClassName() or "TProfile2D" in plot.ClassName():
             canvas.SetRightMargin(0.20)
             plot.SetContour(100)
-            plot.Draw("colz")
+            plot.Draw("colz" if len(drawopt)>0 else drawopt)
         else:
-            plot.Draw()
+            plot.Draw(drawopt)
         for ext in self._options.printPlots.split(","):
             canvas.Print("%s/%s.%s" % (fdir, outputName, ext))
 
@@ -220,6 +229,38 @@ class TagValidation:
         for h in histosDiff:
             h.Write()
         of.Close()
+
+    def historyPlot(self,detid,iovfiles):
+        iovs = []
+        for f in iovfiles: 
+            print "Looking for crystal with rawID = ",detid," in the IOV file ",f,"..."
+            data = self.parseDic(self.loadTemplates(f))
+            pulsetemp = []
+            for partition in ['0','1']:
+                key = (partition,detid)
+                if key in data: pulsetemp = data[key]
+            if len(pulsetemp)==0: print "ERROR! Crystal with detid = ",detid," not found in the IOV file ",f,". Skipping point."
+            else: iovs.append(pulsetemp)
+
+
+        canv = rt.TCanvas("c","",600,600)
+        for s in range(12): 
+            y = [float(pulsetemp[s]) for pulsetemp in iovs]
+            x = [float(i+1) for i in range(len(y))]
+            g = rt.TGraph(len(y),np.array(x),np.array(y))
+            g.SetTitle("")
+            avg = sum(y)/float(len(y))
+            var = max(max(y)-avg,avg-min(y))
+            g.GetYaxis().SetRangeUser(avg - 2*var,avg + 2*var)
+            g.SetLineColor(SAFE_COLOR_LIST[s])
+            g.SetMarkerColor(SAFE_COLOR_LIST[s])
+            g.SetMarkerStyle(rt.kFullCircle)
+            g.SetMarkerSize(1)
+            g.GetXaxis().SetTitle("IOV in 2016")
+            g.GetYaxis().SetTitle("sample %d value" % (4+s))
+            self.printOnePlot(g,canv,"template_sample_%d" % s,"AP")
+
+            
 
 if __name__ == "__main__":
     from optparse import OptionParser
