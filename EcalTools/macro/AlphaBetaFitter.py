@@ -63,3 +63,6 @@ class AlphaBetaFitter:
             canv.SaveAs(canvasName)
 
         return ret
+
+    def getFcn(self): 
+        return self.fcn
