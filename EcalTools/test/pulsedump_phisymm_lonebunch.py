@@ -8,7 +8,7 @@ run = 211831
 barrel = True
 FEDused = "EB+13"
 Gain = 12
-LoneBunch = True
+LoneBunch = False
 ###############################
 
 templateOutputFile = str("templates_run"+str(run)+"_"+FEDused+"_Gain"+str(Gain)+".root")

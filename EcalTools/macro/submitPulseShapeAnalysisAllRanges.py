@@ -10,15 +10,17 @@ if __name__ == "__main__":
 
 # CUSTOMIZE THE RUN RANGES HERE
 ranges = {
-    274958:275659,
-    275757:275931,
-    276315:276587
+    278167:278175,
+#    283863:284035,
+#    283171:283835,
+#    282408:283067,
+#    281616:282092
     }
 
 pwd = os.getcwd()
 
 for start,stop in ranges.iteritems():
-    comm = 'bsub -q 2nd -J '+str(start)+'_'+str(stop)+' -o psana_runs_'+str(start)+'_'+str(stop)+'.log '+pwd+'/submitPulseShapeAnalysisOneRange.sh '+str(start)+' '+str(stop)+' '+args[0]
+    comm = 'bsub -q cmscaf1nd -J '+str(start)+'_'+str(stop)+' -o psana_runs_'+str(start)+'_'+str(stop)+'.log '+pwd+'/submitPulseShapeAnalysisOneRange.sh '+str(start)+' '+str(stop)+' '+args[0]
     if options.create: print comm
     else: os.system(comm)
 

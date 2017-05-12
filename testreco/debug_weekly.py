@@ -26,7 +26,7 @@ process.maxEvents = cms.untracked.PSet(
 
 # Input source
 process.source = cms.Source("PoolSource",
-    fileNames = cms.untracked.vstring('file:/data1/emanuele/ecal/localreco/1A438326-636D-E511-9BE0-02163E01442D.root'),
+    fileNames = cms.untracked.vstring('/store/data/Run2016D/DoubleEG/RAW-RECO/ZElectron-PromptReco-v2/000/276/315/00000/1E33116B-0545-E611-A6F5-02163E01474A.root'),
     secondaryFileNames = cms.untracked.vstring()
 )
 
@@ -61,7 +61,7 @@ process.RECOoutput = cms.OutputModule("PoolOutputModule",
 
 # Other statements
 from Configuration.AlCa.GlobalTag_condDBv2 import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, '74X_dataRun2_Prompt_v4', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, '80X_dataRun2_Prompt_v10', '')
 
 # Path and EndPath definitions
 process.raw2digi_step = cms.Path(process.RawToDigi)
@@ -88,14 +88,14 @@ process=convertToUnscheduled(process)
 from FWCore.ParameterSet.Utilities import cleanUnscheduled
 process=cleanUnscheduled(process)
 
-# process.GlobalTag.toGet = cms.VPSet(
-# cms.PSet(record = cms.string("EcalPulseShapesRcd"),
-# tag = cms.string("EcalPulseShapes_data"),
-# connect = cms.untracked.string("sqlite_file:ecaltemplates_popcon_weekly.db"
-# )))
-
 process.GlobalTag.toGet = cms.VPSet(
-cms.PSet(record = cms.string("EcalPulseCovariancesRcd"),
-tag = cms.string("EcalPulseCovariances_data"),
-connect = cms.untracked.string("sqlite_file:ecalcovariances_popcon_weekly.db"
+cms.PSet(record = cms.string("EcalPulseShapesRcd"),
+tag = cms.string("EcalPulseShapes_data"),
+connect = cms.string("sqlite_file:/afs/cern.ch/work/e/emanuele/public/ecal/pulseshapes_db/ecaltemplates_popcon_data_Run2016BC_since_274958.db"
 )))
+
+# process.GlobalTag.toGet = cms.VPSet(
+# cms.PSet(record = cms.string("EcalPulseCovariancesRcd"),
+# tag = cms.string("EcalPulseCovariances_data"),
+# connect = cms.untracked.string("sqlite_file:ecalcovariances_popcon_weekly.db"
+# )))
