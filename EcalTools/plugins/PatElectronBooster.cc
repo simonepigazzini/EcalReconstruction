@@ -157,7 +157,7 @@ void PatElectronBooster::produce(edm::Event& iEvent, const edm::EventSetup& iSet
     iEvent.getByToken( eeMultifit50nsRecHitCollection_, pEERecHits );
     const EcalRecHitCollection *eeRecHits_ = pEERecHits.product();
 
-    std::auto_ptr<pat::ElectronCollection> pOut(new pat::ElectronCollection);
+    std::unique_ptr<pat::ElectronCollection> pOut(new pat::ElectronCollection);
 
     lazyToolnoZS_Global = new noZS::EcalClusterLazyTools(iEvent, iSetup, ebGlobalRecHitCollection_, eeGlobalRecHitCollection_);
     lazyToolnoZS_Multifit50ns = new noZS::EcalClusterLazyTools(iEvent, iSetup, ebMultifit50nsRecHitCollection_, eeMultifit50nsRecHitCollection_);
@@ -268,7 +268,7 @@ void PatElectronBooster::produce(edm::Event& iEvent, const edm::EventSetup& iSet
       pOut->push_back(clone);
 	
     }
-    iEvent.put(pOut);
+    iEvent.put(std::move(pOut));
     delete lazyToolnoZS_Global;
     delete lazyToolnoZS_Multifit50ns;
     delete lazyToolnoZS_Multifit25ns;
