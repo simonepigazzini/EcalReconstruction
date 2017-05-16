@@ -18,7 +18,7 @@ import re
 #            "282408_283067",
 #            "283171_283835",
 #            "283863_284035" ]
-ranges = [ "278167_278175" ]
+ranges = [ "293765_293910" ]
 
 for r in ranges:
     print "processing run range ",r

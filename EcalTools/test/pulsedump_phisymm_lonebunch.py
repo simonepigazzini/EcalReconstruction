@@ -34,12 +34,12 @@ process.options = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
 
 from Configuration.AlCa.GlobalTag_condDBv2 import GlobalTag as customiseGlobalTag
 #process.GlobalTag = customiseGlobalTag(process.GlobalTag, globaltag = 'auto:run2_hlt_GRun')
-process.GlobalTag.globaltag = "80X_dataRun2_HLT_v12"
+process.GlobalTag.globaltag = "90X_dataRun2_HLT_v2"
 
 process.load('EcalReconstruction.EcalTools.pulseDump_cfi')
 
 process.source = cms.Source("PoolSource",
-                              fileNames = cms.untracked.vstring('/store/data/Run2016B/AlCaPhiSym/RAW/v2/000/273/554/00000/2C787C50-2A1D-E611-AEC4-02163E014568.root')
+                              fileNames = cms.untracked.vstring('root://xrootd-cms.infn.it//store/data/Commissioning2017/AlCaPhiSym/RAW/v1/000/293/765/00000/007A9FAE-8B36-E711-B50D-02163E0144FE.root')
                             )
 
 process.TFileService = cms.Service("TFileService", fileName = cms.string("templates.root") )

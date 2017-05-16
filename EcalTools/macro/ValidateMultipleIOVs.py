@@ -2,16 +2,8 @@
 import os
 import sys
 
-# N-1 update
-#currentPromptIOV = ('IOV11','/afs/cern.ch/user/e/emanuele/w/public/ecal/pulseshapes_db/template_histograms_ECAL_Run2016_runs_279841_279841.txt')
-
-#toValidateIOVs = [('IOV12','/afs/cern.ch/user/e/emanuele/w/public/ecal/pulseshapes_db/template_histograms_ECAL_Run2016_runs_281616_282092.txt'),
-#                  ('IOV13','/afs/cern.ch/user/e/emanuele/w/public/ecal/pulseshapes_db/template_histograms_ECAL_Run2016_runs_282408_283067.txt'),
-#                  ('IOV14','/afs/cern.ch/user/e/emanuele/w/public/ecal/pulseshapes_db/template_histograms_ECAL_Run2016_runs_283171_283835.txt'),
-#                  ('IOV15','/afs/cern.ch/user/e/emanuele/w/public/ecal/pulseshapes_db/template_histograms_ECAL_Run2016_runs_283863_284035.txt')]
-
-currentPromptIOV = ('IOV6','/afs/cern.ch/user/e/emanuele/w/public/ecal/pulseshapes_db/template_histograms_ECAL_Run2016_runs_276315_276587.txt')  
-toValidateIOVs = [('IOV7new','/afs/cern.ch/user/e/emanuele/w/public/ecal/pulseshapes_db/template_histograms_ECAL_Run2016_runs_278167_278175.txt')]
+currentPromptIOV = ('IOV2016',' /afs/cern.ch/user/e/emanuele/w/public/ecal/pulseshapes_db/template_histograms_ECAL_Run2016_runs_283863_284035.txt')  
+toValidateIOVs = [('IOV1','/afs/cern.ch/user/e/emanuele/w/public/ecal/pulseshapes_db/template_histograms_ECAL_Run2017_runs_293765_293910.txt')]
 
 
 allIOVs = [currentPromptIOV] + toValidateIOVs
