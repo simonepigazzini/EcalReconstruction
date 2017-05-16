@@ -230,6 +230,76 @@ class TagValidation:
             h.Write()
         of.Close()
 
+    def timeFit(self,pulse,fitter,doEB):
+        histo = rt.TH1F("time","",15,0,15)
+        # fill the template and fit it
+        for s in range(3):  histo.SetBinContent(s+1,0)
+        for s in range(12): histo.SetBinContent(s+4,float(pulse[s]))
+        # results = fitter.fit(histo,doEB,('pulse_%d_%d_%d.png' % (x,y,z)))
+        results = fitter.fit(histo,doEB)
+        time = 25.*((results['pars'])[2]-5.5)
+        return time
+
+    def do2dTimeDiff(self,doEB):
+        part = 'EB' if doEB else 'EE'
+        customROOTstyle()
+        refData = self.parseDic(self._allData["ref"])
+        newData = self.parseDic(self._allData["current"])
+        of = rt.TFile.Open('%s_timeVals.root' % part,'recreate')
+        histos = []
+        if doEB: 
+            h = rt.TProfile2D(('%s_time' % part),"",360,1,360,170,-85,85)
+            h.GetXaxis().SetTitle('i#phi')
+            h.GetYaxis().SetTitle('i#eta')
+            h.SetTitle('Time (ns)')
+            h.GetZaxis().SetRangeUser(0,2)
+            histos.append(h)
+        else: 
+            hplus = rt.TProfile2D(('%splus_time' % part),"",100,1,100,100,1,100)
+            hplus.GetXaxis().SetTitle('ix')
+            hplus.GetYaxis().SetTitle('iy')
+            hplus.SetTitle('Time (ns)')
+            hplus.GetZaxis().SetRangeUser(0,2)
+            histos.append(hplus)
+            hminus = hplus.Clone('%sminus_time' % part)
+            histos.append(hminus)
+
+        detids = EcalDetId('/afs/cern.ch/work/e/emanuele/public/ecal/pulseshapes_db/detids_ECAL.txt')
+
+        fitter = AlphaBetaFitter( rt.TF1("alphabeta",alphabeta,0,10,5), doEB)
+        cryfit = 0
+        for (partition,detid),samples in newData.iteritems():
+            key = (partition,detid)
+            (x,y,z) = detids.xyz(detid)
+
+            if key not in refData: continue
+            if ((doEB and int(partition)==0) or (not doEB and int(partition)==1)): continue
+            if z==-999: continue
+            if z==0 or z==1: 
+                htofill = histos[0]
+            else: 
+                htofill = histos[1]
+
+            (ix,iy) = (y,x) if doEB else (x,y)
+
+            time = self.timeFit(newData[key],fitter,doEB)
+            timeRef = self.timeFit(refData[key],fitter,doEB)
+            htofill.Fill(ix,iy,time - timeRef)
+
+            if cryfit % 1000 == 0: print 'fitted ',cryfit,' templates'
+            cryfit += 1
+
+        xsize = 1200
+        ysize = int(xsize*170/360+0.1*xsize) if doEB else int(xsize*0.9)
+        of.cd()
+        canv = rt.TCanvas("c","",xsize,ysize)
+        for h in histos:
+            #h.Draw("colz")
+            #canv.SaveAs(h.GetName()+'.pdf')
+            h.Write()
+            self.printOnePlot(h,canv,h.GetName())
+        of.Close()
+
     def historyPlot(self,detid,iovfiles):
         iovs = []
         for f in iovfiles: 
@@ -269,6 +339,7 @@ if __name__ == "__main__":
     parser.add_option(     "--do1Ddiff",  dest="do1Ddiff",   action="store_true", help="make the 1D differences of the samples in the two tags")
     parser.add_option(     "--do2Ddiff",  dest="do2Ddiff",   action="store_true", help="make the 2D differences of the samples in the two tags")
     parser.add_option(     "--do2Dtime",  dest="do2Dtime",   action="store_true", help="make the 2D time map")
+    parser.add_option(     "--do2Dtimediff",  dest="do2Dtimediff",   action="store_true", help="make the 2D time difference map, only based on pulse shapes")
     parser.add_option("-t","--timeICs",   dest="timeICs",    type="string", default="", help="the file containing the time ICs")
     parser.add_option("--print", dest="printPlots", type="string", default="png,pdf,txt", help="print out plots in this format or formats (e.g. 'png,pdf,txt')");
     parser.add_option("--pdir", "--print-dir", dest="printDir", type="string", default="plots", help="print out plots in this directory");
@@ -285,6 +356,10 @@ if __name__ == "__main__":
     if options.do2Ddiff:
         doEB = True if options.partition=='EB' else False
         tv.do2dDiff(doEB)
+
+    if options.do2Dtimediff:
+        doEB = True if options.partition=='EB' else False
+        tv.do2dTimeDiff(doEB)
 
     currentTimeICs = '/afs/cern.ch/work/e/emanuele/public/ecal/timeICs_dump_EcalTimeCalibConstants__since_00253984_till_Run2016A.txt'
     if options.do2Dtime:
