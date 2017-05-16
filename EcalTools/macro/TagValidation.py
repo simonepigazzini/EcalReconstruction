@@ -57,12 +57,11 @@ class TagValidation:
         elif "TH2" in plot.ClassName() or "TProfile2D" in plot.ClassName():
             canvas.SetRightMargin(0.20)
             plot.SetContour(100)
-            plot.Draw("colz" if len(drawopt)>0 else drawopt)
+            plot.Draw("colz" if len(drawopt)==0 else drawopt)
         else:
             plot.Draw(drawopt)
         for ext in self._options.printPlots.split(","):
             canvas.Print("%s/%s.%s" % (fdir, outputName, ext))
-
 
     def do1dDiff(self,doEB):
         part = 'eb' if doEB else 'ee'
@@ -101,14 +100,14 @@ class TagValidation:
                 h.GetXaxis().SetTitle('i#phi')
                 h.GetYaxis().SetTitle('i#eta')
                 h.SetTitle('sample_{%d}^{new}-sample_{%d}^{ref}' % (s,s))
-                h.GetZaxis().SetRangeUser(-0.03,0.03)
+                h.GetZaxis().SetRangeUser(-0.05,0.05)
                 histos['eb'].append(h)
             else: 
                 hplus = rt.TProfile2D(('%s_plus_diff_2d_sample%d' % (part,s)),"",100,1,100,100,1,100)
                 hplus.GetXaxis().SetTitle('ix')
                 hplus.GetYaxis().SetTitle('iy')
                 hplus.SetTitle('sample_{%d}^{new}-sample_{%d}^{ref}' % (s,s))
-                hplus.GetZaxis().SetRangeUser(-0.03,0.03)
+                hplus.GetZaxis().SetRangeUser(-0.05,0.05)
                 histos['eeplus'].append(hplus)
                 hminus = hplus.Clone('%s_minus_diff_2d_sample%d' % (part,s))
                 histos['eeminus'].append(hminus)
@@ -132,6 +131,7 @@ class TagValidation:
         xsize = 1200
         ysize = int(xsize*170/360+0.1*xsize) if doEB else int(xsize*0.9)
         canv = rt.TCanvas("c","",xsize,ysize)
+
         for k,v in histos.iteritems():
             for s in range(12):
                 #(histos[k])[s].Draw("colz")

@@ -34,7 +34,7 @@ process.options = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
 
 from Configuration.AlCa.GlobalTag_condDBv2 import GlobalTag as customiseGlobalTag
 #process.GlobalTag = customiseGlobalTag(process.GlobalTag, globaltag = 'auto:run2_hlt_GRun')
-process.GlobalTag.globaltag = "80X_dataRun2_HLT_v12"
+process.GlobalTag.globaltag = "90X_dataRun2_HLT_v2"
 
 process.load('EcalReconstruction.EcalTools.pulseDump_cfi')
 
