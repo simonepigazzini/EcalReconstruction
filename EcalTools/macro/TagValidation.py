@@ -7,7 +7,7 @@ import ROOT as rt
 rt.gROOT.SetBatch(True)
 
 from ecalDetId import EcalDetId
-from PlotUtils import customROOTstyle, customPalette
+from PlotUtils import customROOTstyle, customPalette, doLegend
 from AlphaBetaFitter import *
 
 SAFE_COLOR_LIST=[
@@ -330,7 +330,44 @@ class TagValidation:
             g.GetYaxis().SetTitle("sample %d value" % (4+s))
             self.printOnePlot(g,canv,"template_sample_%d" % s,"AP")
 
-            
+
+    def pulseComp(self,detid,pulse,pulseRef):
+        customROOTstyle()
+        hpulse = rt.TH1F("hpulse","",15,0,15)
+        hpulseref = hpulse.Clone("hpulseref")
+        # fill the template and fit it
+        for s in range(3):  
+            hpulse.SetBinContent(s+1,0)
+            hpulseref.SetBinContent(s+1,0)
+        for s in range(12): 
+            hpulse.SetBinContent(s+4,float(pulse[s]))
+            hpulseref.SetBinContent(s+4,float(pulseRef[s]))
+        canvas = rt.TCanvas("c","",600,600)
+        hpulseref.SetLineColor(rt.kBlue+2)
+        hpulse.SetMarkerStyle(rt.kFullCircle)
+        hpulseref.Draw("hist")
+        hpulse.Draw("same p")
+        fdir = self._options.printDir
+        plots = [hpulse,hpulseref]; labels=['2017','2016']; styles=['p','l']
+        leg = doLegend(plots,labels,styles)
+        leg.Draw()
+        for ext in self._options.printPlots.split(","):
+            canvas.Print("%s/pulse_id%s.%s" % (fdir,detid,ext))
+
+    def do1dComparison(self,doEB,maxPlots=10):
+        part = 'eb' if doEB else 'ee'
+        rt.gStyle.SetOptStat(111111)
+        refData = self.parseDic(self._allData["ref"])
+        newData = self.parseDic(self._allData["current"])
+    
+        ipulse=0
+        for (partition,detid),samples in refData.iteritems():
+            key = (partition,detid)
+            if key not in newData: continue
+            if ((doEB and int(partition)==0) or (not doEB and int(partition)==1)): continue
+            self.pulseComp(detid,newData[key],refData[key])
+            if ipulse<maxPlots: ipulse += 1
+            else: break
 
 if __name__ == "__main__":
     from optparse import OptionParser
@@ -340,6 +377,7 @@ if __name__ == "__main__":
     parser.add_option(     "--do2Ddiff",  dest="do2Ddiff",   action="store_true", help="make the 2D differences of the samples in the two tags")
     parser.add_option(     "--do2Dtime",  dest="do2Dtime",   action="store_true", help="make the 2D time map")
     parser.add_option(     "--do2Dtimediff",  dest="do2Dtimediff",   action="store_true", help="make the 2D time difference map, only based on pulse shapes")
+    parser.add_option(     "--do1Dpulses",  dest="do1Dpulses",   action="store_true", help="make the comparison of pulses in the same crystal for the two tags")
     parser.add_option("-t","--timeICs",   dest="timeICs",    type="string", default="", help="the file containing the time ICs")
     parser.add_option("--print", dest="printPlots", type="string", default="png,pdf,txt", help="print out plots in this format or formats (e.g. 'png,pdf,txt')");
     parser.add_option("--pdir", "--print-dir", dest="printDir", type="string", default="plots", help="print out plots in this directory");
@@ -348,22 +386,23 @@ if __name__ == "__main__":
     if len(args) < 2: raise RuntimeError, 'Expecting at least two arguments'
 
     tv = TagValidation(args,options)
+
+    doEB = True if options.partition=='EB' else False
     
     if options.do1Ddiff:
-        doEB = True if options.partition=='EB' else False
         tv.do1dDiff(doEB)
 
     if options.do2Ddiff:
-        doEB = True if options.partition=='EB' else False
         tv.do2dDiff(doEB)
 
     if options.do2Dtimediff:
-        doEB = True if options.partition=='EB' else False
         tv.do2dTimeDiff(doEB)
+        
+    if options.do1Dpulses:
+        tv.do1dComparison(doEB)
 
     currentTimeICs = '/afs/cern.ch/work/e/emanuele/public/ecal/timeICs_dump_EcalTimeCalibConstants__since_00253984_till_Run2016A.txt'
     if options.do2Dtime:
-        doEB = True if options.partition=='EB' else False
         # values in the GT 80X_dataRun2_Prompt_v8
         tv.setTimeOffset(-0.964168,0.347665)
         tv.do2dTime(currentTimeICs,doEB,options.timeICs)
