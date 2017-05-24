@@ -45,7 +45,7 @@ class TagValidation:
         return mydata
 
     def printOnePlot(self, plot, canvas, outputName, drawopt=""):
-        fdir = self._options.printDir
+        fdir = self._options.printDir if hasattr(self._options,"printDir") else "./"
         if not os.path.exists(fdir):
             os.makedirs(fdir);
         if os.path.exists("/afs/cern.ch"): os.system("cp /afs/cern.ch/user/g/gpetrucc/php/index.php "+fdir)
