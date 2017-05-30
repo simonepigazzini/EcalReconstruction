@@ -24,7 +24,7 @@ class etaRingMapping:
         if doEB: return self.ebringmap[(x,y,z)]
         else: return self.eeringmap[(x,y)] if (x,y) in self.eeringmap else -1
 
-def asymmetryByRing(tv,data):
+def asymmetryByRing(tv,data,doPlot=True):
 
     customROOTstyle()
     rt.gStyle.SetOptStat(0)
@@ -65,7 +65,7 @@ def asymmetryByRing(tv,data):
     xsize = 1200
     ysize = int(xsize*0.9)
     canv = rt.TCanvas("c","",xsize,ysize)
-
+ 
     for s in range(12):
         for b in range(histos['eeplus'][s].GetNbinsX()+1):
             reldiff = (histos['eeplus'][s].GetBinContent(b)-histos['eeminus'][s].GetBinContent(b))/(histos['eeplus'][s].GetBinContent(b)+histos['eeminus'][s].GetBinContent(b))
@@ -73,13 +73,41 @@ def asymmetryByRing(tv,data):
                            histos['eeplus'][s].GetBinError(b)/histos['eeplus'][s].GetBinContent(b))
             histos['eediff'][s].SetBinContent(b,reldiff)
             histos['eediff'][s].SetBinError(b,relerr)
-        tv.printOnePlot((histos['eediff'])[s],canv,'endcap_diff_ring_sample%d' % s )
-        tv.printOnePlot((histos['eeplus'])[s],canv,'endcap_plus_ring_sample%d' % s )
-        tv.printOnePlot((histos['eeminus'])[s],canv,'endcap_minus_ring_sample%d' % s )
+        if doPlot:
+            tv.printOnePlot((histos['eediff'])[s],canv,'endcap_diff_ring_sample%d' % s )
+            tv.printOnePlot((histos['eeplus'])[s],canv,'endcap_plus_ring_sample%d' % s )
+            tv.printOnePlot((histos['eeminus'])[s],canv,'endcap_minus_ring_sample%d' % s )
+
+    return histos
+
+def iovRatio(tv,dataNew,dataRef):
+    histosNew = asymmetryByRing(tv,dataNew,doPlot=False)
+    histosRef = asymmetryByRing(tv,dataRef,doPlot=False)
+
+    diffs = []
+    for s in range(12): 
+        hdr = rt.TH1D(('endcap_asymratio_ring_sample%d' % s),"",39,0,39)
+        hdr.GetXaxis().SetTitle('#eta ring')
+        hdr.SetTitle('sample %d (asymmetry new)/(asymmetry ref)' %s)
+        hdr.GetYaxis().SetLimits(-0.05,0.05)
+        hdr.GetYaxis().SetRangeUser(-0.05,0.05)
+        diffs.append(hdr)
+
+    xsize = 1200
+    ysize = int(xsize*0.9)
+    canv = rt.TCanvas("c","",xsize,ysize)
+    for s in range(12):
+        for b in range(histosNew['eediff'][s].GetNbinsX()+1):
+            diff = histosNew['eediff'][s].GetBinContent(b)-histosRef['eediff'][s].GetBinContent(b)
+            err = 0 if histosNew['eediff'][s].GetBinContent(b)==0 or histosRef['eediff'][s].GetBinContent(b)==0 else hypot(histosNew['eediff'][s].GetBinError(b), 
+                                                                                                                           histosRef['eediff'][s].GetBinError(b))
+            diffs[s].SetBinContent(b,diff)
+            diffs[s].SetBinError(b,err)
+        tv.printOnePlot(diffs[s],canv,'endcap_asymdiff_ring_sample%d' % s )
 
 if __name__ == "__main__":
     from optparse import OptionParser
-    parser = OptionParser(usage="%prog [options] tag.txt")
+    parser = OptionParser(usage="%prog [options] tag.txt [tagref.txt]")
     parser.add_option("--pdir", "--print-dir", dest="printDir", type="string", default="iovX", help="print out plots in this directory");
     (options, args) = parser.parse_args()
 
@@ -87,4 +115,8 @@ if __name__ == "__main__":
     tv._options.printDir = '/afs/cern.ch/user/e/emanuele/www/ECAL/reco/PSTag/Legacy2016/'+options.printDir
     tv._options.printPlots =  'pdf,png'
     data = tv.parseDic(tv._allData["current"])
-    asymmetryByRing(tv,data)
+    #asymmetryByRing(tv,data)
+
+    if len(args)==2:
+        dataRef = tv.parseDic(tv._allData["ref"])
+        iovRatio(tv,data,dataRef)
