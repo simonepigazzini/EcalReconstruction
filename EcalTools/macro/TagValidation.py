@@ -1,7 +1,6 @@
 #! /usr/bin/env python
-import os
-import sys
-import math
+import os,sys
+from math import *
 import numpy as np
 import ROOT as rt
 rt.gROOT.SetBatch(True)
@@ -234,35 +233,47 @@ class TagValidation:
         histo = rt.TH1F("time","",15,0,15)
         # fill the template and fit it
         for s in range(3):  histo.SetBinContent(s+1,0)
-        for s in range(12): histo.SetBinContent(s+4,float(pulse[s]))
+        for s in range(12): 
+            histo.SetBinContent(s+4,float(pulse[s]))
+            histo.SetBinError(s+4,float(pulse[s])/sqrt(1000)) # about 1k entries per bin
         # results = fitter.fit(histo,doEB,('pulse_%d_%d_%d.png' % (x,y,z)))
         results = fitter.fit(histo,doEB)
-        time = 25.*((results['pars'])[2]-5.5)
-        return time
+        val = {}; err = {};
+        for par in AlphaBetaParameter:
+            val[par.name] = (results['pars'])[par.value]
+            err[par.name] = (results['errs'])[par.value]
+            if par==AlphaBetaParameter.T0:
+                val[par.name] = (val[par.name]-5.5)*25.
+                err[par.name] = err[par.name]*25.
+        return (val,err)
 
-    def do2dTimeDiff(self,doEB):
+    def do2dShapeDiff(self,doEB):
         part = 'EB' if doEB else 'EE'
         customROOTstyle()
         refData = self.parseDic(self._allData["ref"])
         newData = self.parseDic(self._allData["current"])
         of = rt.TFile.Open('%s_timeVals.root' % part,'recreate')
-        histos = []
-        if doEB: 
-            h = rt.TProfile2D(('%s_time' % part),"",360,1,360,170,-85,85)
-            h.GetXaxis().SetTitle('i#phi')
-            h.GetYaxis().SetTitle('i#eta')
-            h.SetTitle('Time (ns)')
-            h.GetZaxis().SetRangeUser(0,2)
-            histos.append(h)
-        else: 
-            hplus = rt.TProfile2D(('%splus_time' % part),"",100,1,100,100,1,100)
-            hplus.GetXaxis().SetTitle('ix')
-            hplus.GetYaxis().SetTitle('iy')
-            hplus.SetTitle('Time (ns)')
-            hplus.GetZaxis().SetRangeUser(0,2)
-            histos.append(hplus)
-            hminus = hplus.Clone('%sminus_time' % part)
-            histos.append(hminus)
+        histos = {}
+        for p in AlphaBetaParameter:
+            (zmin,zmax) = (-1,1) if p==AlphaBetaParameter.T0 else (-1,1)
+            if doEB:
+                h = rt.TProfile2D(('%s_%s' % (part,p.name)),"",360,1,360,170,-85,85)
+                h.GetXaxis().SetTitle('i#phi')
+                h.GetYaxis().SetTitle('i#eta')
+                h.SetTitle('Time (ns)' if p==AlphaBetaParameter.T0 else '#Delta %s [n#sigma]'%p.name)
+                h.GetZaxis().SetRangeUser(zmin,zmax)
+                histos[p.name] = [h]
+            else: 
+                hz = []
+                hplus = rt.TProfile2D(('%splus_%s' % (part,p.name)),"",100,1,100,100,1,100)
+                hplus.GetXaxis().SetTitle('ix')
+                hplus.GetYaxis().SetTitle('iy')
+                hplus.SetTitle('Time (ns)' if p==AlphaBetaParameter.T0 else '#Delta %s [n#sigma]'%p.name)
+                hplus.GetZaxis().SetRangeUser(zmin,zmax)
+                hz.append(hplus)
+                hminus = hplus.Clone('%sminus_%s' % (part,p.name))
+                hz.append(hminus)
+                histos[p.name] = hz
 
         detids = EcalDetId('/afs/cern.ch/work/e/emanuele/public/ecal/pulseshapes_db/detids_ECAL.txt')
 
@@ -275,16 +286,22 @@ class TagValidation:
             if key not in refData: continue
             if ((doEB and int(partition)==0) or (not doEB and int(partition)==1)): continue
             if z==-999: continue
-            if z==0 or z==1: 
-                htofill = histos[0]
-            else: 
-                htofill = histos[1]
 
             (ix,iy) = (y,x) if doEB else (x,y)
 
-            time = self.timeFit(newData[key],fitter,doEB)
-            timeRef = self.timeFit(refData[key],fitter,doEB)
-            htofill.Fill(ix,iy,time - timeRef)
+            (val,err) = self.timeFit(newData[key],fitter,doEB)
+            (valRef,errRef) = self.timeFit(refData[key],fitter,doEB)
+
+            for p in AlphaBetaParameter:
+                if z==0 or z==1: 
+                    htofill = (histos[p.name])[0]
+                else: 
+                    htofill = (histos[p.name])[1]
+                value = val[p.name]-valRef[p.name]
+                if p!=AlphaBetaParameter.T0: value = value/math.hypot(err[p.name],errRef[p.name])
+                #print "par = ",p.name," val1,2 = ",val[p.name]," ",valRef[p.name]," norm value = ",value
+                #print "err1,2 = ",err[p.name]," ",errRef[p.name]
+                htofill.Fill(ix,iy,value)
 
             if cryfit % 1000 == 0: print 'fitted ',cryfit,' templates'
             cryfit += 1
@@ -293,11 +310,10 @@ class TagValidation:
         ysize = int(xsize*170/360+0.1*xsize) if doEB else int(xsize*0.9)
         of.cd()
         canv = rt.TCanvas("c","",xsize,ysize)
-        for h in histos:
-            #h.Draw("colz")
-            #canv.SaveAs(h.GetName()+'.pdf')
-            h.Write()
-            self.printOnePlot(h,canv,h.GetName())
+        for k,hvect in histos.iteritems():
+            for h in hvect:
+                h.Write()
+                self.printOnePlot(h,canv,h.GetName())
         of.Close()
 
     def historyPlot(self,detid,iovfiles):
@@ -376,7 +392,7 @@ if __name__ == "__main__":
     parser.add_option(     "--do1Ddiff",  dest="do1Ddiff",   action="store_true", help="make the 1D differences of the samples in the two tags")
     parser.add_option(     "--do2Ddiff",  dest="do2Ddiff",   action="store_true", help="make the 2D differences of the samples in the two tags")
     parser.add_option(     "--do2Dtime",  dest="do2Dtime",   action="store_true", help="make the 2D time map")
-    parser.add_option(     "--do2Dtimediff",  dest="do2Dtimediff",   action="store_true", help="make the 2D time difference map, only based on pulse shapes")
+    parser.add_option(     "--do2DShapeDiff",  dest="do2DShapeDiff",   action="store_true", help="make the 2D shape difference map, only based on pulse shapes")
     parser.add_option(     "--do1Dpulses",  dest="do1Dpulses",   action="store_true", help="make the comparison of pulses in the same crystal for the two tags")
     parser.add_option("-t","--timeICs",   dest="timeICs",    type="string", default="", help="the file containing the time ICs")
     parser.add_option("--print", dest="printPlots", type="string", default="png,pdf,txt", help="print out plots in this format or formats (e.g. 'png,pdf,txt')");
@@ -395,8 +411,8 @@ if __name__ == "__main__":
     if options.do2Ddiff:
         tv.do2dDiff(doEB)
 
-    if options.do2Dtimediff:
-        tv.do2dTimeDiff(doEB)
+    if options.do2DShapeDiff:
+        tv.do2dShapeDiff(doEB)
         
     if options.do1Dpulses:
         tv.do1dComparison(doEB)
