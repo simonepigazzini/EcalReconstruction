@@ -18,8 +18,8 @@ def alphabeta(x, par):
     return fcn
 
 class AlphaBetaParameter(Enum):
-    ALPHA = 0
-    BETA = 1
+    alpha = 0
+    beta = 1
     T0 = 2
 
 class AlphaBetaFitter:

@@ -43,7 +43,7 @@ class TagValidation:
             mydata[key] = val
         return mydata
 
-    def printOnePlot(self, plot, canvas, outputName, drawopt=""):
+    def printOnePlot(self, plot, canvas, outputName, drawopt="",profileY=False):
         fdir = self._options.printDir if hasattr(self._options,"printDir") else "./"
         if not os.path.exists(fdir):
             os.makedirs(fdir);
@@ -56,11 +56,20 @@ class TagValidation:
         elif "TH2" in plot.ClassName() or "TProfile2D" in plot.ClassName():
             canvas.SetRightMargin(0.20)
             plot.SetContour(100)
-            plot.Draw("colz" if len(drawopt)==0 else drawopt)
+            plot.Draw("colz0" if len(drawopt)==0 else drawopt)
         else:
             plot.Draw(drawopt)
         for ext in self._options.printPlots.split(","):
             canvas.Print("%s/%s.%s" % (fdir, outputName, ext))
+        if ("TH2" in plot.ClassName() or "TProfile2D" in plot.ClassName()) and profileY:
+            canvas.SetRightMargin(0.10)
+            profY = plot.ProfileY("%s_profY" % plot.GetName(), 0, -1, "s")
+            profY.GetXaxis().SetTitle(plot.GetYaxis().GetTitle())
+            profY.GetYaxis().SetTitle(plot.GetTitle())
+            profY.SetTitle("")
+            profY.Draw()
+            for ext in self._options.printPlots.split(","):
+                canvas.Print("%s/%s_profIEta.%s" % (fdir, outputName, ext))
 
     def do1dDiff(self,doEB):
         part = 'eb' if doEB else 'ee'
@@ -255,12 +264,12 @@ class TagValidation:
         of = rt.TFile.Open('%s_timeVals.root' % part,'recreate')
         histos = {}
         for p in AlphaBetaParameter:
-            (zmin,zmax) = (-1,1) if p==AlphaBetaParameter.T0 else (-1,1)
+            (zmin,zmax) = (-0.03,0.03) if p!=AlphaBetaParameter.T0 else (-0.3,0.3)
             if doEB:
                 h = rt.TProfile2D(('%s_%s' % (part,p.name)),"",360,1,360,170,-85,85)
                 h.GetXaxis().SetTitle('i#phi')
                 h.GetYaxis().SetTitle('i#eta')
-                h.SetTitle('Time (ns)' if p==AlphaBetaParameter.T0 else '#Delta %s [n#sigma]'%p.name)
+                h.SetTitle('Time (ns)' if p==AlphaBetaParameter.T0 else '#Delta #{par}/#{par}'.format(par=p.name))
                 h.GetZaxis().SetRangeUser(zmin,zmax)
                 histos[p.name] = [h]
             else: 
@@ -268,7 +277,7 @@ class TagValidation:
                 hplus = rt.TProfile2D(('%splus_%s' % (part,p.name)),"",100,1,100,100,1,100)
                 hplus.GetXaxis().SetTitle('ix')
                 hplus.GetYaxis().SetTitle('iy')
-                hplus.SetTitle('Time (ns)' if p==AlphaBetaParameter.T0 else '#Delta %s [n#sigma]'%p.name)
+                hplus.SetTitle('Time (ns)' if p==AlphaBetaParameter.T0 else '#Delta #{par}/#{par}'.format(par=p.name))
                 hplus.GetZaxis().SetRangeUser(zmin,zmax)
                 hz.append(hplus)
                 hminus = hplus.Clone('%sminus_%s' % (part,p.name))
@@ -298,7 +307,7 @@ class TagValidation:
                 else: 
                     htofill = (histos[p.name])[1]
                 value = val[p.name]-valRef[p.name]
-                if p!=AlphaBetaParameter.T0: value = value/math.hypot(err[p.name],errRef[p.name])
+                if p!=AlphaBetaParameter.T0: value = value/valRef[p.name]
                 #print "par = ",p.name," val1,2 = ",val[p.name]," ",valRef[p.name]," norm value = ",value
                 #print "err1,2 = ",err[p.name]," ",errRef[p.name]
                 htofill.Fill(ix,iy,value)
@@ -313,7 +322,7 @@ class TagValidation:
         for k,hvect in histos.iteritems():
             for h in hvect:
                 h.Write()
-                self.printOnePlot(h,canv,h.GetName())
+                self.printOnePlot(h,canv,h.GetName(),"",True)
         of.Close()
 
     def historyPlot(self,detid,iovfiles):
