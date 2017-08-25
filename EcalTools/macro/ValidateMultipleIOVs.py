@@ -2,8 +2,10 @@
 import os
 import sys
 
-currentPromptIOV = ('IOV2','/afs/cern.ch/user/e/emanuele/w/public/ecal/pulseshapes_db/template_histograms_ECAL_Run2017_runs_297113_297114.txt') 
-toValidateIOVs = [('IOV3','/afs/cern.ch/user/e/emanuele/w/public/ecal/pulseshapes_db/template_histograms_ECAL_Run2017_runs_298809_298809.txt')]
+currentPromptIOV = ('IOV6','/afs/cern.ch/user/e/emanuele/w/public/ecal/pulseshapes_db/template_histograms_ECAL_Run2017_runs_300157_300157.txt')
+toValidateIOVs = [('IOV7','/afs/cern.ch/user/e/emanuele/w/public/ecal/pulseshapes_db/template_histograms_ECAL_Run2017_runs_300574_300576.txt'),
+                  ('IOV8','/afs/cern.ch/user/e/emanuele/w/public/ecal/pulseshapes_db/template_histograms_ECAL_Run2017_runs_301141_301165.txt'),
+                  ('IOV9','/afs/cern.ch/user/e/emanuele/w/public/ecal/pulseshapes_db/template_histograms_ECAL_Run2017_runs_301472_301480.txt')]
 
 allIOVs = [currentPromptIOV] + toValidateIOVs
 
