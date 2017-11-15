@@ -87,6 +87,8 @@ class TagValidation:
             if ((doEB and int(partition)==0) or (not doEB and int(partition)==1)): continue
             for s in range(12):
                 histos[s].Fill(float((newData[key])[s])-float((refData[key])[s]))
+                if (self._options.debugOutliers and s==1 and abs(float((newData[key])[s])-float((refData[key])[s]))>0.1):
+                    print "big change for detid = ",detid
         canv = rt.TCanvas("c","",1200,1200)
         canv.SetLogy()
         for s in range(12):
@@ -108,14 +110,14 @@ class TagValidation:
                 h.GetXaxis().SetTitle('i#phi')
                 h.GetYaxis().SetTitle('i#eta')
                 h.SetTitle('sample_{%d}^{new}-sample_{%d}^{ref}' % (s,s))
-                h.GetZaxis().SetRangeUser(-0.05,0.05)
+                h.GetZaxis().SetRangeUser(-0.1,0.1)
                 histos['eb'].append(h)
             else: 
                 hplus = rt.TProfile2D(('%s_plus_diff_2d_sample%d' % (part,s)),"",100,1,100,100,1,100)
                 hplus.GetXaxis().SetTitle('ix')
                 hplus.GetYaxis().SetTitle('iy')
                 hplus.SetTitle('sample_{%d}^{new}-sample_{%d}^{ref}' % (s,s))
-                hplus.GetZaxis().SetRangeUser(-0.05,0.05)
+                hplus.GetZaxis().SetRangeUser(-0.1,0.1)
                 histos['eeplus'].append(hplus)
                 hminus = hplus.Clone('%s_minus_diff_2d_sample%d' % (part,s))
                 histos['eeminus'].append(hminus)
@@ -370,25 +372,33 @@ class TagValidation:
         canvas = rt.TCanvas("c","",600,600)
         hpulseref.SetLineColor(rt.kBlue+2)
         hpulse.SetMarkerStyle(rt.kFullCircle)
+        hpulseref.GetXaxis().SetTitle("sample")
+        hpulseref.GetYaxis().SetTitle("a.u.")
         hpulseref.Draw("hist")
         hpulse.Draw("same p")
         fdir = self._options.printDir
-        plots = [hpulse,hpulseref]; labels=['2017','2016']; styles=['p','l']
+        plots = [hpulse,hpulseref]; labels=['new','ref']; styles=['p','l']
         leg = doLegend(plots,labels,styles)
         leg.Draw()
         for ext in self._options.printPlots.split(","):
             canvas.Print("%s/pulse_id%s.%s" % (fdir,detid,ext))
 
-    def do1dComparison(self,doEB,maxPlots=10):
+    def do1dComparison(self,doEB,inputfile=None,maxPlots=10):
         part = 'eb' if doEB else 'ee'
         rt.gStyle.SetOptStat(111111)
         refData = self.parseDic(self._allData["ref"])
         newData = self.parseDic(self._allData["current"])
-    
+
+        detidsToCheck=[]
+        if inputfile: 
+            detidsToCheck=[line.rstrip() for line in open(inputfile,'r')]
+            print "check ids = ",detidsToCheck
+
         ipulse=0
         for (partition,detid),samples in refData.iteritems():
             key = (partition,detid)
             if key not in newData: continue
+            if len(detidsToCheck)>0 and detid not in detidsToCheck: continue
             if ((doEB and int(partition)==0) or (not doEB and int(partition)==1)): continue
             self.pulseComp(detid,newData[key],refData[key])
             if ipulse<maxPlots: ipulse += 1
@@ -406,6 +416,7 @@ if __name__ == "__main__":
     parser.add_option("-t","--timeICs",   dest="timeICs",    type="string", default="", help="the file containing the time ICs")
     parser.add_option("--print", dest="printPlots", type="string", default="png,pdf,txt", help="print out plots in this format or formats (e.g. 'png,pdf,txt')");
     parser.add_option("--pdir", "--print-dir", dest="printDir", type="string", default="plots", help="print out plots in this directory");
+    parser.add_option(     "--debugOutliers", dest="debugOutliers", action="store_true", help="print the hashed index of crystals which have a variation larger than 10% in raising sample");
 
     (options, args) = parser.parse_args()
     if len(args) < 2: raise RuntimeError, 'Expecting at least two arguments'
@@ -424,7 +435,11 @@ if __name__ == "__main__":
         tv.do2dShapeDiff(doEB)
         
     if options.do1Dpulses:
-        tv.do1dComparison(doEB)
+        if len(args)==3:
+            print "using ",args[2]," as the list of crystals to display"
+            tv.do1dComparison(doEB,args[2])
+        else: 
+            tv.do1dComparison(doEB)
 
     currentTimeICs = '/afs/cern.ch/work/e/emanuele/public/ecal/timeICs_dump_EcalTimeCalibConstants__since_00253984_till_Run2016A.txt'
     if options.do2Dtime:
