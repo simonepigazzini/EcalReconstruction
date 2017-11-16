@@ -1,5 +1,6 @@
 import ROOT as rt
 import math
+from enum import Enum
 
 def alphabeta(x, par):
     # par[0] = normalization
@@ -16,6 +17,11 @@ def alphabeta(x, par):
     else: fcn = par[4]
     return fcn
 
+class AlphaBetaParameter(Enum):
+    alpha = 0
+    beta = 1
+    T0 = 2
+
 class AlphaBetaFitter:
 
     def __init__ (self,fcn,doEB,pedestal=0.):
@@ -29,7 +35,8 @@ class AlphaBetaFitter:
 
         self.fcn.SetParNames("norm","#alpha","#beta","tmax","pedestal");
 
-        self.fcn.SetParLimits(0,0,10); # normalization
+        #self.fcn.SetParLimits(0,0,10); # normalization
+        self.fcn.FixParameter(0,1);
         self.fcn.SetParameter(1,self.alpha);
         self.fcn.SetParameter(2,self.beta);
         self.fcn.SetParameter(3,5.5);
@@ -37,7 +44,7 @@ class AlphaBetaFitter:
         else: self.fcn.SetParLimits(1,0.5,2.5);
         self.fcn.SetParLimits(2,0.8,2.5); # beta
         self.fcn.SetParLimits(3,4,7); # tmax
-        self.fcn.FixParameter(5,pedestal);
+        self.fcn.FixParameter(4,pedestal);
 
         self.fcn.SetLineColor(rt.kRed+1);
 
@@ -48,7 +55,7 @@ class AlphaBetaFitter:
             canv = rt.TCanvas("fitc","",600,600)
             histo.Draw("hist E2")
 
-        histo.Fit("alphabeta","Q WW M","same",0,10)
+        histo.Fit("alphabeta","QM","same",0,10)
         fitpars = []
         fiterrs = []
         for p in range(1,4):

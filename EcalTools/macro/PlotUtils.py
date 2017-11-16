@@ -51,7 +51,7 @@ def customPalette(zeropoint = 0.5):
     rt.TColor.CreateGradientColorTable(Number,Length,Red,Green,Blue,nb)
 
 def doSpam(text,x1,y1,x2,y2,align=12,fill=False,textSize=0.033,_noDelete={}):
-    cmsprel = ROOT.TPaveText(x1,y1,x2,y2,"NDC");
+    cmsprel = rt.TPaveText(x1,y1,x2,y2,"NDC");
     cmsprel.SetTextSize(textSize);
     cmsprel.SetFillColor(0);
     cmsprel.SetFillStyle(1001 if fill else 0);
@@ -82,3 +82,29 @@ def doTinyCmsPrelim(textLeft="_default_",textRight="_default_",hasExpo=False,tex
     if textRight not in ['', None]:
         doSpam(textRight,.68+xoffs, .955, .99+xoffs, .995, align=32, textSize=textSize)
 
+
+def doLegend(plots,labels,styles,nentries=1,corner="TR",textSize=0.035,cutoff=1e-2,legWidth=0.18,legBorder=True):
+        (x1,y1,x2,y2) = (.90-legWidth, .75 - textSize*max(nentries-3,0), .90, .93)
+        if corner == "TR":
+            (x1,y1,x2,y2) = (.90-legWidth, .75 - textSize*max(nentries-3,0), .90, .93)
+        elif corner == "TC":
+            (x1,y1,x2,y2) = (.5, .75 - textSize*max(nentries-3,0), .5+legWidth, .93)
+        elif corner == "TL":
+            (x1,y1,x2,y2) = (.2, .75 - textSize*max(nentries-3,0), .2+legWidth, .93)
+        elif corner == "BR":
+            (x1,y1,x2,y2) = (.90-legWidth, .33 + textSize*max(nentries-3,0), .90, .15)
+        elif corner == "BC":
+            (x1,y1,x2,y2) = (.5, .33 + textSize*max(nentries-3,0), .5+legWidth, .15)
+        elif corner == "BL":
+            (x1,y1,x2,y2) = (.2, .33 + textSize*max(nentries-3,0), .2+legWidth, .15)
+       
+        leg = rt.TLegend(x1,y1,x2,y2)
+        leg.SetFillColor(0)
+        leg.SetShadowColor(0)
+        if not legBorder:
+            leg.SetLineColor(0)
+        leg.SetTextFont(42)
+        leg.SetTextSize(textSize)
+        for (plot,label,style) in zip(plots,labels,styles): leg.AddEntry(plot,label,style)
+        leg.Draw()
+        return leg
