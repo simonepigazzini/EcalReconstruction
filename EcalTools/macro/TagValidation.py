@@ -122,7 +122,7 @@ class TagValidation:
                 hminus = hplus.Clone('%s_minus_diff_2d_sample%d' % (part,s))
                 histos['eeminus'].append(hminus)
 
-        detids = EcalDetId('/afs/cern.ch/work/e/emanuele/public/ecal/pulseshapes_db/detids_ECAL.txt')
+        detids = EcalDetId('/afs/cern.ch/work/e/emanuele/public/ecal/pulseshapes_db/detids_ECAL_all.txt')
 
         for (partition,detid),samples in refData.iteritems():
             key = (partition,detid)
@@ -184,7 +184,7 @@ class TagValidation:
             histos.append(hminus)
             histosDiff.append(hminus.Clone(('%sminus_time_diff' % part)))
 
-        detids = EcalDetId('/afs/cern.ch/work/e/emanuele/public/ecal/pulseshapes_db/detids_ECAL.txt')
+        detids = EcalDetId('/afs/cern.ch/work/e/emanuele/public/ecal/pulseshapes_db/detids_ECAL_all.txt')
 
         # load the current time ICs (dump of the tag)
         self.timeICs = self.loadTimeICs(currentTimeIC)
@@ -286,7 +286,7 @@ class TagValidation:
                 hz.append(hminus)
                 histos[p.name] = hz
 
-        detids = EcalDetId('/afs/cern.ch/work/e/emanuele/public/ecal/pulseshapes_db/detids_ECAL.txt')
+        detids = EcalDetId('/afs/cern.ch/work/e/emanuele/public/ecal/pulseshapes_db/detids_ECAL_all.txt')
 
         fitter = AlphaBetaFitter( rt.TF1("alphabeta",alphabeta,0,10,5), doEB)
         cryfit = 0
