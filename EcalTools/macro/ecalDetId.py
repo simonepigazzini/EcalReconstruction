@@ -21,5 +21,5 @@ class EcalDetId:
         return [int(i) for i in coordinates]
 
 if __name__ == "__main__":
-    edi = EcalDetId('/afs/cern.ch/work/e/emanuele/public/ecal/pulseshapes_db/detids_ECAL.txt')
+    edi = EcalDetId('/afs/cern.ch/work/e/emanuele/public/ecal/pulseshapes_db/detids_ECAL_all.txt')
 
