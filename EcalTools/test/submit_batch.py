@@ -34,10 +34,9 @@ def main():
     if len(args) != 1:
         print usage
         sys.exit(1)
-    dataset = args[0]
+    inputlist = args[0]
 
-    inputlist=dataset+".list"
-    output = dataset
+    output = os.path.splitext(os.path.basename(inputlist))[0]
 
     print "the outputs will be in the directory: "+opt.prefix
 
