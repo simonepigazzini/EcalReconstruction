@@ -20,7 +20,6 @@ process.load('FWCore.MessageService.MessageLogger_cfi')
 process.load('Configuration.EventContent.EventContent_cff')
 process.load('Configuration.StandardSequences.GeometryRecoDB_cff')
 process.load('Configuration.Geometry.GeometrySimDB_cff')
-process.load('Configuration.StandardSequences.MagneticField_38T_PostLS1_cff')
 process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff')
 process.load('Configuration.StandardSequences.RawToDigi_cff')
@@ -34,51 +33,51 @@ process.options = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
 
 from Configuration.AlCa.GlobalTag_condDBv2 import GlobalTag as customiseGlobalTag
 #process.GlobalTag = customiseGlobalTag(process.GlobalTag, globaltag = 'auto:run2_hlt_GRun')
-process.GlobalTag.globaltag = "92X_dataRun2_Prompt_v5"
+process.GlobalTag.globaltag = "101X_dataRun2_v8"
 
-process.GlobalTag = cms.ESSource("PoolDBESSource",
-                                 DBParameters = cms.PSet(
-        authenticationPath = cms.untracked.string(''),
-        authenticationSystem = cms.untracked.int32(0),
-        messageLevel = cms.untracked.int32(0),
-        security = cms.untracked.string('')
-        ),
-                                 DumpStat = cms.untracked.bool(False),
-                                 ReconnectEachRun = cms.untracked.bool(False),
-                                 RefreshAlways = cms.untracked.bool(False),
-                                 RefreshEachRun = cms.untracked.bool(False),
-                                 RefreshOpenIOVs = cms.untracked.bool(False),
-                                 connect = cms.string('frontier://FrontierProd/CMS_CONDITIONS'),
-                                 globaltag = cms.string('92X_dataRun2_2017Repro_Candidate_2017_11_10_15_04_54'),
-                                 pfnPostfix = cms.untracked.string(''),
-                                 pfnPrefix = cms.untracked.string(''),
-                                 snapshotTime = cms.string(''),
+# process.GlobalTag = cms.ESSource("PoolDBESSource",
+#                                  DBParameters = cms.PSet(
+#         authenticationPath = cms.untracked.string(''),
+#         authenticationSystem = cms.untracked.int32(0),
+#         messageLevel = cms.untracked.int32(0),
+#         security = cms.untracked.string('')
+#         ),
+#                                  DumpStat = cms.untracked.bool(False),
+#                                  ReconnectEachRun = cms.untracked.bool(False),
+#                                  RefreshAlways = cms.untracked.bool(False),
+#                                  RefreshEachRun = cms.untracked.bool(False),
+#                                  RefreshOpenIOVs = cms.untracked.bool(False),
+#                                  connect = cms.string('frontier://FrontierProd/CMS_CONDITIONS'),
+#                                  globaltag = cms.string('101X_dataRun2_v8'),
+#                                  pfnPostfix = cms.untracked.string(''),
+#                                  pfnPrefix = cms.untracked.string(''),
+#                                  snapshotTime = cms.string(''),
                                  
-                                 toGet = cms.VPSet(
-        cms.PSet(record = cms.string("EcalPulseShapesRcd"),
-                 tag = cms.string("EcalPulseShapes_October2017_rereco_v3"),
-                 connect = cms.string("frontier://FrontierProd/CMS_CONDITIONS"),
-                 ),
-        cms.PSet(record = cms.string("EcalTimeCalibConstantsRcd"),
-                 tag = cms.string("EcalTimeCalibConstants_Legacy2017_v2"),
-                 connect = cms.string("frontier://FrontierProd/CMS_CONDITIONS"),
-                 ),
-        cms.PSet(record = cms.string("EcalIntercalibConstantsRcd"),
-                 tag = cms.string("EcalIntercalibConstants_Run1_Run2_V04_offline"),
-                 connect = cms.string("frontier://FrontierProd/CMS_CONDITIONS"),
-                 ),
-        cms.PSet(record = cms.string("ESEEIntercalibConstantsRcd"),
-                 tag = cms.string("ESEEIntercalibConstants_V05_offline"),
-                 connect = cms.string("frontier://FrontierProd/CMS_CONDITIONS"),
-                 ),
-        )
-                                 )
+#                                  toGet = cms.VPSet(
+#         cms.PSet(record = cms.string("EcalPulseShapesRcd"),
+#                  tag = cms.string("EcalPulseShapes_October2017_rereco_v3"),
+#                  connect = cms.string("frontier://FrontierProd/CMS_CONDITIONS"),
+#                  ),
+#         cms.PSet(record = cms.string("EcalTimeCalibConstantsRcd"),
+#                  tag = cms.string("EcalTimeCalibConstants_Legacy2017_v2"),
+#                  connect = cms.string("frontier://FrontierProd/CMS_CONDITIONS"),
+#                  ),
+#         cms.PSet(record = cms.string("EcalIntercalibConstantsRcd"),
+#                  tag = cms.string("EcalIntercalibConstants_Run1_Run2_V04_offline"),
+#                  connect = cms.string("frontier://FrontierProd/CMS_CONDITIONS"),
+#                  ),
+#         cms.PSet(record = cms.string("ESEEIntercalibConstantsRcd"),
+#                  tag = cms.string("ESEEIntercalibConstants_V05_offline"),
+#                  connect = cms.string("frontier://FrontierProd/CMS_CONDITIONS"),
+#                  ),
+#         )
+#                                  )
 
 
 process.load('EcalReconstruction.EcalTools.pulseDump_cfi')
 
 process.source = cms.Source("PoolSource",
-                              fileNames = cms.untracked.vstring('/store/data/Run2017B/AlCaPhiSym/RAW/v1/000/298/809/00000/002491FF-2D66-E711-B634-02163E01A4B0.root')
+                              fileNames = cms.untracked.vstring('/store/data/Commissioning2018/AlCaPhiSym/RAW/v1/000/314/094/00000/08094BC3-3A3E-E811-9ACB-FA163EAF9ADD.root')
                             )
 
 process.TFileService = cms.Service("TFileService", fileName = cms.string("templates.root") )
