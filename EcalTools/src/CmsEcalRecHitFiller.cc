@@ -149,7 +149,7 @@ void CmsEcalRecHitFiller::writeEcalRecHitInfo(const EcalRecHit *cand,
                                               const CaloSubdetectorTopology *pTopology,
                                               const CaloSubdetectorGeometry *pGeometry) {
 
-  const CaloCellGeometry* cell = pGeometry->getGeometry(cand->detid());
+  auto cell = pGeometry->getGeometry(cand->detid());
     
   CaloNavigator<DetId> cursorE = CaloNavigator<DetId>(cand->detid(), pTopology );
       
