@@ -43,7 +43,7 @@ process.PoolDBOutputService = cms.Service("PoolDBOutputService",
 )
 
 basedir = "/afs/cern.ch/work/e/emanuele/public/ecal/pulseshapes_db/"
-txtfile = basedir+"/template_histograms_ECAL_Run2017"+suffixorig+".txt"
+txtfile = basedir+"/template_histograms_ECAL_Run2018"+suffixorig+".txt"
 if os.path.isfile(txtfile)==False:
     print "WARNING: file ",txtfile," does not exist. Exiting... "
     exit
