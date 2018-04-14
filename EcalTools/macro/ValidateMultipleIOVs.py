@@ -3,11 +3,8 @@ import os
 import sys
 
 path='/afs/cern.ch/user/e/emanuele/w/public/ecal/pulseshapes_db/'
-currentPromptIOV = ('IOV11',path+'template_histograms_ECAL_Run2017_runs_304209_304292.txt')
-toValidateIOVs = [('IOV12High','/afs/cern.ch/work/e/emanuele/ecal/ecalreco/multifit/studies_25ns/CMSSW_9_2_5_patch2/src/EcalReconstruction/template_histograms_ECAL_Run2017_runs_304797_304797.txt'),
-                  ('IOV13High','/afs/cern.ch/work/e/emanuele/ecal/ecalreco/multifit/studies_25ns/CMSSW_9_2_5_patch2/src/EcalReconstruction/template_histograms_ECAL_Run2017_runs_305814_305814.txt'),
-                  ('IOV14High','/afs/cern.ch/work/e/emanuele/ecal/ecalreco/multifit/studies_25ns/CMSSW_9_2_5_patch2/src/EcalReconstruction/template_histograms_ECAL_Run2017_runs_305832_305842.txt'),
-                  ('IOV15High','/afs/cern.ch/work/e/emanuele/ecal/ecalreco/multifit/studies_25ns/CMSSW_9_2_5_patch2/src/EcalReconstruction/template_histograms_ECAL_Run2017_runs_306121_306126.txt')]
+currentPromptIOV = ('IOV16',path+'template_histograms_ECAL_Run2017_runs_306896_307082.txt')
+toValidateIOVs = [('IOV1',path+'template_histograms_ECAL_Run2018_runs_314093_314094.txt')]
 
 allIOVs = [currentPromptIOV] + toValidateIOVs
 

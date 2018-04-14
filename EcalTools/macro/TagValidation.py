@@ -258,7 +258,7 @@ class TagValidation:
                 err[par.name] = err[par.name]*25.
         return (val,err)
 
-    def do2dShapeDiff(self,doEB):
+    def do2dShapeDiff(self,doEB,absoluteShape=False):
         part = 'EB' if doEB else 'EE'
         customROOTstyle()
         refData = self.parseDic(self._allData["ref"])
@@ -267,6 +267,7 @@ class TagValidation:
         histos = {}
         for p in AlphaBetaParameter:
             (zmin,zmax) = (-0.03,0.03) if p!=AlphaBetaParameter.T0 else (-0.3,0.3)
+            if p==AlphaBetaParameter.T0 and absoluteShape: (zmin,zmax) = (-5,5) # ns
             if doEB:
                 h = rt.TProfile2D(('%s_%s' % (part,p.name)),"",360,1,360,170,-85,85)
                 h.GetXaxis().SetTitle('i#phi')
@@ -301,15 +302,15 @@ class TagValidation:
             (ix,iy) = (y,x) if doEB else (x,y)
 
             (val,err) = self.timeFit(newData[key],fitter,doEB)
-            (valRef,errRef) = self.timeFit(refData[key],fitter,doEB)
+            (valRef,errRef) = self.timeFit(refData[key],fitter,doEB) if not absoluteShape else ({},{})
 
             for p in AlphaBetaParameter:
                 if z==0 or z==1: 
                     htofill = (histos[p.name])[0]
                 else: 
                     htofill = (histos[p.name])[1]
-                value = val[p.name]-valRef[p.name]
-                if p!=AlphaBetaParameter.T0: value = value/valRef[p.name]
+                value = val[p.name]-valRef[p.name] if not absoluteShape else val[p.name]
+                if p!=AlphaBetaParameter.T0: value = value/valRef[p.name] if not absoluteShape else value
                 #print "par = ",p.name," val1,2 = ",val[p.name]," ",valRef[p.name]," norm value = ",value
                 #print "err1,2 = ",err[p.name]," ",errRef[p.name]
                 htofill.Fill(ix,iy,value)
@@ -412,6 +413,7 @@ if __name__ == "__main__":
     parser.add_option(     "--do2Ddiff",  dest="do2Ddiff",   action="store_true", help="make the 2D differences of the samples in the two tags")
     parser.add_option(     "--do2Dtime",  dest="do2Dtime",   action="store_true", help="make the 2D time map")
     parser.add_option(     "--do2DShapeDiff",  dest="do2DShapeDiff",   action="store_true", help="make the 2D shape difference map, only based on pulse shapes")
+    parser.add_option(     "--do2DShape",  dest="do2DShape",   action="store_true", help="make the 2D shape map, only based on pulse shapes")
     parser.add_option(     "--do1Dpulses",  dest="do1Dpulses",   action="store_true", help="make the comparison of pulses in the same crystal for the two tags")
     parser.add_option("-t","--timeICs",   dest="timeICs",    type="string", default="", help="the file containing the time ICs")
     parser.add_option("--print", dest="printPlots", type="string", default="png,pdf,txt", help="print out plots in this format or formats (e.g. 'png,pdf,txt')");
@@ -433,6 +435,9 @@ if __name__ == "__main__":
 
     if options.do2DShapeDiff:
         tv.do2dShapeDiff(doEB)
+
+    if options.do2DShape:
+        tv.do2dShapeDiff(doEB,absoluteShape=True)
         
     if options.do1Dpulses:
         if len(args)==3:
