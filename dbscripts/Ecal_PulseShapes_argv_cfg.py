@@ -7,16 +7,17 @@ FIRST_RUN_DATA = '2'
 
 if POPULATE_MC: suffix = "mc"
 else: 
-    suffix = sys.argv[2]
-    suffixorig = sys.argv[3]
+    suffix = sys.argv[2] # run range
+    prefix =  sys.argv[3] # txt file prefix
 
+basedir = "/afs/cern.ch/work/e/emanuele/public/ecal/pulseshapes_db/"
+txtfile = basedir+prefix+"_runs_"+suffix+".txt"
 
-print "reading txt file with suffix ",suffixorig
-print "writing into ",suffix
+print "reading txt file ",txtfile
 
 process = cms.Process("ProcessOne")
 process.load("CondCore.DBCommon.CondDBCommon_cfi")
-process.CondDBCommon.connect = 'sqlite_file:ecaltemplates_popcon'+suffix+'.db'
+process.CondDBCommon.connect = 'sqlite_file:ecaltemplates_popcon_runs_'+suffix+'.db'
 process.CondDBCommon.DBParameters.authenticationPath = '.'
 process.CondDBCommon.DBParameters.messageLevel=cms.untracked.int32(1)
 
@@ -34,7 +35,7 @@ process.source = cms.Source("EmptyIOVSource",
 
 process.PoolDBOutputService = cms.Service("PoolDBOutputService",
     process.CondDBCommon,
-    logconnect = cms.untracked.string('sqlite_file:logecaltemplates_popcon'+suffix+'.db'),
+    logconnect = cms.untracked.string('sqlite_file:logecaltemplates_popcon_runs_'+suffix+'.db'),
     timetype = cms.untracked.string('runnumber'),
     toPut = cms.VPSet(cms.PSet(
         record = cms.string('EcalPulseShapesRcd'),
@@ -42,8 +43,6 @@ process.PoolDBOutputService = cms.Service("PoolDBOutputService",
     ))
 )
 
-basedir = "/afs/cern.ch/work/e/emanuele/public/ecal/pulseshapes_db/"
-txtfile = basedir+"/template_histograms_ECAL_Run2018"+suffixorig+".txt"
 if os.path.isfile(txtfile)==False:
     print "WARNING: file ",txtfile," does not exist. Exiting... "
     exit
