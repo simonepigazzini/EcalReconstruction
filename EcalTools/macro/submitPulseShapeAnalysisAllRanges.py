@@ -10,7 +10,8 @@ if __name__ == "__main__":
 
 # CUSTOMIZE THE RUN RANGES HERE
 ranges = {
-    314093:314094
+#    314093:314094 # first unstable beams 2018
+    314474:314530 # first stable beams 2018 (TR shift in EB-05)
     }
 
 pwd = os.getcwd()
