@@ -295,7 +295,7 @@ class TagValidation:
             key = (partition,detid)
             (x,y,z) = detids.xyz(detid)
 
-            if key not in refData: continue
+            if not absoluteShape and key not in refData: continue
             if ((doEB and int(partition)==0) or (not doEB and int(partition)==1)): continue
             if z==-999: continue
 
