@@ -1,28 +1,7 @@
 #! /usr/bin/env python
 import os
 from math import *
-from TagValidation import *
-
-
-class etaRingMapping:
-    def __init__(self):
-        Endc_x_y_ring=("%s/src/EcalReconstruction/data/Endc_x_y_ring.txt" % os.environ['CMSSW_BASE'])
-        self.eeringmap = {}
-        for line in open(Endc_x_y_ring,'r'):
-            item = line.split()
-            key = (int(item[0]),int(item[1]))
-            self.eeringmap[key] = int(item[3])
-
-        self.ebringmap = {}
-        for iz in range(-1,2,2):
-            for ieta in range(1,86):
-                for iphi in range(1,361):
-                    key = (ieta,iphi,iz)
-                    self.ebringmap[key] = iz*ieta
-                    
-    def getRing(self,doEB,x,y,z):
-        if doEB: return self.ebringmap[(x,y,z)]
-        else: return self.eeringmap[(x,y)] if (x,y) in self.eeringmap else -1
+from ecalDetId import EcalDetId,etaRingMapping
 
 def asymmetryByRing(tv,data,doPlot=True):
 

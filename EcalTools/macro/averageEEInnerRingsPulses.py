@@ -2,20 +2,20 @@
 import os,sys
 import math
 from TagValidation import TagValidation
-from EndcapAsymmetry import etaRingMapping
-from ecalDetId import EcalDetId
+from ecalDetId import EcalDetId, etaRingMapping
 
 if __name__ == "__main__":
     from optparse import OptionParser
-    parser = OptionParser(usage="%prog [options] oldtag.txt newtag.txt")
+    parser = OptionParser(usage="%prog [options] oldtag.txt")
     (options, args) = parser.parse_args()
 
     txt = args[0]
-    outtxt = args[1]
+    outtxt = (txt.replace('.txt',''))+'_ee_averaged.txt'
     print "scanning ",txt
 
     maxIr = 20
-    minCryFrac = 0.8
+    ringFilledFracMin = 0.90
+    minCryToAverage = 50
 
     tv = TagValidation([txt],options)
     data = tv.parseDic(tv._allData["current"])
@@ -71,12 +71,17 @@ if __name__ == "__main__":
             if iring not in filledCry: 
                 print "Warning! Completely empty ring: ",iring
                 continue
-            if filledCry[iring]>100: 
+            nCryRing = ringmap.getNCrystals(False,iring)
+            #if iring >-1: print "ncry in ring ",iring , " = ",nCryRing," Filled = ",filledCry[iring]," frac = ",float(filledCry[iring])/float(nCryRing)
+            if iring>-1 and float(filledCry[iring])/float(nCryRing) > ringFilledFracMin and key in eedata:
+                eenewdata[key] = eedata[key]
+                unchanged+=1
+            elif filledCry[iring]>minCryToAverage:
                 eenewdata[key] = [s/float(filledCry[iring]) for s in averages[iring]]
                 averaged+=1
             else: 
                 rring = iring
-                while filledCry[rring]<100: rring -= 1
+                while filledCry[rring]<minCryToAverage: rring -= 1
                 #print "ring ",iring, "has ",filledCry[iring]," filled crystals. The closest ring with 100 crystals is ",rring
                 eenewdata[key] = [s/float(filledCry[rring]) for s in averages[rring]]
                 averagedtoneighbor+=1

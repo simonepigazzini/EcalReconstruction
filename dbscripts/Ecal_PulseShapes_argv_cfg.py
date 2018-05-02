@@ -10,8 +10,7 @@ else:
     suffix = sys.argv[2] # run range
     prefix =  sys.argv[3] # txt file prefix
 
-basedir = "/afs/cern.ch/work/e/emanuele/public/ecal/pulseshapes_db/"
-txtfile = basedir+prefix+"_runs_"+suffix+".txt"
+txtfile = prefix+"_runs_"+suffix+".txt"
 
 print "reading txt file ",txtfile
 

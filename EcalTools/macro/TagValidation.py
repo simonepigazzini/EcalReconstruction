@@ -5,7 +5,7 @@ import numpy as np
 import ROOT as rt
 rt.gROOT.SetBatch(True)
 
-from ecalDetId import EcalDetId
+from ecalDetId import EcalDetId,etaRingMapping
 from PlotUtils import customROOTstyle, customPalette, doLegend
 from AlphaBetaFitter import *
 
@@ -30,6 +30,7 @@ class TagValidation:
         self._allData = {}
         for k,v in tags.iteritems():
             self._allData[k] = self.loadTemplates(v)
+        self.ringmap = etaRingMapping()
     
     def setTimeOffset(self,ebval,eeval):
         self.timeOffsets['EB'] = ebval
@@ -63,13 +64,24 @@ class TagValidation:
             canvas.Print("%s/%s.%s" % (fdir, outputName, ext))
         if ("TH2" in plot.ClassName() or "TProfile2D" in plot.ClassName()) and profileY:
             canvas.SetRightMargin(0.10)
-            profY = plot.ProfileY("%s_profY" % plot.GetName(), 0, -1, "s")
-            profY.GetXaxis().SetTitle(plot.GetYaxis().GetTitle())
-            profY.GetYaxis().SetTitle(plot.GetTitle())
+            if "EB" in outputName:
+                profY = plot.ProfileY("%s_profY" % plot.GetName(), 0, -1, "s")
+                profY.GetXaxis().SetTitle(plot.GetYaxis().GetTitle())
+                profY.GetYaxis().SetTitle(plot.GetTitle())
+            else:
+                profY = rt.TProfile("%s_profIring" % plot.GetName(),"", 39, 0, 38, "s")
+                z=1 if "plus" in outputName else -1
+                for xbin in xrange(plot.GetNbinsX()+1):
+                    for ybin in xrange(plot.GetNbinsY()+1):
+                        iring = self.ringmap.getRing(False,xbin+1,ybin+1,z)
+                        profY.Fill(iring,plot.GetBinContent(xbin,ybin))
+                        profY.GetXaxis().SetTitle("#eta ring")
+                        profY.GetYaxis().SetTitle(plot.GetTitle())
             profY.SetTitle("")
             profY.Draw()
             for ext in self._options.printPlots.split(","):
                 canvas.Print("%s/%s_profIEta.%s" % (fdir, outputName, ext))
+                        
 
     def do1dDiff(self,doEB):
         part = 'eb' if doEB else 'ee'
@@ -266,7 +278,7 @@ class TagValidation:
         of = rt.TFile.Open('%s_timeVals.root' % part,'recreate')
         histos = {}
         for p in AlphaBetaParameter:
-            (zmin,zmax) = (-0.03,0.03) if p!=AlphaBetaParameter.T0 else (-0.3,0.3)
+            (zmin,zmax) = (-0.03,0.03) if p!=AlphaBetaParameter.T0 else (-1,1) # ns
             if p==AlphaBetaParameter.T0 and absoluteShape: (zmin,zmax) = (-5,5) # ns
             if doEB:
                 h = rt.TProfile2D(('%s_%s' % (part,p.name)),"",360,1,360,170,-85,85)
