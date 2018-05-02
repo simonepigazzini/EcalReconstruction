@@ -12,7 +12,8 @@ if __name__ == "__main__":
 ranges = {
 #    314093:314094 # first unstable beams 2018
 #    314474:314530 # first stable beams 2018 (TR shift in EB-05)
-    315255:315267 # after the delays changes in the EE
+#    315255:315267 # after the delays changes in the EE
+    315488:315512 # after 1/fb of irradiation
     }
 
 pwd = os.getcwd()
