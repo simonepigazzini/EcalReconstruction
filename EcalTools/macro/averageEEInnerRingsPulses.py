@@ -2,8 +2,7 @@
 import os,sys
 import math
 from TagValidation import TagValidation
-from EndcapAsymmetry import etaRingMapping
-from ecalDetId import EcalDetId
+from ecalDetId import EcalDetId, etaRingMapping
 
 if __name__ == "__main__":
     from optparse import OptionParser
@@ -15,7 +14,7 @@ if __name__ == "__main__":
     print "scanning ",txt
 
     maxIr = 20
-    ringFilledFracMin = 0.5
+    ringFilledFracMin = 0.90
     minCryToAverage = 50
 
     tv = TagValidation([txt],options)
