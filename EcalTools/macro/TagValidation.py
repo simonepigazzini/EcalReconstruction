@@ -117,7 +117,7 @@ class TagValidation:
             histos['eeplus'] = []
             histos['eeminus'] = []
         for s in range(12): 
-            if doEB: 
+            if doEB:
                 h = rt.TProfile2D(('%s_diff_2d_sample%d' % (part,s)),"",360,1,360,170,-85,85)
                 h.GetXaxis().SetTitle('i#phi')
                 h.GetYaxis().SetTitle('i#eta')
@@ -146,7 +146,7 @@ class TagValidation:
             if z==0: htofill = histos['eb']
             elif z==1: htofill = histos['eeplus']
             else: htofill = histos['eeminus']
-            (ix,iy) = (y,x) if doEB else (x,y)
+            (ix,iy) = (y,x) if doEB else (x+1,y+1)
             for s in range(12):
                 htofill[s].Fill(ix,iy,float((newData[key])[s])-float((refData[key])[s]))
 
@@ -311,7 +311,7 @@ class TagValidation:
             if ((doEB and int(partition)==0) or (not doEB and int(partition)==1)): continue
             if z==-999: continue
 
-            (ix,iy) = (y,x) if doEB else (x,y)
+            (ix,iy) = (y,x) if doEB else (x+1,y+1)
 
             (val,err) = self.timeFit(newData[key],fitter,doEB)
             (valRef,errRef) = self.timeFit(refData[key],fitter,doEB) if not absoluteShape else ({},{})
