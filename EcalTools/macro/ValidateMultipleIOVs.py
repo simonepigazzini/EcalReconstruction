@@ -5,6 +5,7 @@ import sys
 path='/afs/cern.ch/user/e/emanuele/w/public/ecal/pulseshapes_db/'
 currentPromptIOV = ('IOV2',path+'template_histograms_ECAL_Run2018_runs_315255_315267.txt')
 toValidateIOVs = [('IOV3',path+'template_histograms_ECAL_Run2018_runs_315488_315512.txt')]
+toValidateIOVs = [('IOV4',path+'template_histograms_ECAL_Run2018_runs_315721_316153.txt')]
 
 allIOVs = [currentPromptIOV] + toValidateIOVs
 
