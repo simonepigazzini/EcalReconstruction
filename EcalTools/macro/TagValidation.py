@@ -337,7 +337,7 @@ class TagValidation:
         for k,hvect in histos.iteritems():
             for h in hvect:
                 h.Write()
-                self.printOnePlot(h,canv,h.GetName(),"",True)
+                self.printOnePlot(h,canv,'{name}{absolute}'.format(name=h.GetName(),absolute='_absolute' if absoluteShape else ''),"",True)
         of.Close()
 
     def historyPlot(self,detid,iovfiles):
