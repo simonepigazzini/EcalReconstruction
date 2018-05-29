@@ -21,7 +21,7 @@ if __name__ == "__main__":
     parser = OptionParser(usage="%prog [options] range1 range2...")
     parser.add_option("-p","--prefix", dest="prefix", type="string", default="template_histograms_ECAL_Run2018", help="Prefix for the file")
     parser.add_option("-b","--backup", dest="backup", action="store_true", default=False, help="Backup the file in the dir: {dbdir}".format(dbdir=dbdir))
-    parser.add_option(     "--doNotAverageEE", dest="doNotAverageEE", action="store_true", default=False, help="don't average the inner endcap rings dynamically (default is average)")
+    parser.add_option(     "--averageEE", dest="averageEE", action="store_true", default=False, help="average the inner endcap rings dynamically (default is average)")
     (options, args) = parser.parse_args()
     if len(args)<1: raise RuntimeError, 'Expecting at least one run range in the form runmin_runmax'
 
@@ -41,7 +41,7 @@ if __name__ == "__main__":
         num_lines = sum(1 for line in open(txtfile))
         print bcolors.OKGREEN + "TXT file {txt} has {ncry} crystals".format(txt=txtfile,ncry=num_lines) + bcolors.ENDC
 
-        if options.doNotAverageEE==False:
+        if options.averageEE:
             print bcolors.OKBLUE + "AVERAGING THE INNER ENDCAP RINGS WHICH HAVE NOT MUCH STATISTICS..." + bcolors.ENDC
             os.system("{cmsswbase}/src/EcalReconstruction/EcalTools/macro/averageEEInnerRingsPulses.py {txtfile}".format(cmsswbase=os.environ['CMSSW_BASE'],txtfile=txtfile))
             os.system("mv {base}.txt {base}_ee_original.txt; mv {base}_ee_averaged.txt {base}.txt".format(base= txtfile.replace('.txt','')))
