@@ -7,7 +7,6 @@ rt.gROOT.SetBatch(True)
 
 from ecalDetId import EcalDetId,etaRingMapping
 from PlotUtils import customROOTstyle, customPalette, doLegend
-from AlphaBetaFitter import *
 
 SAFE_COLOR_LIST=[
 rt.kBlack, rt.kRed, rt.kGreen+2, rt.kBlue, rt.kMagenta+1, rt.kOrange+7, rt.kCyan+1, rt.kGray+2, rt.kViolet+5, rt.kSpring+5, rt.kAzure+1, rt.kPink+7, rt.kOrange+3, rt.kBlue+3, rt.kMagenta+3, rt.kRed+2,
@@ -31,7 +30,11 @@ class TagValidation:
         for k,v in tags.iteritems():
             self._allData[k] = self.loadTemplates(v)
         self.ringmap = etaRingMapping()
-    
+        if "/AlphaBetaFitter_cc.so" not in rt.gSystem.GetLibraries():
+            print "Load C++ Fitter"
+            rt.gROOT.ProcessLine(".L AlphaBetaFitter.cc+")
+        self.abfitter = rt.AlphaBetaFitter();
+
     def setTimeOffset(self,ebval,eeval):
         self.timeOffsets['EB'] = ebval
         self.timeOffsets['EE'] = eeval
@@ -203,7 +206,6 @@ class TagValidation:
         if len(newTimeIC)>0: newTimeICs = self.loadTimeICs(newTimeIC)
 
         histo = rt.TH1F("histo","",15,0,15)
-        fitter = AlphaBetaFitter( rt.TF1("alphabeta",alphabeta,0,10,5), doEB)
         cryfit = 0
         for (partition,detid),samples in newData.iteritems():
             key = (partition,detid)
@@ -222,8 +224,8 @@ class TagValidation:
             # fill the template and fit it
             for s in range(3):  histo.SetBinContent(s+1,0)
             for s in range(12): histo.SetBinContent(s+4,float((newData[key])[s]))
-            # results = fitter.fit(histo,doEB,('pulse_%d_%d_%d.png' % (x,y,z)))
-            results = fitter.fit(histo,doEB)
+            self.abfitter.fit(histo,doEB)
+            results = {'pars': abfitter.getPars(), 'errs': abfitter.getErrs()}
             currentCorr = float(self.timeICs[detid]) + self.timeOffsets[part]
             time = 25.*((results['pars'])[2]-5.5)
             correctedTime = time + currentCorr
@@ -252,22 +254,23 @@ class TagValidation:
             h.Write()
         of.Close()
 
-    def timeFit(self,pulse,fitter,doEB):
+    def timeFit(self,pulse,abfitter,doEB):
         histo = rt.TH1F("time","",15,0,15)
         # fill the template and fit it
         for s in range(3):  histo.SetBinContent(s+1,0)
         for s in range(12): 
             histo.SetBinContent(s+4,float(pulse[s]))
             histo.SetBinError(s+4,float(pulse[s])/sqrt(1000)) # about 1k entries per bin
-        # results = fitter.fit(histo,doEB,('pulse_%d_%d_%d.png' % (x,y,z)))
-        results = fitter.fit(histo,doEB)
+        abfitter.fit(histo,doEB)
+        results = {'pars': abfitter.getPars(), 'errs': abfitter.getErrs()}
         val = {}; err = {};
-        for par in AlphaBetaParameter:
-            val[par.name] = (results['pars'])[par.value]
-            err[par.name] = (results['errs'])[par.value]
-            if par==AlphaBetaParameter.T0:
-                val[par.name] = (val[par.name]-5.5)*25.
-                err[par.name] = err[par.name]*25.
+        for ip,par in enumerate(['alpha','beta','T0']):
+            val[par] = (results['pars'])[ip]
+            err[par] = (results['errs'])[ip]
+            if par=="T0":
+                val[par] = (val[par]-5.5)*25.
+                err[par] = err[par]*25.
+        histo.Delete()
         return (val,err)
 
     def do2dShapeDiff(self,doEB,absoluteShape=False):
@@ -277,31 +280,30 @@ class TagValidation:
         newData = self.parseDic(self._allData["current"])
         of = rt.TFile.Open('%s_timeVals.root' % part,'recreate')
         histos = {}
-        for p in AlphaBetaParameter:
-            (zmin,zmax) = (-0.03,0.03) if p!=AlphaBetaParameter.T0 else (-1,1) # ns
-            if p==AlphaBetaParameter.T0 and absoluteShape: (zmin,zmax) = (-5,5) # ns
+        for ip,par in enumerate(['alpha','beta','T0']):
+            (zmin,zmax) = (-0.03,0.03) if par!="T0" else (-1,1) # ns
+            if par=="T0" and absoluteShape: (zmin,zmax) = (-5,5) # ns
             if doEB:
-                h = rt.TProfile2D(('%s_%s' % (part,p.name)),"",360,1,360,170,-85,85)
+                h = rt.TProfile2D(('%s_%s' % (part,par)),"",360,1,360,170,-85,85)
                 h.GetXaxis().SetTitle('i#phi')
                 h.GetYaxis().SetTitle('i#eta')
-                h.SetTitle('Time (ns)' if p==AlphaBetaParameter.T0 else '#Delta #{par}/#{par}'.format(par=p.name))
+                h.SetTitle('Time (ns)' if par=="T0" else '#Delta #{par}/#{par}'.format(par=par))
                 h.GetZaxis().SetRangeUser(zmin,zmax)
-                histos[p.name] = [h]
+                histos[par] = [h]
             else: 
                 hz = []
-                hplus = rt.TProfile2D(('%splus_%s' % (part,p.name)),"",100,1,100,100,1,100)
+                hplus = rt.TProfile2D(('%splus_%s' % (part,par)),"",100,1,100,100,1,100)
                 hplus.GetXaxis().SetTitle('ix')
                 hplus.GetYaxis().SetTitle('iy')
-                hplus.SetTitle('Time (ns)' if p==AlphaBetaParameter.T0 else '#Delta #{par}/#{par}'.format(par=p.name))
+                hplus.SetTitle('Time (ns)' if par=="T0" else '#Delta #{par}/#{par}'.format(par=par))
                 hplus.GetZaxis().SetRangeUser(zmin,zmax)
                 hz.append(hplus)
-                hminus = hplus.Clone('%sminus_%s' % (part,p.name))
+                hminus = hplus.Clone('%sminus_%s' % (part,par))
                 hz.append(hminus)
-                histos[p.name] = hz
+                histos[par] = hz
 
         detids = EcalDetId('/afs/cern.ch/work/e/emanuele/public/ecal/pulseshapes_db/detids_ECAL.txt')
 
-        fitter = AlphaBetaFitter( rt.TF1("alphabeta",alphabeta,0,10,5), doEB)
         cryfit = 0
         for (partition,detid),samples in newData.iteritems():
             key = (partition,detid)
@@ -313,18 +315,18 @@ class TagValidation:
 
             (ix,iy) = (y,x) if doEB else (x+1,y+1)
 
-            (val,err) = self.timeFit(newData[key],fitter,doEB)
-            (valRef,errRef) = self.timeFit(refData[key],fitter,doEB) if not absoluteShape else ({},{})
+            (val,err) = self.timeFit(newData[key],self.abfitter,doEB)
+            (valRef,errRef) = self.timeFit(refData[key],self.abfitter,doEB) if not absoluteShape else ({},{})
 
-            for p in AlphaBetaParameter:
+            for ip,par in enumerate(['alpha','beta','T0']):
                 if z==0 or z==1: 
-                    htofill = (histos[p.name])[0]
+                    htofill = (histos[par])[0]
                 else: 
-                    htofill = (histos[p.name])[1]
-                value = val[p.name]-valRef[p.name] if not absoluteShape else val[p.name]
-                if p!=AlphaBetaParameter.T0: value = value/valRef[p.name] if not absoluteShape else value
-                #print "par = ",p.name," val1,2 = ",val[p.name]," ",valRef[p.name]," norm value = ",value
-                #print "err1,2 = ",err[p.name]," ",errRef[p.name]
+                    htofill = (histos[par])[1]
+                value = val[par]-valRef[par] if not absoluteShape else val[par]
+                if par!="T0": value = value/valRef[par] if not absoluteShape else value
+                #print "par = ",par," val1,2 = ",val[par]," ",valRef[par]," norm value = ",value
+                #print "err1,2 = ",err[par]," ",errRef[par]
                 htofill.Fill(ix,iy,value)
 
             if cryfit % 1000 == 0: print 'fitted ',cryfit,' templates'
