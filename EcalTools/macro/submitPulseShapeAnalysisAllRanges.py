@@ -17,7 +17,11 @@ ranges = {
 #    315721:316153 # plateau of timing, finally: IOV4
 #    316758:316758 # after the change of channel TokenRing8 in EE+06 22/05/2018: IOV5
 #    316876:316928 # after the tuning of new TR8 in EE+06: IOV6
-    316944:317089 # after that EB+17 has returned in the original position
+#    316944:317089 # after that EB+17 has returned in the original position
+#    318438:318464 # unstable collisions of Run2018B after delays change (again, EB+EE)
+#    318622:318622 # stable collisions after TS1 (but still small dataset) --- not used --- 
+#    318816:318828 # stable collisions after TS1 (~70/pb)
+    319697:319698 # collisions after some integrated lumi, fill with 2 isolated bunches
     }
 
 pwd = os.getcwd()
