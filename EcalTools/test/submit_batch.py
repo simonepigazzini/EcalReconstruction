@@ -26,7 +26,7 @@ def main():
     parser.add_option('-c', '--create',      action='store_true',dest='create',      help='create only the jobs, do not submit them'                  , default=False)
     parser.add_option('-t', '--testnjobs',   action='store',     dest='testnjobs',   help='submit only the first n jobs'                              , default=1000000, type='int')
     parser.add_option('-N', '--neventsjob', action='store',     dest='neventsjob',  help='split the jobs with n events  / batch job'                 , default=200,   type='int')
-    parser.add_option('-T', '--eventsperfile', action='store',     dest='eventsperfile',  help='number of events per input file'                     , default=2000,   type='int')
+    parser.add_option('-T', '--eventsperfile', action='store',     dest='eventsperfile',  help='number of events per input file'                     , default=-1,   type='int')
     parser.add_option('--eos',               action='store',     dest='eos',         help='copy the output in the specified EOS path'                 , default='')
     parser.add_option('--cfg',               action='store',     dest='cfg',         help='the cfg to be run'                                         , default='pippo_cfg.py')
     (opt, args) = parser.parse_args()
