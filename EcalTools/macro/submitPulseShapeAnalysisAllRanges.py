@@ -21,7 +21,7 @@ ranges = {
 #    318438:318464 # unstable collisions of Run2018B after delays change (again, EB+EE)
 #    318622:318622 # stable collisions after TS1 (but still small dataset) --- not used --- 
 #    318816:318828 # stable collisions after TS1 (~70/pb)
-    319697:319698 # collisions after some integrated lumi, fill with 2 isolated bunches
+    319697:319840 # collisions after some integrated lumi, fill with 2 isolated bunches
     }
 
 pwd = os.getcwd()
