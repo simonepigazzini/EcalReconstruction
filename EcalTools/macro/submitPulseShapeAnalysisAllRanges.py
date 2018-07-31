@@ -10,6 +10,19 @@ if __name__ == "__main__":
 
 # CUSTOMIZE THE RUN RANGES HERE
 ranges = {
+    274958:275281, # 2016B IOV 4.1
+    275282:275376 # 2016B IOV 4.2
+#    275656:275847 # 2016C IOV 5.1
+#    275886:276097 # 2016C IOV 5.2
+#    276282:276502, # Run2016D IOV 6.1
+#    276525:276659, # Run2016D IOV 6.2
+#    276775:276811, # Run2016D IOV 6.3
+#    279715:279716, # Run2016G IOV 10.2
+#    279993:280024, # Run2016G IOV 11.2
+#    280327:280364 # Run2016G IOV 11.3
+#    282408:282712, # Run2016H 13.1
+#    282730:282814, # Run2016H 13.2
+#    282842:283067, # Run2016H 13.3
 #    314093:314094 # first unstable beams 2018
 #    314474:314530 # first stable beams 2018 (TR shift in EB-05): IOV1
 #    315255:315267 # after the delays changes in the EE: IOV2
@@ -21,7 +34,7 @@ ranges = {
 #    318438:318464 # unstable collisions of Run2018B after delays change (again, EB+EE)
 #    318622:318622 # stable collisions after TS1 (but still small dataset) --- not used --- 
 #    318816:318828 # stable collisions after TS1 (~70/pb)
-    319697:319840 # collisions after some integrated lumi, fill with 2 isolated bunches
+#    319697:319840 # collisions after some integrated lumi, fill with 2 isolated bunches
     }
 
 pwd = os.getcwd()
