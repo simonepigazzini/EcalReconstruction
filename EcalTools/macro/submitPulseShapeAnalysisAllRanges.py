@@ -10,8 +10,8 @@ if __name__ == "__main__":
 
 # CUSTOMIZE THE RUN RANGES HERE
 ranges = {
-    274958:275281, # 2016B IOV 4.1
-    275282:275376 # 2016B IOV 4.2
+#    274958:275281, # 2016B IOV 4.1
+#    275282:275376 # 2016B IOV 4.2
 #    275656:275847 # 2016C IOV 5.1
 #    275886:276097 # 2016C IOV 5.2
 #    276282:276502, # Run2016D IOV 6.1
@@ -35,14 +35,57 @@ ranges = {
 #    318622:318622 # stable collisions after TS1 (but still small dataset) --- not used --- 
 #    318816:318828 # stable collisions after TS1 (~70/pb)
 #    319697:319840 # collisions after some integrated lumi, fill with 2 isolated bunches
+#
+### 2017
+#
+# 2017B # remaking the ntuples on LSF
+#    297046:297101,
+#    297113:297316,
+#    297359:297505,
+#    297557:297723,
+#    298809:299067,
+#    299096:299329,
+# 2017C
+# 
+#    299368:299450, #OK
+#    299477:299650, #OK
+#    300079:300124, # OK
+#    300155:300401, # OK
+#     300459:300742, #OK
+#     300777:301165, #OK
+#     301330:301480, #OK
+#     301519:301914, # manca EE
+#     301941:302044, #OK
+# 2017D
+#    302131:302280, #OK
+#    302322:302479, # manca tutto
+#    302484:302555, #OK
+#    302563:302678, #OK
+# 2017E
+#    303817:303832,
+#    303838:304062,
+#    304119:304354,
+#    304366:304655,
+#    304661:304797,
+# Run2017F
+#    305040:305114,
+#    305178:305252,
+#    305310:305518,
+#    305586:305842,
+     305902:306126,
+     306134:306462,
+
+# 2018D (for prompt reco)
+#    321162:321218
     }
 
 pwd = os.getcwd()
 
 for start,stop in ranges.iteritems():
-    comm = 'bsub -q cmscaf1nw -J '+str(start)+'_'+str(stop)+' -o psana_runs_'+str(start)+'_'+str(stop)+'.log '+pwd+'/submitPulseShapeAnalysisOneRange.sh '+str(start)+' '+str(stop)+' '+args[0]
-    if options.create: print comm
-    else: os.system(comm)
+    for iecal in xrange(2):
+        comm = 'bsub -q 1nw -J '+str(start)+'_'+str(stop)+' -o psana_runs_'+str(start)+'_'+str(stop)+'.log '+pwd+'/submitPulseShapeAnalysisOneRange.sh '+str(start)+' '+str(stop)+' '+args[0]+' '+str(iecal)
+        if options.create: print comm
+        else: os.system(comm)
 
 print 'DONE.'
 
