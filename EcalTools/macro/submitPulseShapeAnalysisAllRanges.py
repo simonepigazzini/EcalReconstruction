@@ -5,6 +5,7 @@ if __name__ == "__main__":
     from optparse import OptionParser
     parser = OptionParser(usage="%prog [options] filelist.txt")
     parser.add_option("-c","--create", dest="create",  action="store_true", default=False, help="do not submit jobs, only show the submission command")
+    parser.add_option("-p", "--partition", dest="partition", type="string", default=None, help="submit only EB or EE")
     (options, args) = parser.parse_args()
     if len(args) < 1: raise RuntimeError, 'Expecting at least the filelist as argument'
 
@@ -39,12 +40,12 @@ ranges = {
 ### 2017
 #
 # 2017B # remaking the ntuples on LSF
-#    297046:297101,
-#    297113:297316,
-#    297359:297505,
-#    297557:297723,
-#    298809:299067,
-#    299096:299329,
+#    297046:297101, #OK
+#    297113:297316, #OK
+#    297359:297505, #OK
+#    297557:297723, # manca EE
+#    298809:299067, # manca EB
+#    299096:299329, # manca EB
 # 2017C
 # 
 #    299368:299450, #OK
@@ -62,18 +63,18 @@ ranges = {
 #    302484:302555, #OK
 #    302563:302678, #OK
 # 2017E
-#    303817:303832,
-#    303838:304062,
-#    304119:304354,
-#    304366:304655,
-#    304661:304797,
+#    303817:303832, # manca EB
+#    303838:304062, #OK
+#    304119:304354, #OK
+#    304366:304655, #manca EB
+#    304661:304797, #OK
 # Run2017F
-#    305040:305114,
-#    305178:305252,
-#    305310:305518,
-#    305586:305842,
-     305902:306126,
-     306134:306462,
+#    305040:305114, #OK
+#    305178:305252, #OK
+#    305310:305518, #OK
+    305586:305842, #manca EE
+#     305902:306126, #OK
+#     306134:306462, #OK
 
 # 2018D (for prompt reco)
 #    321162:321218
@@ -81,9 +82,16 @@ ranges = {
 
 pwd = os.getcwd()
 
+partitions = []
+if options.partition == 'EB': partitions.append(1)
+elif options.partition == 'EE': partitions.append(0)
+else:
+    partitions.append(1)
+    partitions.append(0)
+
 for start,stop in ranges.iteritems():
-    for iecal in xrange(2):
-        comm = 'bsub -q 1nw -J '+str(start)+'_'+str(stop)+' -o psana_runs_'+str(start)+'_'+str(stop)+'.log '+pwd+'/submitPulseShapeAnalysisOneRange.sh '+str(start)+' '+str(stop)+' '+args[0]+' '+str(iecal)
+    for iecal in partitions:
+        comm = 'bsub -q 1nw -J '+str(start)+'_'+str(stop)+' -o psana_runs_'+str(start)+'_'+str(stop)+'_IECAL'+str(iecal)+'.log '+pwd+'/submitPulseShapeAnalysisOneRange.sh '+str(start)+' '+str(stop)+' '+args[0]+' '+str(iecal)
         if options.create: print comm
         else: os.system(comm)
 
