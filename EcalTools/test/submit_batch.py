@@ -9,39 +9,29 @@ import commands
 import optparse
 import datetime
 
-def writeCondorCfg(srcfile, logdir, flavour=None, maxRunTime=None):
-    base=os.path.splitext(srcfile)[0]
-    procId=os.path.basename(base).split('_')[-1]
-    maxruntime="-t" # time in minutes
-    if maxRunTime:
-        if flavour:
-            print "Can't set both flavour and maxruntime"
-            sys.exit(1)
-        maxruntime = str(60 * int(maxRunTime))
-    job_desc = """Universe = vanilla
-Executable = {scriptName}
-use_x509userproxy = {x509}
-Log        = {logdir}/condor_job_{ProcId}.log
-Output     = {logdir}/condor_job_{ProcId}.out
-Error      = {logdir}/condor_job_{ProcId}.error
+def makeCondorFile(jobdir, srcFiles, options):
+    dummy_exec = open(jobdir+'/dummy_exec.sh','w')
+    dummy_exec.write('#!/bin/bash\n')
+    dummy_exec.write('bash $*\n')
+    dummy_exec.close()
+     
+    condor_file_name = jobdir+'/condor_submit.condor'
+    condor_file = open(condor_file_name,'w')
+    condor_file.write('''Universe = vanilla
+Executable = {de}
+use_x509userproxy = $ENV(X509_USER_PROXY)
+Log        = {jd}/$(ProcId).log
+Output     = {jd}/$(ProcId).out
+Error      = {jd}/$(ProcId).error
 getenv      = True
 environment = "LS_SUBCWD={here}"
-request_memory = 2000
-""".format(scriptName=srcfile,
-           x509=os.environ['X509_USER_PROXY'],
-           logdir=logdir,ProcId=procId,
-           here=os.environ['PWD'])
-    if flavour:
-        job_desc += '+JobFlavour = "%s"\n' % flavour
-    if maxruntime!="":
-        job_desc += '+MaxRuntime = %s\n' % maxruntime
-    job_desc += 'queue 1\n'
-
-    jobdesc=base+'.condor'
-    with open(jobdesc,'w') as outputfile:
-        outputfile.write(job_desc)
-        outputfile.close()
-    return jobdesc
+request_memory = 4000
++MaxRuntime = {rt}\n
+'''.format(de=os.path.abspath(dummy_exec.name), jd=os.path.abspath(jobdir), rt=int(options.runtime*3600), here=os.environ['PWD'] ) )
+    for sf in srcFiles:
+        condor_file.write('arguments = {sf} \nqueue 1 \n\n'.format(sf=os.path.abspath(sf)))
+    condor_file.close()
+    return condor_file_name
 
 def main():
 #######################################
@@ -64,6 +54,7 @@ def main():
     parser.add_option('--eos',               action='store',     dest='eos',         help='copy the output in the specified EOS path'                 , default='')
     parser.add_option('--cfg',               action='store',     dest='cfg',         help='the cfg to be run'                                         , default='pippo_cfg.py')
     parser.add_option('--scheduler',         action='store',     dest='scheduler',   help='select the batch scheduler (lsf,condor). Default=condor'   , default='lsf')
+    parser.add_option('-r'  , '--runtime'       , default=8            , type=int                          , help='New runtime for condor resubmission in hours. default None: will take the original one.');
     (opt, args) = parser.parse_args()
 
     if len(args) != 1:
@@ -80,10 +71,13 @@ def main():
     else: diskoutputdir = ''
     diskoutputmain = diskoutputdir+"/"+opt.prefix+"/"+output
 
-    os.system("mkdir -p "+opt.prefix+"/"+output)
-    os.system("mkdir -p "+opt.prefix+"/"+output+"/log/")
-    os.system("mkdir -p "+opt.prefix+"/"+output+"/src/")
-    os.system("mkdir -p "+opt.prefix+"/"+output+"/cfg/")
+    jobdir = opt.prefix+"/"+output
+    logdir = jobdir+"/log/"
+    os.system("mkdir -p "+jobdir)
+    os.system("mkdir -p "+logdir)
+    os.system("mkdir -p "+jobdir+"/src/")
+    os.system("mkdir -p "+jobdir+"/cfg/")
+
     outputroot = diskoutputmain+"/root/"
 
     if (diskoutputdir != "none" and opt.download=='pccmsrm'): 
@@ -99,6 +93,7 @@ def main():
     inputfiles = inputListfile.readlines()
     ijob=0
 
+    srcfiles = []
     while (len(inputfiles) > 0):
         L = []
         for line in range(min(opt.nfileperjob,len(inputfiles))):
@@ -146,7 +141,6 @@ def main():
             if(opt.download=='pccmsrm'): outputfile.write('ls *.root | xargs -i scp -o BatchMode=yes -o StrictHostKeyChecking=no {} pccmsrm24:'+diskoutputmain+'/{}\n') 
             if(opt.eos!=''): outputfile.write('xrdcp '+rootoutputfile+' root://eoscms/'+opt.eos+'/\n')
             outputfile.close()
-            logdir = pwd+"/"+opt.prefix+"/"+output+"/log/"
             logfile = logdir+output+"_"+str(ijob)+".log"
             scriptfile = pwd+"/"+outputname
             if opt.scheduler=='lsf':
@@ -155,11 +149,7 @@ def main():
                 if not opt.create:
                     os.system(cmd)
             elif opt.scheduler=='condor':
-                condor_jobdesc = writeCondorCfg(scriptfile,logdir,opt.queue)
-                cmd = 'condor_submit '+condor_jobdesc
-                print cmd
-                if not opt.create:
-                    os.system(cmd)
+                srcfiles.append(scriptfile)
             else:
                 print "ERROR. Scheduler ",opt.scheduler," not implemented. Choose either 'lsf' or 'condor'."
                 sys.exit(1)
@@ -167,6 +157,11 @@ def main():
             if(ijob==opt.testnjobs): break
             if (opt.eventsperfile == -1): break
             else: firstEvent = lastEvent
+
+    if opt.scheduler=='condor':
+        cf = makeCondorFile(logdir,srcfiles,opt)
+        cmd = 'condor_submit {rf} '.format(rf = cf)
+        print cmd
 
 if __name__ == "__main__":
         main()
