@@ -136,10 +136,15 @@ def main():
             outputfile.write('export SCRAM_ARCH='+scramarch+'\n')
             outputfile.write('cd '+pwd+'\n')
             outputfile.write('eval `scramv1 runtime -sh`\n')
-            outputfile.write('cd $WORKDIR\n')
+            if opt.scheduler=='lsf':
+                outputfile.write('cd $WORKDIR\n')
+            elif opt.scheduler=='condor':
+                outputfile.write('cd /tmp/'+os.environ['USER']+'\n')
             outputfile.write(opt.application+' '+icfgfilename+' '+rootoutputfile+' \n')
             if(opt.download=='pccmsrm'): outputfile.write('ls *.root | xargs -i scp -o BatchMode=yes -o StrictHostKeyChecking=no {} pccmsrm24:'+diskoutputmain+'/{}\n') 
-            if(opt.eos!=''): outputfile.write('xrdcp '+rootoutputfile+' root://eoscms/'+opt.eos+'/\n')
+            if(opt.eos!=''): 
+                outputfile.write('xrdcp '+rootoutputfile+' root://eoscms/'+opt.eos+'/\n')
+                outputfile.write('rm '+rootoutputfile)
             outputfile.close()
             logfile = logdir+output+"_"+str(ijob)+".log"
             scriptfile = pwd+"/"+outputname

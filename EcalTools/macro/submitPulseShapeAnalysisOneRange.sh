@@ -4,6 +4,7 @@
 firstRun=$1
 lastRun=$2
 filelist=$3
+iecal=$4
 
 # these settings are for release CMSSW_10_2_0_pre1
 export SCRAM_ARCH=slc6_amd64_gcc630
@@ -15,7 +16,7 @@ echo "running the analysis from dir: " $afsdir
 root -b <<EOF
 
 .L PulseShapeAnalysis.cxx+
-saveAllTemplatesOneRange("$filelist",$firstRun,$lastRun)
+saveTemplates("$filelist",$iecal,$firstRun,$lastRun)
 .q
 
 EOF
