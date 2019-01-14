@@ -35,7 +35,6 @@ request_memory = 4000
     condor_file.close()
     return condor_file_name
 
-
 def main():
 #######################################
 ### usage  
@@ -58,6 +57,7 @@ def main():
     parser.add_option('--eos',               action='store',     dest='eos',         help='copy the output in the specified EOS path'                 , default='')
     parser.add_option('--cfg',               action='store',     dest='cfg',         help='the cfg to be run'                                         , default='pippo_cfg.py')
     parser.add_option('--scheduler',         action='store',     dest='scheduler',   help='select the batch scheduler (lsf,condor). Default=condor'   , default='lsf')
+    parser.add_option('-r'  , '--runtime'       , default=8            , type=int                          , help='New runtime for condor resubmission in hours. default None: will take the original one.');
     (opt, args) = parser.parse_args()
 
     if len(args) != 1:
@@ -74,10 +74,13 @@ def main():
     else: diskoutputdir = ''
     diskoutputmain = diskoutputdir+"/"+opt.prefix+"/"+output
 
-    os.system("mkdir -p "+opt.prefix+"/"+output)
-    os.system("mkdir -p "+opt.prefix+"/"+output+"/log/")
-    os.system("mkdir -p "+opt.prefix+"/"+output+"/src/")
-    os.system("mkdir -p "+opt.prefix+"/"+output+"/cfg/")
+    jobdir = opt.prefix+"/"+output
+    logdir = jobdir+"/log/"
+    os.system("mkdir -p "+jobdir)
+    os.system("mkdir -p "+logdir)
+    os.system("mkdir -p "+jobdir+"/src/")
+    os.system("mkdir -p "+jobdir+"/cfg/")
+
     outputroot = diskoutputmain+"/root/"
 
     if (diskoutputdir != "none" and opt.download=='pccmsrm'): 
@@ -149,7 +152,6 @@ def main():
                 outputfile.write('xrdcp '+rootoutputfile+' root://eoscms/'+opt.eos+'/\n')
                 outputfile.write('rm '+rootoutputfile)
             outputfile.close()
-            logdir = pwd+"/"+opt.prefix+"/"+output+"/log/"
             logfile = logdir+output+"_"+str(ijob)+".log"
             scriptfile = pwd+"/"+outputname
             if opt.scheduler=='lsf':
