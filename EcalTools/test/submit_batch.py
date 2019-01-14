@@ -28,6 +28,8 @@ environment = "LS_SUBCWD={here}"
 request_memory = 4000
 +MaxRuntime = {rt}\n
 '''.format(de=os.path.abspath(dummy_exec.name), jd=os.path.abspath(jobdir), rt=int(options.runtime*3600), here=os.environ['PWD'] ) )
+    if os.environ['USER'] in ['mdunser', 'psilva']:
+        condor_file.write('+AccountingGroup = "group_u_CMST3.all"\n\n\n')
     for sf in srcFiles:
         condor_file.write('arguments = {sf} \nqueue 1 \n\n'.format(sf=os.path.abspath(sf)))
     condor_file.close()
@@ -51,6 +53,7 @@ def main():
     parser.add_option('-t', '--testnjobs',   action='store',     dest='testnjobs',   help='submit only the first n jobs'                              , default=1000000, type='int')
     parser.add_option('-N', '--neventsjob', action='store',      dest='neventsjob',  help='split the jobs with n events  / batch job'                 , default=200,   type='int')
     parser.add_option('-T', '--eventsperfile', action='store',   dest='eventsperfile',  help='number of events per input file'                        , default=-1,   type='int')
+    parser.add_option('-r', '--runtime',     action='store',     dest='runtime',     help='New runtime for condor resubmission in hours. default None: will take the original one.', default=8        , type=int);
     parser.add_option('--eos',               action='store',     dest='eos',         help='copy the output in the specified EOS path'                 , default='')
     parser.add_option('--cfg',               action='store',     dest='cfg',         help='the cfg to be run'                                         , default='pippo_cfg.py')
     parser.add_option('--scheduler',         action='store',     dest='scheduler',   help='select the batch scheduler (lsf,condor). Default=condor'   , default='lsf')
@@ -92,6 +95,7 @@ def main():
     inputListfile=open(inputlist)
     inputfiles = inputListfile.readlines()
     ijob=0
+    jobdir = opt.prefix+"/"+output
 
     srcfiles = []
     while (len(inputfiles) > 0):
@@ -130,7 +134,7 @@ def main():
 
             # prepare the script to run
             rootoutputfile = output+'_'+str(ijob)+'.root'
-            outputname = opt.prefix+"/"+output+"/src/submit_"+str(ijob)+".src"
+            outputname = jobdir+"/src/submit_"+str(ijob)+".src"
             outputfile = open(outputname,'w')
             outputfile.write('#!/bin/bash\n')
             outputfile.write('export SCRAM_ARCH='+scramarch+'\n')
@@ -139,7 +143,9 @@ def main():
             if opt.scheduler=='lsf':
                 outputfile.write('cd $WORKDIR\n')
             elif opt.scheduler=='condor':
-                outputfile.write('cd /tmp/'+os.environ['USER']+'\n')
+                #outputfile.write('cd /tmp/'+os.environ['USER']+'\n')
+                rootoutputfile = '/tmp/'+rootoutputfile
+            outputfile.write('echo $PWD\n')
             outputfile.write(opt.application+' '+icfgfilename+' '+rootoutputfile+' \n')
             if(opt.download=='pccmsrm'): outputfile.write('ls *.root | xargs -i scp -o BatchMode=yes -o StrictHostKeyChecking=no {} pccmsrm24:'+diskoutputmain+'/{}\n') 
             if(opt.eos!=''): 
@@ -154,7 +160,7 @@ def main():
                 if not opt.create:
                     os.system(cmd)
             elif opt.scheduler=='condor':
-                srcfiles.append(scriptfile)
+                srcfiles.append(outputname)
             else:
                 print "ERROR. Scheduler ",opt.scheduler," not implemented. Choose either 'lsf' or 'condor'."
                 sys.exit(1)
@@ -164,9 +170,14 @@ def main():
             else: firstEvent = lastEvent
 
     if opt.scheduler=='condor':
-        cf = makeCondorFile(logdir,srcfiles,opt)
-        cmd = 'condor_submit {rf} '.format(rf = cf)
-        print cmd
+        cf = makeCondorFile(jobdir,srcfiles,opt)
+        subcmd = 'condor_submit {rf} '.format(rf = cf)
+        if options.create:
+            print 'running dry, printing the commands...'
+            print subcmd
+        else:
+            print 'submitting for real...'
+            os.system(subcmd)
 
 if __name__ == "__main__":
         main()
