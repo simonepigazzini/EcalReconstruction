@@ -9,41 +9,32 @@ import commands
 import optparse
 import datetime
 
-def writeCondorCfg(srcfile, logdir, flavour=None, maxRunTime=None):
-    base=os.path.splitext(srcfile)[0]
-    procId=os.path.basename(base).split('_')[-1]
-    maxruntime="-t" # time in minutes
-    if maxRunTime:
-        if flavour:
-            print "Can't set both flavour and maxruntime"
-            sys.exit(1)
-        maxruntime = str(60 * int(maxRunTime))
-    job_desc = """Universe = vanilla
-Executable = {scriptName}
-use_x509userproxy = {x509}
-Log        = {logdir}/condor_job_{ProcId}.log
-Output     = {logdir}/condor_job_{ProcId}.out
-Error      = {logdir}/condor_job_{ProcId}.error
-should_transfer_files = NO
-transfer_output_files   = ""
+def makeCondorFile(jobdir, srcFiles, options):
+    dummy_exec = open(jobdir+'/dummy_exec.sh','w')
+    dummy_exec.write('#!/bin/bash\n')
+    dummy_exec.write('bash $*\n')
+    dummy_exec.close()
+     
+    condor_file_name = jobdir+'/condor_submit.condor'
+    condor_file = open(condor_file_name,'w')
+    condor_file.write('''Universe = vanilla
+Executable = {de}
+use_x509userproxy = $ENV(X509_USER_PROXY)
+Log        = {jd}/$(ProcId).log
+Output     = {jd}/$(ProcId).out
+Error      = {jd}/$(ProcId).error
 getenv      = True
 environment = "LS_SUBCWD={here}"
-request_memory = 2000
-""".format(scriptName=srcfile,
-           x509=os.environ['X509_USER_PROXY'],
-           logdir=logdir,ProcId=procId,
-           here=os.environ['PWD'])
-    if flavour:
-        job_desc += '+JobFlavour = "%s"\n' % flavour
-    if maxruntime!="":
-        job_desc += '+MaxRuntime = %s\n' % maxruntime
-    job_desc += 'queue 1\n'
+request_memory = 4000
++MaxRuntime = {rt}\n
+'''.format(de=os.path.abspath(dummy_exec.name), jd=os.path.abspath(jobdir), rt=int(options.runtime*3600), here=os.environ['PWD'] ) )
+    if os.environ['USER'] in ['mdunser', 'psilva']:
+        condor_file.write('+AccountingGroup = "group_u_CMST3.all"\n\n\n')
+    for sf in srcFiles:
+        condor_file.write('arguments = {sf} \nqueue 1 \n\n'.format(sf=os.path.abspath(sf)))
+    condor_file.close()
+    return condor_file_name
 
-    jobdesc=base+'.condor'
-    with open(jobdesc,'w') as outputfile:
-        outputfile.write(job_desc)
-        outputfile.close()
-    return jobdesc
 
 def main():
 #######################################
@@ -63,6 +54,7 @@ def main():
     parser.add_option('-t', '--testnjobs',   action='store',     dest='testnjobs',   help='submit only the first n jobs'                              , default=1000000, type='int')
     parser.add_option('-N', '--neventsjob', action='store',      dest='neventsjob',  help='split the jobs with n events  / batch job'                 , default=200,   type='int')
     parser.add_option('-T', '--eventsperfile', action='store',   dest='eventsperfile',  help='number of events per input file'                        , default=-1,   type='int')
+    parser.add_option('-r', '--runtime',     action='store',     dest='runtime',     help='New runtime for condor resubmission in hours. default None: will take the original one.', default=8        , type=int);
     parser.add_option('--eos',               action='store',     dest='eos',         help='copy the output in the specified EOS path'                 , default='')
     parser.add_option('--cfg',               action='store',     dest='cfg',         help='the cfg to be run'                                         , default='pippo_cfg.py')
     parser.add_option('--scheduler',         action='store',     dest='scheduler',   help='select the batch scheduler (lsf,condor). Default=condor'   , default='lsf')
@@ -100,7 +92,9 @@ def main():
     inputListfile=open(inputlist)
     inputfiles = inputListfile.readlines()
     ijob=0
+    jobdir = opt.prefix+"/"+output
 
+    srcfiles = []
     while (len(inputfiles) > 0):
         L = []
         for line in range(min(opt.nfileperjob,len(inputfiles))):
@@ -137,7 +131,7 @@ def main():
 
             # prepare the script to run
             rootoutputfile = output+'_'+str(ijob)+'.root'
-            outputname = opt.prefix+"/"+output+"/src/submit_"+str(ijob)+".src"
+            outputname = jobdir+"/src/submit_"+str(ijob)+".src"
             outputfile = open(outputname,'w')
             outputfile.write('#!/bin/bash\n')
             outputfile.write('export SCRAM_ARCH='+scramarch+'\n')
@@ -146,7 +140,9 @@ def main():
             if opt.scheduler=='lsf':
                 outputfile.write('cd $WORKDIR\n')
             elif opt.scheduler=='condor':
-                outputfile.write('cd /tmp/'+os.environ['USER']+'\n')
+                #outputfile.write('cd /tmp/'+os.environ['USER']+'\n')
+                rootoutputfile = '/tmp/'+rootoutputfile
+            outputfile.write('echo $PWD\n')
             outputfile.write(opt.application+' '+icfgfilename+' '+rootoutputfile+' \n')
             if(opt.download=='pccmsrm'): outputfile.write('ls *.root | xargs -i scp -o BatchMode=yes -o StrictHostKeyChecking=no {} pccmsrm24:'+diskoutputmain+'/{}\n') 
             if(opt.eos!=''): 
@@ -162,11 +158,7 @@ def main():
                 if not opt.create:
                     os.system(cmd)
             elif opt.scheduler=='condor':
-                condor_jobdesc = writeCondorCfg(scriptfile,logdir,opt.queue)
-                cmd = 'condor_submit '+condor_jobdesc
-                print cmd
-                if not opt.create:
-                    os.system(cmd)
+                srcfiles.append(outputname)
             else:
                 print "ERROR. Scheduler ",opt.scheduler," not implemented. Choose either 'lsf' or 'condor'."
                 sys.exit(1)
@@ -174,6 +166,16 @@ def main():
             if(ijob==opt.testnjobs): break
             if (opt.eventsperfile == -1): break
             else: firstEvent = lastEvent
+
+    if opt.scheduler=='condor':
+        cf = makeCondorFile(jobdir,srcfiles,opt)
+        subcmd = 'condor_submit {rf} '.format(rf = cf)
+        if options.create:
+            print 'running dry, printing the commands...'
+            print subcmd
+        else:
+            print 'submitting for real...'
+            os.system(subcmd)
 
 if __name__ == "__main__":
         main()
