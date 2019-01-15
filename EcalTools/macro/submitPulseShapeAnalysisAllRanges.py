@@ -77,7 +77,13 @@ ranges = {
 #    306134:306462,
 
 # 2018D (for prompt reco)
-    321162:321218
+#    321162:321218
+#    321973:322022
+#    323413:323474 # after delays
+#     323413:323470 # after delays, but w/o bad TR in EE+
+#    323841:324022 # last of 2018 (200 ps shift)
+    317683:317696 # first UL additional IOV
+#    320673:320757 # second UL additional IOV
     }
 
 pwd = os.getcwd()
@@ -91,7 +97,7 @@ else:
 
 for start,stop in ranges.iteritems():
     for iecal in partitions:
-        comm = 'bsub -q 1nw -J '+str(start)+'_'+str(stop)+' -o psana_runs_'+str(start)+'_'+str(stop)+'_IECAL'+str(iecal)+'.log '+pwd+'/submitPulseShapeAnalysisOneRange.sh '+str(start)+' '+str(stop)+' '+args[0]+' '+str(iecal)
+        comm = 'bsub -q cmscaf1nw -J '+str(start)+'_'+str(stop)+' -o psana_runs_'+str(start)+'_'+str(stop)+'_IECAL'+str(iecal)+'.log '+pwd+'/submitPulseShapeAnalysisOneRange.sh '+str(start)+' '+str(stop)+' '+args[0]+' '+str(iecal)
         if options.create: print comm
         else: os.system(comm)
 
