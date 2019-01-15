@@ -64,10 +64,26 @@ path='/afs/cern.ch/user/e/emanuele/w/public/ecal/pulseshapes_db/'
 #     ('IOV29',path+'template_histograms_ECAL_Run2018_runs_305902_306126.txt'),
 #     ('IOV30',path+'template_histograms_ECAL_Run2018_runs_306134_306462.txt'),
 #     ]
-currentPromptIOV = ('IOV13',path+'template_histograms_ECAL_Run2018_runs_323413_323470.txt')
-toValidateIOVs = [ 
-    ('IOV14bis',path+'template_histograms_ECAL_Run2018_runs_323841_324022.txt'),
-     ]
+# Year 2018 Ultra-Legacy
+currentPromptIOV = ('IOV0',path+'template_histograms_ECAL_Run2018_runs_306134_306462.txt')
+toValidateIOVs = [
+    ('IOV1',path+'template_histograms_ECAL_Run2018_runs_314474_314530.txt'),
+    ('IOV2',path+'template_histograms_ECAL_Run2018_runs_315255_315267.txt'),
+    ('IOV3',path+'template_histograms_ECAL_Run2018_runs_315488_315512.txt'),
+    ('IOV4',path+'template_histograms_ECAL_Run2018_runs_315721_316153.txt'),
+    ('IOV5',path+'template_histograms_ECAL_Run2018_runs_316758_316758.txt'),
+    ('IOV6',path+'template_histograms_ECAL_Run2018_runs_316876_316928.txt'),
+    ('IOV7',path+'template_histograms_ECAL_Run2018_runs_316944_317089.txt'),
+    ('IOV8',path+'template_histograms_ECAL_Run2018_runs_317683_317696.txt'),
+    ('IOV9',path+'template_histograms_ECAL_Run2018_runs_318438_318464.txt'),
+    ('IOV10',path+'template_histograms_ECAL_Run2018_runs_318816_318828.txt'),
+    ('IOV11',path+'template_histograms_ECAL_Run2018_runs_319697_319840.txt'),
+    ('IOV12',path+'template_histograms_ECAL_Run2018_runs_320673_320757.txt'),
+    ('IOV13',path+'template_histograms_ECAL_Run2018_runs_321162_321218.txt'),
+    ('IOV14',path+'template_histograms_ECAL_Run2018_runs_321973_322022.txt'),
+    ('IOV15',path+'template_histograms_ECAL_Run2018_runs_323841_324022.txt'),
+    ('IOV16',path+'template_histograms_ECAL_Run2018_runs_326635_326787.txt'),
+    ]
 
 allIOVs = [currentPromptIOV] + toValidateIOVs
 
