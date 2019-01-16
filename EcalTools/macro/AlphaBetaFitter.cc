@@ -10,6 +10,8 @@
 #include <TMath.h>
 #include <TF1.h>
 #include <TCanvas.h>
+#include "tdrstyle.C"
+#include "CMS_lumi.h"
 
 double alphabeta(double *x, double *par) {
   // par[0] = normalization
@@ -41,7 +43,8 @@ public:
   void fit(TH1F *histo,bool doEB,float pedestal=0,std::string canvasName="");
   double* getPars() {return _pars;}
   double* getErrs() {return _errs;}
-
+  TF1*    getFcn() {return _fitF;}
+  
 
 protected:
   void setParameters(bool doEB, double pedestal);
@@ -77,7 +80,10 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
   TCanvas *canv = 0;
   if(canvasName!="") {
     canv = new TCanvas("fitc","",600,600);
-    histo->Draw("hist E2");
+    histo->GetXaxis()->SetTitle("Time sample");
+    histo->GetYaxis()->SetTitle("Normalized Amplitude");
+    histo->GetYaxis()->SetRangeUser(-0.1,1.2);
+    histo->Draw("p 2");
   }
 
   histo->Fit("alphabeta","QM","same",0,10);
@@ -88,7 +94,12 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
   }
 
   if(canvasName!="") {
+    gROOT->LoadMacro("tdrstyle.C");
+    setTDRStyle();
+    gStyle->SetOptFit(0);
     _fitF->Draw("same");
+    gROOT->LoadMacro("CMS_lumi.h");
+    CMS_lumi(canv,-1);
     canv->SaveAs(canvasName.c_str());
     delete canv;
   }

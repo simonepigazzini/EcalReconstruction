@@ -7,7 +7,6 @@ import ROOT as rt
 rt.gROOT.SetBatch(True)
 
 from ecalDetId import EcalDetId
-from AlphaBetaFitter import *
 
 class TagFitter:
 
@@ -20,7 +19,11 @@ class TagFitter:
     def __init__(self,filename):
         self._data = self.loadTemplates(filename)
         self._badFits = 0
-
+        if "/AlphaBetaFitter_cc.so" not in rt.gSystem.GetLibraries():
+            print "Load C++ Fitter"
+            rt.gROOT.ProcessLine(".L AlphaBetaFitter.cc+")
+        self.abfitter = rt.AlphaBetaFitter()
+        
     def parseDic(self,rawdata):
         mydata = {}
         for item in rawdata:
@@ -29,16 +32,15 @@ class TagFitter:
             mydata[key] = val
         return mydata
 
-    def getPeakNormalisedPulseShape(self,pulseshape,doEB):
+    def getPeakNormalisedPulseShape(self,pulseshape,doEB,detid):
         
         histo = rt.TH1F("histo","",15,0,15)        
         # fill the template and fit it
-        for s in range(3):  histo.SetBinContent(s+1,0)
+        for s in range(3):  histo.SetBinContent(s+1,float(0))
         for s in range(12): histo.SetBinContent(s+4,float(pulseshape[s]))
 
-        fitter = AlphaBetaFitter( rt.TF1("alphabeta",alphabeta,0,10,5), doEB)
-        results = fitter.fit(histo,doEB)
-        fcn = fitter.getFcn()
+        results = self.abfitter.fit(histo,doEB,0,"pulse_eib{eb}_{id}.pdf".format(eb=doEB,id=detid))
+        fcn = self.abfitter.getFcn()
         chi2 = fcn.GetChisquare()
         dt = fcn.GetParameter(3)-5.5
         valAtMax = fcn.Eval(5.5+dt)
@@ -58,11 +60,13 @@ class TagFitter:
         myData = self.parseDic(self._data)
         ncry=0
         for (partition,detid),pulseshape in myData.iteritems():
+            #if int(partition)==0: continue
             if ncry % 1000 == 0: print "fitted ",ncry," pulse shapes"
             key = (partition,detid)
-            normshape = self.getPeakNormalisedPulseShape(pulseshape,partition)
+            normshape = self.getPeakNormalisedPulseShape(pulseshape,int(partition),detid)
             fout.write(partition+"  "+detid+"  "+"  ".join("%.6f" % x for x in normshape)+"\n")
             ncry += 1
+            #if ncry > 10: break
         print "Bad Fits = ",self._badFits
         
 
