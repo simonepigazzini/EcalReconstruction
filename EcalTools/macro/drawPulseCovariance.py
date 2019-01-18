@@ -60,7 +60,7 @@ def pulseCorrelation(barrel):
             
 
 def covMatAxisLabel(bin):
-    label = 'S_{{ {idx} }}'.format(idx=bin+2)
+    label = 'S_{{ {idx} }}'.format(idx=bin+3)
     return label
     
 if __name__ == "__main__":
@@ -91,7 +91,6 @@ if __name__ == "__main__":
     #canv.SetLogz(1)
     
     for iseb in xrange(2):
-        #covmat = pulseCovariance(
         covmat = pulseCorrelation(iseb)
         
         rmax = max(abs(covmat.GetMaximum()),abs(covmat.GetMinimum()))
@@ -109,6 +108,6 @@ if __name__ == "__main__":
         covmat.Draw("colz text45")
         lat.DrawLatex(0.16, 0.92, '#bf{CMS}')
         lat.DrawLatex(0.60, 0.92, '1 fb^{-1} (13 TeV)')
-        canv.SaveAs('pulsecov_ieb{iseb}.pdf'.format(iseb=iseb))
+        canv.SaveAs('pulsecorr_ieb{iseb}.pdf'.format(iseb=iseb))
 
         
