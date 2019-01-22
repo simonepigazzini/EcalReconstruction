@@ -4,6 +4,7 @@ from math import *
 import numpy, re, sys
 import ROOT
 ROOT.gROOT.SetBatch(True)
+from PlotUtils import doLegend
 
 def effSigma(histo):
     xaxis = histo.GetXaxis()
@@ -58,23 +59,14 @@ def getOneResolutionHisto(tree,absetamin,absetamax,etmin,etmax,xmin=0.6,xmax=1.2
     phasespace = 'abs(geneta)>{etamin} && abs(geneta)<{etamax} && genpt>{etmin} && genpt<{etmax}'.format(etamin=absetamin,etamax=absetamax,etmin=etmin,etmax=etmax)
     unconv     = 'simconversion==0'
     cut = '{c1} && {c2}'.format(c1=phasespace,c2=unconv)
-    variable   = 'e5x5/gene'
-    
+    variable   = 'e5x5/gene'    
     nbins = 100 if etmax>20 else 50
     nicename = phasespace.replace(">","gt").replace("<","lt").replace("&&","AND").replace(".","p").replace(" ","_").replace(")","").replace("(","")
-    
     histo = ROOT.TH1D('historeso_'+nicename,'',nbins,xmin,xmax)
-    histo.Reset()
-    print "====== drawing ",variable," with cut ",cut
-    print "nbins,xmin,xmax = ",nbins," ",xmin,"  ",xmax
-    print "Integral = ",histo.Integral()
     tree.Draw('{var}>>historeso_{nn}'.format(var=variable,nn=nicename),cut)
-
     histo.Sumw2()
     effsigma = effSigma(histo)
-
     histo.Scale(1./histo.Integral())
-    
     return (histo,effsigma)
     
 def fitOneReso(hist,name,xmin,histcolor,funccolor):
@@ -83,6 +75,8 @@ def fitOneReso(hist,name,xmin,histcolor,funccolor):
     canv.SetRightMargin(0.15)
     canv.SetBottomMargin(0.15)
     mean,rms = hist.GetMean(), hist.GetRMS()
+    hist.GetXaxis().SetTitle("E_{5x5}/E_{true}")
+    hist.GetYaxis().SetTitle("Normalized entries")
     hist.SetLineColor(histcolor)
     hist.SetMarkerColor(histcolor)
     hist.SetMarkerSize(0.9)
@@ -91,7 +85,7 @@ def fitOneReso(hist,name,xmin,histcolor,funccolor):
     result = hist.Fit('gaus','SR','',mean-1.1*rms, mean+1.1*rms)
     func = hist.GetFunction('gaus')    
     func.SetLineColor(funccolor)
-    printCanvas(canv, name, [], [], options)
+    #printCanvas(canv, name, [], [], options)
     return (result,func)
     
 def getRelReso(fitmandsigma):
@@ -100,17 +94,26 @@ def getRelReso(fitmandsigma):
     err = sigma.getError()
     return (val,err)
 
-def printPlot(frames, name, text, colors):
+def printPlot(frames, name, text=[], colors=[], histopt='', legend=None):
     canv = ROOT.TCanvas("canv","",1200,1200)
     canv.SetLeftMargin(0.15)
     canv.SetRightMargin(0.05)
     canv.SetBottomMargin(0.15)
-    ymax = max([f[0].GetMaximum() for f in frames])
+    ymax = max([f.GetMaximum() for f in frames])
+    ymin = min([f.GetMinimum() for f in frames])
     for iframe,frame in enumerate(frames):
-        frame[0].SetMaximum(ymax*(1.10))
-        frame[0].GetXaxis().SetNdivisions(505)
-        frame[0].GetXaxis().SetDecimals(1)    
-        frame[0].Draw('' if iframe==0 else 'same')
+        print "drawing frame ...",frame.GetName()
+        frame.SetMaximum(ymax*(1.10))
+        frame.SetMinimum(0)
+        frame.GetXaxis().SetNdivisions(505)
+        frame.GetXaxis().SetDecimals(1)    
+        if len(histopt)==0:
+            frame.Draw('' if iframe==0 else 'same')
+        else:
+            frame.Draw(histopt if iframe==0 else 'same '+histopt)            
+            if 'l' in histopt:
+                frame.Draw('same Lhist')
+    if legend: legend.Draw()
     printCanvas(canv, name, text, colors, options)
 
 def doSpam(text,x1,y1,x2,y2,align=12,fill=False,textSize=0.033,textColor=ROOT.kBlack,_noDelete={},debugMargins=False):
@@ -193,11 +196,46 @@ if __name__ == "__main__":
                 res,func = fitOneReso(hist,namereso,x_range[0],hist_colors[reco],func_colors[reco])
                 #fit_res[(reco,ieb,iet)] = (res.floatParsFinal().find('mean'), res.floatParsFinal().find('sigma'))
                 fit_res[(reco,ieb,iet)] = (res.Parameter(1), res.Parameter(2))
-                fit_plots[(reco,ieb,iet)] = (hist,func)
+                fit_plots[(reco,ieb,iet)] = hist
                 hist_res[(reco,ieb,iet)] = effsigma
                 
     # superimpose weights / MF
+    resolVsEt = ROOT.TH1F('resolVsEt','',len(bins_et)-1,array('f',bins_et))
+    resolVsEt.GetXaxis().SetTitle('E_{T} (GeV)')
+    resolVsEt.GetYaxis().SetTitle('Effective resolution (%)')
+    resolVsEt.SetMarkerStyle(ROOT.kFullSquare)
+    resolVsEt.SetMarkerSize(1)
+    
+    resolutionsEt = {}
+    resolQuadDiffEt = {}
+    for subdet in ['EB','EE']:
+        resolQuadDiffEt[subdet] = resolVsEt.Clone('resolQuadDiffEtEt_'+subdet)
+        resolQuadDiffEt[subdet].SetMarkerSize(3)
+        resolQuadDiffEt[subdet].GetYaxis().SetTitle('#sigma_{eff}^{weights} (#minus) #sigma_{eff}^{multifit} (%)')
+        if subdet=='EB':
+            resolQuadDiffEt[subdet].SetLineColor(ROOT.kAzure-3)
+            resolQuadDiffEt[subdet].SetMarkerColor(ROOT.kAzure-3)
+            resolQuadDiffEt[subdet].SetMarkerStyle(ROOT.kFullCircle)
+        else:
+            resolQuadDiffEt[subdet].SetLineColor(ROOT.kOrange-3)
+            resolQuadDiffEt[subdet].SetMarkerColor(ROOT.kOrange-3)
+            resolQuadDiffEt[subdet].SetMarkerStyle(ROOT.kFullSquare)
+        for lbl in recolabels:
+            key = '{reco}_{part}'.format(reco=lbl,part=subdet)
+            resolutionsEt[key] = resolVsEt.Clone('resolEt_'+key)
+            resolutionsEt[key].SetMarkerSize(3)
+            if subdet=='EB':
+                resolutionsEt[key].SetMarkerStyle(ROOT.kFullCircle if lbl=='multifit' else ROOT.kOpenCircle)
+                resolutionsEt[key].SetMarkerColor(ROOT.kAzure-3); resolutionsEt[key].SetLineColor(ROOT.kAzure-3); 
+            else:
+                resolutionsEt[key].SetMarkerStyle(ROOT.kFullSquare if lbl=='multifit' else ROOT.kOpenSquare)
+                resolutionsEt[key].SetMarkerColor(ROOT.kOrange-3); resolutionsEt[key].SetLineColor(ROOT.kOrange-3); 
+                
+            
+    print "Plots = ",fit_plots
+    
     for ieb in xrange(len(bins_eta)-1):
+        subdet = 'EB' if bins_eta[ieb]<1 else 'EE'
         for iet in xrange(len(bins_et)-1):
             frames = []
             text = ['Resolution 5x5']; colors = [ROOT.kBlack]
@@ -205,9 +243,36 @@ if __name__ == "__main__":
                 key = (lbl,ieb,iet)
                 frames.append(fit_plots[key])
                 resol = fit_res[key][1]
-                text.append("#sigma_{{ eff (core) }} = {eff:.1f} ({gauss:.1f}) %".format(eff=100*hist_res[key], gauss=100*resol))
+                text.append("#sigma_{{ eff (core) }}^{{ {label} }} = {eff:.1f} ({gauss:.1f}) %".format(eff=100*hist_res[key], gauss=100*resol, label=lbl))
                 colors.append(hist_colors[lbl])
+                # fill the resolution vs ET histo
+                resolutionsEt['{reco}_{part}'.format(reco=lbl,part=subdet)].SetBinContent(iet+1,100*hist_res[key])
+                resolutionsEt['{reco}_{part}'.format(reco=lbl,part=subdet)].SetBinError(iet+1,0.001) # this is just to show the error on the X
+            # fill the quadrature difference
+            resolQuadDiffEt[subdet].SetBinContent(iet+1,100*sqrt(pow(hist_res[('weights',ieb,iet)],2)-pow(hist_res[('multifit',ieb,iet)],2)))
+            resolQuadDiffEt[subdet].SetBinError(iet+1,0.001)
             namereso = 'plots/compreso_abseta{eta1}to{eta2}_et{et1}to{et2}'.format(eta1=bins_eta[ieb],eta2=bins_eta[ieb+1],
                                                                              et1=bins_et[iet],et2=bins_et[iet+1])
             printPlot(frames, namereso, text, colors)
 
+            
+
+    # resolution vs ET
+    plots = []; labels = []; styles = []
+    for k,h in resolutionsEt.iteritems():
+        label = '{subdet}, {reco}'.format(subdet='Barrel' if 'EB' in k else 'Endcaps',reco=k.split('_')[0])
+        labels.append(label)
+        plots.append(h)
+        styles.append('pe')
+    leg = doLegend(plots,labels,styles,legBorder=False,corner='TC')
+    printPlot(plots,"plots/resolutionEt",histopt='lpe',legend=leg)
+    
+    # difference in quadrature
+    plots = []; labels = []; styles = []
+    for subdet in ['EB','EE']:
+        label = 'Barrel' if subdet=='EB' else 'Endcaps'
+        labels.append(label)
+        plots.append(resolQuadDiffEt[subdet])
+        styles.append('pe')
+    leg = doLegend(plots,labels,styles,legBorder=False,corner='TC')
+    printPlot(plots,"plots/quadratureDifferenceEt",histopt='lpe',legend=leg)
