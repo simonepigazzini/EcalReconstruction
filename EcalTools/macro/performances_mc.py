@@ -94,27 +94,35 @@ def getRelReso(fitmandsigma):
     err = sigma.getError()
     return (val,err)
 
-def printPlot(frames, name, text=[], colors=[], histopt='', legend=None):
+def printPlot(frames, name, text=[], colors=[], histopt='', legend=None, sim=True, yaxMin=None, yaxMax=None, gridx=False, gridy=False, bandPlot=None):
     canv = ROOT.TCanvas("canv","",1200,1200)
     canv.SetLeftMargin(0.15)
     canv.SetRightMargin(0.05)
     canv.SetBottomMargin(0.15)
-    ymax = max([f.GetMaximum() for f in frames])
-    ymin = min([f.GetMinimum() for f in frames])
+    ymax = yaxMax if yaxMax else max([f.GetMaximum() for f in frames])
+    ymin = yaxMin if yaxMin else min([f.GetMinimum() for f in frames])
+    if gridx: canv.SetGridx()
+    if gridy: canv.SetGridy()
     for iframe,frame in enumerate(frames):
         print "drawing frame ...",frame.GetName()
-        frame.SetMaximum(ymax*(1.10))
-        frame.SetMinimum(0)
+        if frame.InheritsFrom("TH1"):
+            frame.SetMaximum(ymax*(1.10))
+            frame.SetMinimum(ymin if yaxMin else 0)
         frame.GetXaxis().SetNdivisions(505)
         frame.GetXaxis().SetDecimals(1)    
-        if len(histopt)==0:
-            frame.Draw('' if iframe==0 else 'same')
-        else:
-            frame.Draw(histopt if iframe==0 else 'same '+histopt)            
-            if 'l' in histopt:
-                frame.Draw('same Lhist')
+        if frame.InheritsFrom("TH1"):
+            if len(histopt)==0:
+                frame.Draw('' if iframe==0 else 'same')
+            else:
+                frame.Draw(histopt if iframe==0 else 'same '+histopt)            
+                if 'l' in histopt:
+                    frame.Draw('same Lhist')
+        elif frame.InheritsFrom("TGraph"):
+            frame.Draw('AP' if iframe==0 else 'P')
+    if bandPlot:
+        bandPlot.Draw('same hist F')
     if legend: legend.Draw()
-    printCanvas(canv, name, text, colors, options)
+    printCanvas(canv, name, text, colors, sim=sim)
 
 def doSpam(text,x1,y1,x2,y2,align=12,fill=False,textSize=0.033,textColor=ROOT.kBlack,_noDelete={},debugMargins=False):
     cmsprel = ROOT.TPaveText(x1,y1,x2,y2,"NDC");
@@ -135,10 +143,14 @@ def doSpam(text,x1,y1,x2,y2,align=12,fill=False,textSize=0.033,textColor=ROOT.kB
     _noDelete[text] = cmsprel; ## so it doesn't get deleted by PyROOT
     return cmsprel
 
-def printCanvas(c1, name, text, colors, options,textSize=0.03):
+def printCanvas(c1, name, text=[], colors=[], options=None,textSize=0.03,sim=True):
 
-    doSpam("#bf{CMS} #it{Simulation}", 0.12, 0.91, 0.55, 0.98, 12, textSize=0.05)
-    doSpam("(13 TeV)", .55, .91, .95, .98, 32, textSize=0.05)
+    if sim:
+        doSpam("#bf{CMS} #it{Simulation}", 0.12, 0.91, 0.55, 0.98, 12, textSize=0.05)
+        doSpam("(13 TeV)", .55, .91, .95, .98, 32, textSize=0.05)
+    else:
+        doSpam("#bf{CMS}", 0.12, 0.91, 0.55, 0.98, 12, textSize=0.05)
+        doSpam("35.9 fb^{-1} (13 TeV)", .55, .91, .95, .98, 32, textSize=0.05)
     
     y0 = 0.85 - textSize*1.8
     for il,line in enumerate(text):
