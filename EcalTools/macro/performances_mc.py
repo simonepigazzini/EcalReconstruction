@@ -150,7 +150,7 @@ def printCanvas(c1, name, text=[], colors=[], options=None,textSize=0.03,sim=Tru
         doSpam("(13 TeV)", .55, .91, .95, .98, 32, textSize=0.05)
     else:
         doSpam("#bf{CMS}", 0.12, 0.91, 0.55, 0.98, 12, textSize=0.05)
-        doSpam("35.9 fb^{-1} (13 TeV)", .55, .91, .95, .98, 32, textSize=0.05)
+        doSpam("6 fb^{-1} (13 TeV)", .55, .91, .95, .98, 32, textSize=0.05)
     
     y0 = 0.85 - textSize*1.8
     for il,line in enumerate(text):
