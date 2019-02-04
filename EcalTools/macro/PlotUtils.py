@@ -94,9 +94,9 @@ def doLegend(plots,labels,styles,nentries=1,corner="TR",textSize=0.035,cutoff=1e
         elif corner == "BR":
             (x1,y1,x2,y2) = (.90-legWidth, .33 + textSize*max(nentries-3,0), .90, .15)
         elif corner == "BC":
-            (x1,y1,x2,y2) = (.5, .33 + textSize*max(nentries-3,0), .5+legWidth, .15)
+            (x1,y1,x2,y2) = (.5, .23 + textSize*max(nentries-3,0), .5+legWidth, .45)
         elif corner == "BL":
-            (x1,y1,x2,y2) = (.2, .33 + textSize*max(nentries-3,0), .2+legWidth, .15)
+            (x1,y1,x2,y2) = (.2, .23 + textSize*max(nentries-3,0), .2+legWidth, .45)
        
         leg = rt.TLegend(x1,y1,x2,y2)
         leg.SetFillColor(0)
