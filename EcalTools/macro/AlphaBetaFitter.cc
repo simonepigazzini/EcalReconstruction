@@ -10,8 +10,8 @@
 #include <TMath.h>
 #include <TF1.h>
 #include <TCanvas.h>
+#include <TLatex.h>
 #include "tdrstyle.C"
-#include "CMS_lumi.h"
 
 double alphabeta(double *x, double *par) {
   // par[0] = normalization
@@ -41,22 +41,25 @@ public:
   ~AlphaBetaFitter() {}
 
   void fit(TH1F *histo,bool doEB,float pedestal=0,std::string canvasName="");
+  void drawExtrapolatedTail() {_extrapTail = true;}
   double* getPars() {return _pars;}
   double* getErrs() {return _errs;}
   TF1*    getFcn() {return _fitF;}
-  
 
 protected:
   void setParameters(bool doEB, double pedestal);
   
   TF1 *_fitF;
   double _pars[4], _errs[4];
+  bool _extrapTail;
 };
 
 AlphaBetaFitter::AlphaBetaFitter() {
-  _fitF = new TF1("alphabeta",alphabeta,0,10,5);
+  _fitF = new TF1("alphabeta",alphabeta,0,15,5);
   _fitF->SetParNames("norm","#alpha","#beta","tmax","pedestal");
-  _fitF->SetLineColor(kRed+1);
+  _fitF->SetLineColor(kAzure+8);
+  _fitF->SetLineWidth(2);
+  _extrapTail = false;
 }
 
 void AlphaBetaFitter::setParameters(bool doEB, double pedestal) {
@@ -80,14 +83,36 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
   TCanvas *canv = 0;
   if(canvasName!="") {
     canv = new TCanvas("fitc","",600,600);
+    canv->SetLeftMargin(0.15);
+    canv->SetRightMargin(0.05);
+    canv->SetBottomMargin(0.15);
+    canv->SetTopMargin(0.10);
+    histo->SetMarkerStyle(kFullSquare);
     histo->GetXaxis()->SetTitle("Time sample");
+    histo->GetXaxis()->SetTitleOffset(1.5);
     histo->GetYaxis()->SetTitle("Normalized Amplitude");
-    histo->GetYaxis()->SetRangeUser(-0.1,1.2);
-    histo->Draw("p 2");
+    histo->GetYaxis()->SetRangeUser(0,1.2);
+    //histo->Draw("p 2");
   }
 
+  TH1F *gapBand = (TH1F*)histo->Clone("gapBand");
   histo->Fit("alphabeta","QM","same",0,10);
- 
+  if (_extrapTail) {
+    gapBand->SetFillColor(kGray);
+    gapBand->SetLineColor(0);
+    for(int i=0; i<16; ++i) {
+      histo->SetBinError(i,0.02*histo->GetBinContent(i));
+      if(i>10) {
+        histo->SetBinContent(i,_fitF->Eval(i-0.5));
+        gapBand->SetBinContent(i,2);
+      } else {
+        gapBand->SetBinContent(i,0);
+      }
+    }
+    gapBand->Draw("hist");
+    histo->Draw("same pe0");
+  }
+  
   for(int p=1; p<4; ++p) {
     _pars[p-1] = _fitF->GetParameter(p);
     _errs[p-1] = _fitF->GetParError(p);
@@ -98,10 +123,17 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
     setTDRStyle();
     gStyle->SetOptFit(0);
     _fitF->Draw("same");
-    gROOT->LoadMacro("CMS_lumi.h");
-    CMS_lumi(canv,-1);
+    TLatex lat;
+    lat.SetNDC(); lat.SetTextFont(42);
+    lat.DrawLatex(0.17, 0.92, "#bf{CMS}");
+    lat.DrawLatex(0.60, 0.92, "0.5 fb^{-1} (13 TeV)");
+    TLatex labels;
+    labels.SetNDC(); labels.SetTextFont(42); labels.SetTextSize(0.04);
+    labels.DrawLatex(0.7,0.85, "#it{extrapolated}");
+    labels.DrawLatex(0.2,0.85, "#it{readout}");
     canv->SaveAs(canvasName.c_str());
     delete canv;
+    delete gapBand;
   }
 }
 #endif
