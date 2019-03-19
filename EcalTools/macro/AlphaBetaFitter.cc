@@ -89,10 +89,12 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
     canv->SetTopMargin(0.10);
     histo->SetMarkerStyle(kFullSquare);
     histo->GetXaxis()->SetTitle("Time sample");
-    histo->GetXaxis()->SetTitleOffset(1.5);
+    histo->GetXaxis()->SetTitleOffset(1.2);
+    histo->GetXaxis()->SetTitleSize(0.05);
     histo->GetYaxis()->SetTitle("Normalized Amplitude");
+    histo->GetYaxis()->SetTitleOffset(1.2);
+    histo->GetYaxis()->SetTitleSize(0.05);
     histo->GetYaxis()->SetRangeUser(0,1.2);
-    //histo->Draw("p 2");
   }
 
   TH1F *gapBand = (TH1F*)histo->Clone("gapBand");
