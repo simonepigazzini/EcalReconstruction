@@ -189,7 +189,7 @@ void PlotPedNice(){
   c1.Print("myped.C");
 
 
-     gStyle->SetPaintTextFormat(".2f");
+  gStyle->SetPaintTextFormat(".2f");
    TCanvas c2("c2","c2",1200,1200);
    c2.SetGridx();
    c2.SetGridy();
@@ -225,9 +225,9 @@ void PlotPedNice(){
    pedm1->Draw(" P SAME");
 
    lat.DrawLatex(0.16, 0.93, "#bf{CMS} ");
-   lat.DrawLatex(0.66, 0.93, "159 fb^{-1} (13 TeV)");
-   lat.DrawLatex(0.70, 0.83, "ECAL Barrel");
-   auto legend2 = new TLegend(0.17,0.66,0.70,0.80,NULL,"brNDC");
+   lat.DrawLatex(0.60, 0.93, "159 fb^{-1} (13 TeV)");
+   lat.DrawLatex(0.65, 0.83, "ECAL Barrel");
+   auto legend2 = new TLegend(0.45,0.19,0.85,0.30,NULL,"brNDC");
    legend2->SetBorderSize(0);
 
    TLegendEntry *entry2=legend2->AddEntry("entry2","Non-collision runs (long term variation)","p");
@@ -241,11 +241,37 @@ void PlotPedNice(){
 
    legend2->Draw();
 
+   TPad *subpad = new TPad("subpad","",0.20,0.55,0.55,0.85); subpad->Draw(); subpad->cd(); 
+   TGraph * inset_pedm0 = (TGraph*)pedm0->Clone("inset_pedm0");
+   inset_pedm0->GetXaxis()->SetTitle("Time");
+   inset_pedm0->GetYaxis()->SetTitle("Pedestal Mean (ADC counts)");
+   inset_pedm0->GetXaxis()->SetTimeDisplay(1);
+   inset_pedm0->GetXaxis()->SetNdivisions(404);
+   inset_pedm0->GetXaxis()->SetLabelSize(0.035);
+   inset_pedm0->GetYaxis()->SetLabelSize(0.035);
+   inset_pedm0->GetXaxis()->SetTitleSize(0.04);
+   inset_pedm0->GetYaxis()->SetTitleSize(0.04);
+
+
+   inset_pedm0->GetXaxis()->SetTimeFormat("%Y/%m");
+   inset_pedm0->GetXaxis()->LabelsOption("v");
+   inset_pedm0->GetXaxis()->SetTimeOffset(0,"gmt");
+   inset_pedm0->GetXaxis()->SetRangeUser(1533427260.,1533427260.+2*24*60*60);
+   inset_pedm0->SetMarkerColor(kGreen+4);
+   inset_pedm0->SetMarkerSize(1.0);
+   inset_pedm0->SetMarkerStyle(24);
+   inset_pedm0->SetMinimum(204.0);
+   inset_pedm0->SetMaximum(206.0);
+   inset_pedm0->Draw("A P");
+
+   TGraph * inset_pedm1 = (TGraph*)pedm1->Clone("inset_pedm1");
+   inset_pedm1->SetMarkerSize(1.0);
+   inset_pedm1->SetMarkerStyle(20);
+   inset_pedm1->SetMarkerColor(kRed+3);
+   inset_pedm1->Draw(" P SAME");
+
    c2.Print("myped2.pdf");
    c2.Print("myped2.C");
-
-
-   
 
 }
 
