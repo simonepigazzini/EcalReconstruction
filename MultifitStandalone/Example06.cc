@@ -25,31 +25,26 @@ SampleMatrix noisecor(SampleMatrix::Zero());
 BXVector activeBX;
 SampleVector amplitudes(SampleVector::Zero());
 
+int NSTEPS=11;
+
 TFile *fout;
-TH1D *h01;
-
-
+TTree *treeout;
+TH1D *hsteps;
+double amplitude[10];
+double amplitudeTruth;
+float steps[11] = {0.,.1,.2,.3,.5,1,2,3,5,10,25};
 
 void initHist()
 {
   fout = new TFile("output.root","recreate");
-  h01 = new TH1D("h01", "dA", 1000, -5.0, 5.0);
-}
-
-void init()
-{
-  initHist();
-
-  // intime sample is [2]
-  double pulseShapeTemplate[NSAMPLES+2];
-  for(int i=0; i<(NSAMPLES+2); i++){
-    double x = double( IDSTART + NFREQ * (i + 3) - WFLENGTH / 2);
-    pulseShapeTemplate[i] = pSh.fShape(x);
+  treeout = new TTree("amplitudes","tree with reco amplitudes");
+  hsteps = new TH1D("hsteps","",NSTEPS,0,NSTEPS);
+  for(int i=0;i<NSTEPS;++i) {
+    hsteps->SetBinContent(i+1,steps[i]);
   }
-  //  for(int i=0; i<(NSAMPLES+2); i++) pulseShapeTemplate[i] /= pulseShapeTemplate[2];
-  for (int i=0; i<(NSAMPLES+2); ++i) fullpulse(i+7) = pulseShapeTemplate[i];
+  treeout->Branch("amplitude", amplitude, Form("amplitude[%i]/D",NSTEPS));
+  treeout->Branch("amplitudeTruth", &amplitudeTruth, "amplitudeTruth/D");
 
-  
   for (int i=0; i<NSAMPLES; ++i) {
     for (int j=0; j<NSAMPLES; ++j) {
       int vidx = std::abs(j-i);
@@ -64,6 +59,22 @@ void init()
   } 
   //  activeBX.resize(1);
   //  activeBX.coeffRef(0) = 0;
+
+}
+
+void init(int step)
+{
+  float deltat = steps[step];
+  // intime sample is [2]
+  double pulseShapeTemplate[NSAMPLES+2];
+  for(int i=0; i<(NSAMPLES+2); i++){
+    double x = double( IDSTART + NFREQ * (i + 3) - WFLENGTH / 2);
+    pulseShapeTemplate[i] = pSh.fShape(x+deltat);
+  }
+  for (int i=0; i<(NSAMPLES+2); ++i) {
+    pulseShapeTemplate[i] /= pulseShapeTemplate[2];
+    fullpulse(i+7) = pulseShapeTemplate[i];
+  }
 }
 
 
@@ -72,10 +83,9 @@ void run()
 {
 
   // TFile *file2 = new TFile("data/samples_signal_10GeV_pu_0.root");
-  TFile *file2 = new TFile("data/samples_signal_10GeV_eta_0.0_pu_140.root");
+  TFile *file2 = TFile::Open("data/samples_signal_10GeV_eta_0.0_pu_140.root");
 
   double samples[NSAMPLES];
-  double amplitudeTruth;
   TTree *tree = (TTree*)file2->Get("Samples");
   tree->SetBranchAddress("amplitudeTruth",      &amplitudeTruth);
   tree->SetBranchAddress("samples",             samples);
@@ -87,35 +97,41 @@ void run()
       amplitudes[i] = samples[i];
     }
 
+    std::cout << "PROCESSING EVENT " << ievt << std::endl;
     double pedval = 0.;
     double pedrms = 1.0;
     PulseChiSqSNNLS pulsefunc;
 
     pulsefunc.disableErrorCalculation();
-    bool status = pulsefunc.DoFit(amplitudes,noisecor,pedrms,activeBX,fullpulse,fullpulsecov);
-    double chisq = pulsefunc.ChiSq();
-  
-    unsigned int ipulseintime = 0;
-    for (unsigned int ipulse=0; ipulse<pulsefunc.BXs().rows(); ++ipulse) {
-      if (pulsefunc.BXs().coeff(ipulse)==0) {
-	ipulseintime = ipulse;
-	break;
-      }
-    }
-    double aMax = status ? pulsefunc.X()[ipulseintime] : 0.;
-    //  double aErr = status ? pulsefunc.Errors()[ipulseintime] : 0.;
 
-    h01->Fill(aMax - amplitudeTruth);
+    for(int step=0; step<NSTEPS; ++step) {
+      init(step);
+      bool status = pulsefunc.DoFit(amplitudes,noisecor,pedrms,activeBX,fullpulse,fullpulsecov);
+      double chisq = pulsefunc.ChiSq();
+
+      unsigned int ipulseintime = 0;
+      for (unsigned int ipulse=0; ipulse<pulsefunc.BXs().rows(); ++ipulse) {
+        if (pulsefunc.BXs().coeff(ipulse)==0) {
+          ipulseintime = ipulse;
+          break;
+        }
+      }
+      double aMax = status ? pulsefunc.X()[ipulseintime] : 0.;
+      //  double aErr = status ? pulsefunc.Errors()[ipulseintime] : 0.;
+      
+      amplitude[step] = aMax;
+
+    }
+    treeout->Fill();
   }
-  cout << "  Mean of REC-MC = " << h01->GetMean() << " GeV" << endl;
-  cout << "   RMS of REC-MC = " << h01->GetRMS() << " GeV" << endl;
 }
 
 void saveHist()
 {
 
   fout->cd();
-  h01->Write();
+  treeout->Write();
+  hsteps->Write();
   fout->Close();
 }
 
@@ -124,7 +140,7 @@ void saveHist()
 # ifndef __CINT__
 int main()
 {
-  init();
+  initHist();
   run();
   saveHist();
   return 0;
