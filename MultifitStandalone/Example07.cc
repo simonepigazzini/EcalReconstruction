@@ -1,7 +1,7 @@
 //
-// MultiFit amplitude reconstruction vs deltaT shift
+// MultiFit amplitude reconstruction vs Pedestal step
 // To run:
-// > g++ -o Example06 Example06.cc PulseChiSqSNNLS.cc -std=c++11 `root-config --cflags --glibs`
+// > g++ -o Example07 Example07.cc PulseChiSqSNNLS.cc -std=c++11 `root-config --cflags --glibs`
 // > ./Example06
 //
 
@@ -25,16 +25,16 @@ SampleMatrix noisecor(SampleMatrix::Zero());
 BXVector activeBX;
 SampleVector amplitudes(SampleVector::Zero());
 
-int NSTEPS=19;
+int NSTEPS=21;
 
 TFile *fout;
 TTree *treeout;
 TH1D *hsteps;
-double amplitude[19];
+double amplitude[21];
 double amplitudeTruth;
-double steps[19] = {-10,-5,-4,-3,-2,-1,-0.5,-0.25,-0.1,
+double steps[21] = {-1,-0.9,-0.8,-0.7,-0.6,-0.5,-0.4,-0.3,-0.2,-0.1,
                     0.0,
-                    0.1,0.25,0.5,1.,2.,3,4,5,10};
+                    0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1};
 
 void initHist()
 {
@@ -64,14 +64,13 @@ void initHist()
 
 }
 
-void init(int step)
+void init()
 {
-  float deltat = steps[step];
   // intime sample is [2]
   double pulseShapeTemplate[NSAMPLES+2];
   for(int i=0; i<(NSAMPLES+2); i++){
     double x = double( IDSTART + NFREQ * (i + 3) - WFLENGTH / 2);
-    pulseShapeTemplate[i] = pSh.fShape(x-deltat);
+    pulseShapeTemplate[i] = pSh.fShape(x);
   }
   for (int i=0; i<(NSAMPLES+2); ++i) {
     //pulseShapeTemplate[i] /= pulseShapeTemplate[2];
@@ -96,9 +95,6 @@ void run()
 
   for(int ievt=0; ievt<nentries; ++ievt){
     tree->GetEntry(ievt);
-    for(int i=0; i<NSAMPLES; i++){
-      amplitudes[i] = samples[i];
-    }
 
     std::cout << "PROCESSING EVENT " << ievt << std::endl;
     double pedval = 0.;
@@ -106,9 +102,14 @@ void run()
     PulseChiSqSNNLS pulsefunc;
 
     pulsefunc.disableErrorCalculation();
+    init();
 
+    // SCAN
     for(int step=0; step<NSTEPS; ++step) {
-      init(step);
+      for(int i=0; i<NSAMPLES; i++){
+        amplitudes[i] = samples[i]-steps[step];
+      }
+
       bool status = pulsefunc.DoFit(amplitudes,noisecor,pedrms,activeBX,fullpulse,fullpulsecov);
       double chisq = pulsefunc.ChiSq();
 
