@@ -2,10 +2,8 @@
 import ROOT
 import root_numpy as rtnp
 
-if __name__ == "__main__":
-
-    ROOT.gStyle.SetOptStat(0)
-    tf = ROOT.TFile.Open("data/reco_signal_50GeV_eta_0.0_pu_40.root")
+def getGraph(filename):
+    tf = ROOT.TFile.Open(filename)
     tree = tf.Get("amplitudes")
     hsteps = tf.Get("hsteps")
 
@@ -20,20 +18,8 @@ if __name__ == "__main__":
         bias = hist.GetMean()
         err = hist.GetMeanError()
         print "deltat = {dt} => bias = {bias}".format(dt=s,bias=bias)
-
         gr.SetPoint(i,s,bias)
         gr.SetPointError(i,0,err)
-
-
-    lat = ROOT.TLatex()
-    lat.SetNDC(); lat.SetTextFont(42)
-    
-    canv = ROOT.TCanvas("canv","",1200,1200)
-    canv.SetGridx()
-    canv.SetGridy()
-    canv.SetLeftMargin(0.17)
-    canv.SetRightMargin(0.1)
-    canv.SetBottomMargin(0.15)
     gr.SetMarkerStyle(ROOT.kFullCircle)
     gr.SetMarkerSize(1.5)
     gr.Draw("ACPE")
@@ -45,8 +31,36 @@ if __name__ == "__main__":
     yax.SetTitleOffset(1.5); yax.SetTitleSize(0.05)
     xax.SetTitle('#Delta T (ns)')
     yax.SetTitle('A/A_{true}')
+    return gr
+    
+if __name__ == "__main__":
 
+    grfull = getGraph("data/reco_signal_50GeV_eta_0.0_pu_40_shiftdt_pm5ns.root")
+    grzoom = getGraph("data/reco_signal_50GeV_eta_0.0_pu_40_shiftdt_pm1ns.root")
+    
+    ROOT.gStyle.SetOptStat(0)
+
+    canv = ROOT.TCanvas("canv","",1200,1200)
+    canv.SetGridx()
+    canv.SetGridy()
+    canv.SetLeftMargin(0.17)
+    canv.SetRightMargin(0.1)
+    canv.SetBottomMargin(0.15)
+
+    grfull.Draw("ACPE")
+
+    lat = ROOT.TLatex()
+    lat.SetNDC(); lat.SetTextFont(42)
     lat.DrawLatex(0.19, 0.92, '#bf{CMS}')
     lat.DrawLatex(0.73, 0.92, '(13 TeV)')
+
+    subpad = ROOT.TPad("subpad","",0.22,0.5,0.55,0.88); subpad.Draw(); subpad.cd();
+    subpad.SetGridx(); subpad.SetGridy()
+    subpad.SetLeftMargin(0.17)
+    subpad.SetBottomMargin(0.15)
+    grzoom.GetYaxis().SetRangeUser(0.985,1.015)
+    grzoom.GetYaxis().SetRangeUser(0.985,1.015)
+    grzoom.Draw("ACPE")
+
     canv.SaveAs("bias_vs_dt.pdf")
     

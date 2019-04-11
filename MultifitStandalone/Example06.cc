@@ -25,16 +25,19 @@ SampleMatrix noisecor(SampleMatrix::Zero());
 BXVector activeBX;
 SampleVector amplitudes(SampleVector::Zero());
 
-int NSTEPS=19;
+int NSTEPS=21;
 
 TFile *fout;
 TTree *treeout;
 TH1D *hsteps;
-double amplitude[19];
+double amplitude[21];
 double amplitudeTruth;
-double steps[19] = {-10,-5,-4,-3,-2,-1,-0.5,-0.25,-0.1,
+// double steps[19] = {-10,-5,-4,-3,-2,-1,-0.5,-0.25,-0.1,
+//                     0.0,
+//                     0.1,0.25,0.5,1.,2.,3,4,5,10};
+double steps[21] = {-1,-0.9,-0.8,-0.7,-0.6,-0.5,-0.4,-0.3,-0.2,-0.1,
                     0.0,
-                    0.1,0.25,0.5,1.,2.,3,4,5,10};
+                    0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1};
 
 void initHist()
 {
