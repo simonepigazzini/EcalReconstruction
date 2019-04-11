@@ -23,6 +23,7 @@ class TagFitter:
             print "Load C++ Fitter"
             rt.gROOT.ProcessLine(".L AlphaBetaFitter.cc+")
         self.abfitter = rt.AlphaBetaFitter()
+        self.abfitter.drawExtrapolatedTail()
         
     def parseDic(self,rawdata):
         mydata = {}
@@ -66,7 +67,7 @@ class TagFitter:
             normshape = self.getPeakNormalisedPulseShape(pulseshape,int(partition),detid)
             fout.write(partition+"  "+detid+"  "+"  ".join("%.6f" % x for x in normshape)+"\n")
             ncry += 1
-            #if ncry > 10: break
+            if ncry > 10: break
         print "Bad Fits = ",self._badFits
         
 
