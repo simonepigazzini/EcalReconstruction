@@ -33,10 +33,10 @@ void Example02()
   
   const TString fileInput       = "data/EmptyFileCRRC43.root";
   const TString fileOutput      = "output.root";
-  const int     nPU             = 0;
-  const int     nEventsTotal    = 100;
+  const int     nPU             = 40;
+  const int     nEventsTotal    = 10000;
   const float   eta             = 0.0;
-  const float   signalAmplitude = 10.0;
+  const float   signalAmplitude = 50.0;
   
   TFile *file = new TFile(fileInput.Data());
 
@@ -79,6 +79,7 @@ void Example02()
 
   
   for(int ievt = 0; ievt < nEventsTotal; ievt++){
+    if (ievt%100==0) std::cout << "simulating event " << ievt << "..." << endl;
     for(int ibx = 0; ibx < nBX; ibx++){
 
       // number of min-bias interactions in each bunch crossing

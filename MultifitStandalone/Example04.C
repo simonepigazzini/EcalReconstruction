@@ -33,7 +33,7 @@ void Example04()
 
   // input Waveforms
 
-  TFile *file = new TFile("data/waveform_signal_10GeV_pu_0.root");
+  TFile *file = new TFile("data/waveform_signal_50GeV_eta_2.5_pu_40.root");
   int    BX0;
   int    nWF;
   double waveform[WFLENGTH];
