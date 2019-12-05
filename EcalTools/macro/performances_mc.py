@@ -157,7 +157,7 @@ def printCanvas(c1, name, text=[], colors=[], options=None,textSize=0.03,sim=Tru
         niceline = re.sub(r"(\s+)-(\d+)",r"\1#minus\2", line)
         doSpam(niceline, 0.20, y0, 0.40, y0 + textSize*1.2, 11, textSize=textSize, textColor=colors[il])
         y0 -= textSize * 1.8
-    for ext in ['pdf','png']:
+    for ext in ['pdf','png','root']:
         c1.Print('{name}.{ext}'.format(name=name,ext=ext))
 
 

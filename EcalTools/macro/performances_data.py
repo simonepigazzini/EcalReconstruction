@@ -8,9 +8,10 @@ import ROOT
 ROOT.gROOT.SetBatch(True)
 from PlotUtils import doLegend
 
-from performances_mc import effSigma,printCanvas,printPlot
+from performances_mc import effSigma,printCanvas,printPlot,fitOneReso
 
-def getOneMassHisto(tree,absetamin,absetamax,variable='invMass_5x5SC',xmin=60,xmax=110,timeMin=-1,timeMax=-1,name='mass'):
+def getOneMassHisto(tree,absetamin,absetamax,variable='R9Ele[0]',xmin=0,xmax=1.1,timeMin=-1,timeMax=-1,runRange=(-1,1e+6),name='r9'):
+#def getOneMassHisto(tree,absetamin,absetamax,variable='invMass_5x5SC',xmin=50,xmax=110,timeMin=-1,timeMax=-1,runRange=(-1,1e+6),name='mass'):
     canv = ROOT.TCanvas("canvreso","",1200,1200)
     canv.SetLeftMargin(0.15)
     canv.SetRightMargin(0.15)
@@ -22,13 +23,16 @@ def getOneMassHisto(tree,absetamin,absetamax,variable='invMass_5x5SC',xmin=60,xm
     #phasespace = '(abs(etaEle[0])>{etamin} && abs(etaEle[0])<{etamax} && abs(etaEle[1])>{etamin} && abs(etaEle[1])<{etamax})'.format(etamin=absetamin,etamax=absetamax)        
     if timeMin>0 and timeMax>0:
         time = 'eventTime>{timemin} && eventTime<{timemax}'.format(timemin=timeMin,timemax=timeMax)
-        nbins = 100
+        nbins = 50
     else:
         time = '1'
         nbins = 200 if absetamax<1.3 else 100
-    unconv     = 'fbremEle[0]>0 && fbremEle[0]<{fbremcut} && fbremEle[1]>0 && fbremEle[1]<{fbremcut}'.format(fbremcut=0.1 if absetamax<1.5 else 0.1)
-    cut = '{c1} && {c2} && {c3}'.format(c1=phasespace,c2=unconv,c3=time)
-    variable   = 'invMass_5x5SC'
+    runRangeCut = 'runNumber>={rmin} && runNumber<={rmax}'.format(rmin=runRange[0],rmax=runRange[1])
+    #unconv     = 'fbremEle[0]>0 && fbremEle[0]<{fbremcut} && fbremEle[1]>0 && fbremEle[1]<{fbremcut}'.format(fbremcut=0.3 if absetamax<1.5 else 0.5)
+    unconv = '1'
+    cut = '{c1} && {c2} && {c3} && {c4}'.format(c1=phasespace,c2=unconv,c3=time,c4=runRangeCut)
+    #variable   = 'invMass_5x5SC'
+    #variable   = 'invMass'
     #print "Now plotting ",variable,"  with cuts: ",cut
     nicename = cut.replace(">","gt").replace("<","lt").replace("&&","AND").replace(".","p").replace(" ","_").replace(")","").replace("(","").replace("[",'').replace("]",'').replace("!","NOT").replace('||','OR')
     histoname = '{name}_{cuts}'.format(name=name,cuts=nicename)
@@ -44,6 +48,16 @@ def getMedian(histo):
     histo.GetQuantiles(len(probSums),quantiles,probSums)
     return quantiles[0]
 
+def getMaximumPosition(histo):
+    binmax = histo.GetMaximumBin()
+    return histo.GetXaxis().GetBinCenter(binmax)
+
+def getFitPeak(histo):
+    if histo.Integral()==0:
+        return (0.0,0.0)
+    res,func = fitOneReso(histo,"mass",-1,ROOT.kBlack,ROOT.kRed)
+    return (res.Parameter(1), res.Parameter(2))
+    
 if __name__ == "__main__":
 
     from optparse import OptionParser
@@ -51,7 +65,7 @@ if __name__ == "__main__":
     parser.add_option('-s',  "--step",    dest="step", type='string', default='history', help="step (can be 'histograms','history')")
     parser.add_option('-o',  "--outfile", dest="outfile", default='masses.root', help="name of the output file for the step 1 (default = masses.root)")    
     parser.add_option('-i',  "--infile", dest="infile",   default='masses.root', help="name of the input file with histograms")    
-    parser.add_option(       "--deltat", dest="deltat",   default=5, type=int, help="time interval in days where average the hiostory (dafault=5 days)")    
+    parser.add_option(       "--runrange", dest="runRange", type=int, nargs=2, default=(277069, 277087), help="run range to be analyzed (default fill ")    
     (options, args) = parser.parse_args()
     
     ROOT.gStyle.SetOptStat(0)
@@ -73,10 +87,17 @@ if __name__ == "__main__":
 
     if options.step=='histograms':
         oneday = 24*60*60
-        deltat = options.deltat * oneday
-        beginTime = 1462950000
-        endTime = 1473000000
-        #endTime = beginTime+10*oneday
+        onehour = 60*60
+        deltat = 5*onehour
+        beginTime = 1466953984 # 26/06/2016 - start of fill 5045
+        endTime = 1467088854 # 28/06/2016 - end of fill 5045
+
+        beginTime = 1468948818
+        endTime = 1469032179
+        
+        #beginTime = 1462950000
+        #endTime = 1473000000
+
         
         outfname = options.outfile
         outfile = ROOT.TFile(outfname,'recreate')
@@ -84,18 +105,19 @@ if __name__ == "__main__":
         for idir,d in enumerate(dirs):
             reco = recolabels[idir]
             print "Resolution vs time: analyzing reconstruction algo: ",reco
-            chains[reco].Add('{d1}/{d2}/DoubleEG*Run2016*.root'.format(d1=maindir,d2=d))
+            #chains[reco].Add('{d1}/{d2}/DoubleEG*Run2016*.root'.format(d1=maindir,d2=d))
+            chains[reco].Add('{d1}/{d2}/DoubleEG*Run2016E*.root'.format(d1=maindir,d2=d))
             time = beginTime
             while time<endTime:
                 print "Date: ",datetime.utcfromtimestamp(time).strftime('%Y-%m-%d %H:%M:%S')
                 for ieb in xrange(len(bins_eta)-1):
                     subdet_idx = 0 if abs(bins_eta[ieb])<1.4442 else 1
-                    start = time; stop = time+oneday
-                    hist = getOneMassHisto(chains[reco],bins_eta[ieb],bins_eta[ieb+1],timeMin=start,timeMax=stop,name='mass_'+reco)
+                    start = time; stop = time+deltat
+                    hist = getOneMassHisto(chains[reco],bins_eta[ieb],bins_eta[ieb+1],timeMin=start,timeMax=stop,runRange=options.runRange,name='mass_'+reco)
                     outfile.cd()
                     hist.Write()
                 time += deltat
-
+                #if time-beginTime>10: deltat=4*onehour
         outfile.Close()
 
     if options.step == 'history':
@@ -113,8 +135,11 @@ if __name__ == "__main__":
             histo = infile.Get(hname)
             tokens = hname.split('_')
             variable = tokens[0]; reco = tokens[1]
-            startTime = tokens[-3].replace('eventTimegt',''); stopTime = tokens[-1].replace('eventTimelt','');
+            startTime = tokens[-7].replace('eventTimegt',''); stopTime = tokens[-5].replace('eventTimelt','');
             #print "var = ",variable," reco = ",reco," start = ",startTime,"   stop = ",stopTime
+            #median,effsigma = (getMedian(histo),effSigma(histo))
+            #median,effsigma = (getMaximumPosition(histo),effSigma(histo))
+            #median,sigma = getFitPeak(histo)
             median,effsigma = (getMedian(histo),effSigma(histo))
             #print "integral = ",histo.Integral(),"  median = ",median,"    effsigma = ",effsigma
             subdet = 'EE' if 'NOT' in hname else 'EB'
@@ -125,9 +150,13 @@ if __name__ == "__main__":
 
         print "estimators = ",hist_res
 
-        history = ROOT.TGraphErrors(nTimePoints)
+        history = ROOT.TGraphErrors(nTimePoints/2)
+        print "nTimePoints = ",nTimePoints/2
         history.GetXaxis().SetTimeDisplay(1)
-        history.GetXaxis().SetTimeFormat("%m\/%y%F2016-05-01 13:00:01");
+        history.GetXaxis().SetTimeFormat("%H:%M");
+        history.GetXaxis().SetTitle("Time during fill (hr:min)")
+        history.GetXaxis().SetTitleOffset(0.1)
+        history.GetYaxis().SetTitle("Median of cluster R_{9}")
         
         graph = {}; graph_npoints = {}
         hist_colors = {'weights':ROOT.kBlack, 'multifit':ROOT.kRed}
@@ -139,32 +168,41 @@ if __name__ == "__main__":
                     graph[(reco,subdet,est)].SetTitle("")
                     graph[(reco,subdet,est)].GetXaxis().SetTitle()
                     graph[(reco,subdet,est)].SetMarkerStyle(ROOT.kOpenSquare)
-                    graph[(reco,subdet,est)].SetMarkerSize(0.9)
+                    graph[(reco,subdet,est)].SetMarkerSize(1.2)
                     graph[(reco,subdet,est)].SetMarkerColor(hist_colors[reco])
                     graph[(reco,subdet,est)].SetLineColor(hist_colors[reco])
                     if est=='median':
-                        graph[(reco,subdet,est)].SetMaximum(84)
-                        graph[(reco,subdet,est)].SetMinimum(82)
+                        graph[(reco,subdet,est)].SetMaximum(0.915)
+                        graph[(reco,subdet,est)].SetMinimum(0.885)
                     else:
-                        graph[(reco,subdet,est)].SetMaximum(5)
-                        graph[(reco,subdet,est)].SetMinimum(4)
+                        graph[(reco,subdet,est)].SetMaximum(5.0)
+                        graph[(reco,subdet,est)].SetMinimum(4.5)
                         
 
                         
         for key,val in hist_res.iteritems():
             (variable,reco,subdet,start,stop) = key
             (median,effsigma) = val
-            time = (float(stop)+float(start))/2.
-            graph[(reco,subdet,'median')].SetPoint(graph_npoints[(reco,subdet,'median')],time,median); graph_npoints[(reco,subdet,'median')]+=1
-            graph[(reco,subdet,'sigma')].SetPoint(graph_npoints[(reco,subdet,'sigma')],time,effsigma); graph_npoints[(reco,subdet,'sigma')]+=1
+            time = int((float(stop.replace('p0',''))+float(start.replace('p0','')))/2.)
+            print "time = ",datetime.utcfromtimestamp(time).strftime('%Y-%m-%d %H:%M:%S')
+            median_norm = 1.
+            sigma_norm = 1.0
+            graph[(reco,subdet,'median')].SetPoint(graph_npoints[(reco,subdet,'median')],time,median/median_norm); 
+            #graph[(reco,subdet,'median')].SetPoint(graph_npoints[(reco,subdet,'median')],time,median/median_norm); 
+            #graph[(reco,subdet,'median')].SetPointError(graph_npoints[(reco,subdet,'sigma')],0,effsigma);
+            graph_npoints[(reco,subdet,'median')]+=1
+            graph[(reco,subdet,'sigma')].SetPoint(graph_npoints[(reco,subdet,'sigma')],time,effsigma/sigma_norm); graph_npoints[(reco,subdet,'sigma')]+=1
             print key, "has values:", val
             print graph_npoints[(reco,subdet,'median')]
             
         for subdet in ['EB','EE']:
             for est in ['median','sigma']:
                 plots = [ graph[(reco,subdet,est)] for reco in ['weights','multifit'] ]
+                labels = ['weights','multifit']
+                styles = ['pe','pe']
+                leg = doLegend(plots,labels,styles,legBorder=False,corner='TL')
                 nameplot = 'history_mass_{sub}_{est}'.format(sub=subdet,est=est)
-                printPlot(plots, nameplot)
+                printPlot(plots, nameplot, sim=False, legend=leg)
 
 
 
