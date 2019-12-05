@@ -52,5 +52,7 @@ if __name__ == "__main__":
 
     lat.DrawLatex(0.19, 0.92, '#bf{CMS}')
     lat.DrawLatex(0.73, 0.92, '(13 TeV)')
+    lat.DrawLatex(0.19,0.20, 'E=50 GeV')
+    
     canv.SaveAs("bias_vs_dped.pdf")
     

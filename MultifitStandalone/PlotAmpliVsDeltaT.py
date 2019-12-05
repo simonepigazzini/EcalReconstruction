@@ -53,7 +53,8 @@ if __name__ == "__main__":
     lat.SetNDC(); lat.SetTextFont(42)
     lat.DrawLatex(0.19, 0.92, '#bf{CMS} Simulation')
     lat.DrawLatex(0.73, 0.92, '(13 TeV)')
-
+    lat.DrawLatex(0.60,0.20, 'E=50 GeV')
+    
     subpad = ROOT.TPad("subpad","",0.22,0.5,0.55,0.88); subpad.Draw(); subpad.cd();
     subpad.SetGridx(); subpad.SetGridy()
     subpad.SetLeftMargin(0.17)

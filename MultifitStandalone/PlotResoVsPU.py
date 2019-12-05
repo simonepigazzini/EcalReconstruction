@@ -68,21 +68,22 @@ def getOne(reco,npu,energy,includeITasTrue=False,eta="0.0"):
     rms = histo.GetRMS()
     effs = effSigma(histo)
     
-    gaussf = ROOT.TF1('gaussf','gaus',mean-3*rms,mean+3*rms)
-    gaussf.SetParameter(1,mean)
-    gaussf.SetParameter(2,rms)
-    histo.Fit('gaussf')
+    # gaussf = ROOT.TF1('gaussf','gaus',mean-3*rms,mean+3*rms)
+    # gaussf.SetParameter(1,mean)
+    # gaussf.SetParameter(2,rms)
+    # histo.Fit('gaussf')
 
-    m = gaussf.GetParameter(1)
-    me = gaussf.GetParError(1)
-    s = gaussf.GetParameter(2)
-    se = gaussf.GetParError(2)
+    # m = gaussf.GetParameter(1)
+    # me = gaussf.GetParError(1)
+    # s = gaussf.GetParameter(2)
+    # se = gaussf.GetParError(2)
 
-    return (mean,meanerr,effs,se)
+    return (mean,meanerr,effs,0)
 
 if __name__ == "__main__":
 
-    Energy = 2 # GeV
+    ## toys done for 2 or 50 GeV
+    Energy = 50 # GeV
     
     ROOT.gStyle.SetOptStat(0)
 
@@ -110,7 +111,7 @@ if __name__ == "__main__":
         offset['weights'] = 5e-3
         offset['multifit'] = 0
     else:
-        offset['weights'] = 2e-4
+        offset['weights'] = 2.5e-4
         offset['multifit'] = 0
     
     for i,pu in enumerate(purange):
@@ -143,7 +144,7 @@ if __name__ == "__main__":
 
     xax = graphs[('weights','itfalse')].GetXaxis(); yax = graphs[('weights','itfalse')].GetYaxis()
     if Energy>10:
-        yax.SetRangeUser(0.0005,0.0012)
+        yax.SetRangeUser(0.0004,0.0012)
     else:
         yax.SetRangeUser(0.005,0.04)
     yax.SetDecimals()
@@ -161,5 +162,6 @@ if __name__ == "__main__":
     lat.SetNDC(); lat.SetTextFont(42)
     lat.DrawLatex(0.19, 0.92, '#bf{CMS} Simulation')
     lat.DrawLatex(0.73, 0.92, '(13 TeV)')
-
+    lat.DrawLatex(0.19,0.20, 'E={ene} GeV'.format(ene=Energy))
+    
     canv.SaveAs("resol_vs_pu_{ene}GeV.pdf".format(ene=Energy))
