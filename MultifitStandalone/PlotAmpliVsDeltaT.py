@@ -24,7 +24,7 @@ def getGraph(filename):
     gr.SetMarkerSize(1.5)
     gr.Draw("ACPE")
     xax = gr.GetXaxis(); yax = gr.GetYaxis()
-    xax.SetRangeUser(-4.5,4.5)
+    xax.SetRangeUser(-4.,4.)
     yax.SetRangeUser(0.97,1.05)
     yax.SetDecimals()
     xax.SetTitleOffset(1.1); xax.SetTitleSize(0.05)
@@ -47,11 +47,11 @@ if __name__ == "__main__":
     canv.SetRightMargin(0.1)
     canv.SetBottomMargin(0.15)
 
-    grfull.Draw("ACPE")
+    grfull.Draw("ALPE")
 
     lat = ROOT.TLatex()
     lat.SetNDC(); lat.SetTextFont(42)
-    lat.DrawLatex(0.19, 0.92, '#bf{CMS}')
+    lat.DrawLatex(0.19, 0.92, '#bf{CMS} Simulation')
     lat.DrawLatex(0.73, 0.92, '(13 TeV)')
 
     subpad = ROOT.TPad("subpad","",0.22,0.5,0.55,0.88); subpad.Draw(); subpad.cd();
@@ -60,7 +60,7 @@ if __name__ == "__main__":
     subpad.SetBottomMargin(0.15)
     grzoom.GetYaxis().SetRangeUser(0.985,1.015)
     grzoom.GetYaxis().SetRangeUser(0.985,1.015)
-    grzoom.Draw("ACPE")
+    grzoom.Draw("ALPE")
 
     canv.SaveAs("bias_vs_dt.pdf")
     
