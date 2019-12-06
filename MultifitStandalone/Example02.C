@@ -32,9 +32,9 @@ void Example02()
   // make sure these inputs are what you really want
   
   const TString fileInput       = "data/EmptyFileCRRC43.root";
-  const TString fileOutput      = "output.root";
+  const TString fileOutput      = "data/waveform_signal_50GeV_eta_0.0_pu_40.root";
   const int     nPU             = 40;
-  const int     nEventsTotal    = 10000;
+  const int     nEventsTotal    = 100000;
   const float   eta             = 0.0;
   const float   signalAmplitude = 50.0;
   

@@ -25,19 +25,26 @@ SampleMatrix noisecor(SampleMatrix::Zero());
 BXVector activeBX;
 SampleVector amplitudes(SampleVector::Zero());
 
-int NSTEPS=21;
+int NSTEPS=1;
+double amplitude[1]; // NSTEPS
+
+
+int    BX0;
+int    nBX    = NBXTOTAL;
+double energyPU[NBXTOTAL];
 
 TFile *fout;
 TTree *treeout;
 TH1D *hsteps;
-double amplitude[21];
+double amp[10];
 double amplitudeTruth;
 // double steps[19] = {-10,-5,-4,-3,-2,-1,-0.5,-0.25,-0.1,
+//                      0.0,
+//                      0.1,0.25,0.5,1.,2.,3,4,5,10};
+// double steps[21] = {-1,-0.9,-0.8,-0.7,-0.6,-0.5,-0.4,-0.3,-0.2,-0.1,
 //                     0.0,
-//                     0.1,0.25,0.5,1.,2.,3,4,5,10};
-double steps[21] = {-1,-0.9,-0.8,-0.7,-0.6,-0.5,-0.4,-0.3,-0.2,-0.1,
-                    0.0,
-                    0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1};
+//                     0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1};
+double steps[21] = {0.0};
 
 void initHist()
 {
@@ -47,8 +54,13 @@ void initHist()
   for(int i=0;i<NSTEPS;++i) {
     hsteps->SetBinContent(i+1,steps[i]);
   }
+
   treeout->Branch("amplitude", amplitude, Form("amplitude[%i]/D",NSTEPS));
+  treeout->Branch("amp",       amp,                  "amp[10]/D");
   treeout->Branch("amplitudeTruth", &amplitudeTruth, "amplitudeTruth/D");
+  treeout->Branch("BX0",            &BX0,            "BX0/I");
+  treeout->Branch("nBX",            &nBX,            "nBX/I");
+  treeout->Branch("energyPU",       energyPU,        "energyPU[nBX]/D");
 
   for (int i=0; i<NSAMPLES; ++i) {
     for (int j=0; j<NSAMPLES; ++j) {
@@ -87,14 +99,16 @@ void init(int step)
 void run()
 {
 
-  // TFile *file2 = new TFile("data/samples_signal_10GeV_pu_0.root");
   TFile *file2 = TFile::Open("data/samples_signal_50GeV_eta_0.0_pu_40.root");
-  // TFile *file2 = TFile::Open("data/samples_signal_10GeV_eta_0.0_pu_140.root");
+  //TFile *file2 = TFile::Open("data/samples_signal_50GeV_eta_2.5_pu_40.root");
 
   double samples[NSAMPLES];
   TTree *tree = (TTree*)file2->Get("Samples");
   tree->SetBranchAddress("amplitudeTruth",      &amplitudeTruth);
   tree->SetBranchAddress("samples",             samples);
+  tree->SetBranchAddress("BX0",                 &BX0);
+  tree->SetBranchAddress("nBX",                 &nBX);
+  tree->SetBranchAddress("energyPU",            energyPU);
   int nentries = tree->GetEntries();
 
   for(int ievt=0; ievt<nentries; ++ievt){
@@ -124,7 +138,14 @@ void run()
       }
       double aMax = status ? pulsefunc.X()[ipulseintime] : 0.;
       //  double aErr = status ? pulsefunc.Errors()[ipulseintime] : 0.;
-      
+
+      for (unsigned int ipulse = 0; ipulse < pulsefunc.BXs().rows(); ++ipulse) {
+        int bx = pulsefunc.BXs().coeff(ipulse);
+        if (std::abs(bx) < 100) {
+          amp[bx+5] = status ? pulsefunc.X().coeff(ipulse) : 0.;
+        }
+      }
+    
       amplitude[step] = aMax;
 
     }
