@@ -1,3 +1,6 @@
+#ifndef PULSE_H
+#define PULSE_H
+
 #include <TRandom.h>
 #include <TMath.h>
 #include <TFile.h>
@@ -134,3 +137,4 @@ void Pulse::NoiseInit()
 
 
 
+#endif
