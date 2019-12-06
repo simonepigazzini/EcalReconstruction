@@ -22,7 +22,7 @@ def getGraph(filename):
         gr.SetPointError(i,0,err)
     gr.SetMarkerStyle(ROOT.kFullCircle)
     gr.SetMarkerSize(1.5)
-    gr.Draw("ACPE")
+    gr.Draw("APE")
     xax = gr.GetXaxis(); yax = gr.GetYaxis()
     xax.SetRangeUser(-4.,4.)
     yax.SetRangeUser(0.97,1.05)
@@ -35,8 +35,10 @@ def getGraph(filename):
     
 if __name__ == "__main__":
 
-    grfull = getGraph("data/reco_signal_50GeV_eta_0.0_pu_40_shiftdt_pm5ns.root")
-    grzoom = getGraph("data/reco_signal_50GeV_eta_0.0_pu_40_shiftdt_pm1ns.root")
+    eta = 0.0
+    
+    grfull = getGraph("data/reco_signal_50GeV_eta_%.1f_pu_40_shiftdt_pm5ns.root" % eta)
+    grzoom = getGraph("data/reco_signal_50GeV_eta_%.1f_pu_40_shiftdt_pm1ns.root" % eta)
     
     ROOT.gStyle.SetOptStat(0)
 
@@ -47,12 +49,13 @@ if __name__ == "__main__":
     canv.SetRightMargin(0.1)
     canv.SetBottomMargin(0.15)
 
-    grfull.Draw("ALPE")
+    grfull.Draw("APE")
 
     lat = ROOT.TLatex()
     lat.SetNDC(); lat.SetTextFont(42)
     lat.DrawLatex(0.19, 0.92, '#bf{CMS} Simulation')
     lat.DrawLatex(0.73, 0.92, '(13 TeV)')
+    lat.DrawLatex(0.60,0.25, 'ECAL {part}'.format(part="Barrel" if eta<1.5 else "Endcap"))
     lat.DrawLatex(0.60,0.20, 'E=50 GeV')
     
     subpad = ROOT.TPad("subpad","",0.22,0.5,0.55,0.88); subpad.Draw(); subpad.cd();
@@ -61,7 +64,8 @@ if __name__ == "__main__":
     subpad.SetBottomMargin(0.15)
     grzoom.GetYaxis().SetRangeUser(0.985,1.015)
     grzoom.GetYaxis().SetRangeUser(0.985,1.015)
-    grzoom.Draw("ALPE")
+    grzoom.Draw("APE")
 
-    canv.SaveAs("bias_vs_dt.pdf")
+    canv.SaveAs("bias_{part}_vs_dt.pdf".format(part='eb' if eta<1.5 else 'ee'))
+    canv.SaveAs("bias_{part}_vs_dt.png".format(part='eb' if eta<1.5 else 'ee'))
     

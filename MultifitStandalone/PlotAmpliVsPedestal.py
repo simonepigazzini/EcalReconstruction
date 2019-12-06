@@ -48,11 +48,12 @@ if __name__ == "__main__":
     yax.SetTitleOffset(1.5); yax.SetTitleSize(0.05)
     xax.SetTitle('#Delta P (ADC counts)')
     # yax.SetTitle('A/A_{true}')
-    yax.SetTitle('A-A_{true} (GeV)')
+    yax.SetTitle('A-A_{true} (ADC counts)')
 
     lat.DrawLatex(0.19, 0.92, '#bf{CMS}')
     lat.DrawLatex(0.73, 0.92, '(13 TeV)')
     lat.DrawLatex(0.19,0.20, 'E=50 GeV')
     
     canv.SaveAs("bias_vs_dped.pdf")
+    canv.SaveAs("bias_vs_dped.png")
     

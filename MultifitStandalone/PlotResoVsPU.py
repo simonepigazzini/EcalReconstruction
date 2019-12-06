@@ -83,7 +83,7 @@ def getOne(reco,npu,energy,includeITasTrue=False,eta="0.0"):
 if __name__ == "__main__":
 
     ## toys done for 2 or 50 GeV
-    Energy = 50 # GeV
+    Energy = 2 # GeV
     
     ROOT.gStyle.SetOptStat(0)
 
@@ -165,3 +165,4 @@ if __name__ == "__main__":
     lat.DrawLatex(0.19,0.20, 'E={ene} GeV'.format(ene=Energy))
     
     canv.SaveAs("resol_vs_pu_{ene}GeV.pdf".format(ene=Energy))
+    canv.SaveAs("resol_vs_pu_{ene}GeV.png".format(ene=Energy))
