@@ -24,16 +24,18 @@
 void Example04(int nPU)
 {
   Pulse pSh;
-  
-  TString filenameOutput = TString::Format("data/samples_signal_2GeV_eta_0.0_pu_%d.root",nPU); 
+
+  const float   signalAmplitude = 50;
+  const float   eta = 2.5;
+  TString filenameOutput = TString::Format("data/samples_signal_%dGeV_eta_%.1f_pu_%d.root",int(signalAmplitude),eta,nPU); 
   
   // Noise level (GeV)
-  double sigmaNoise = 0.044;
+  double sigmaNoise = eta<1.5 ? 0.044 : 0.300 ;
   
 
   // input Waveforms
 
-  TFile *file = new TFile(TString::Format("data/waveform_signal_2GeV_eta_0.0_pu_%d.root",nPU));
+  TFile *file = new TFile(TString::Format("data/waveform_signal_%dGeV_eta_%.1f_pu_%d.root",int(signalAmplitude),eta,nPU));
   int    BX0;
   int    nWF;
   double waveform[WFLENGTH];
@@ -99,11 +101,4 @@ void Example04(int nPU)
   fileOut->Close();
   file->Close();
 
-}
-
-void produceManyPU() {
-  for(int pu=0;pu<=60;pu+=5) {
-    std::cout << "PRODUCE SAMPLE WITH SAMPLES WITH PU = " << pu << std::endl;
-    Example04(pu);
-  }
 }

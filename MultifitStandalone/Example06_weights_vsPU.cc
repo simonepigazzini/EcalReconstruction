@@ -77,15 +77,20 @@ void saveHist()
 
 
 # ifndef __CINT__
-int main()
+int main(int argc, char** argv)
 {
 
-  for(int pu=0;pu<=60;pu+=5) {
-    std::cout << "RECONSTRUCT SAMPLE WITH PU = " << pu << std::endl;
-    initHist(pu);
-    run(pu);
-    saveHist();
+  if (argc<2) {
+    std::cout << "Give the number of PU interactions as argument" << endl;
+    return 0;
   }
+
+  int npu = atoi(argv[1]);
+  std::cout << "RECONSTRUCT SAMPLE WITH PU = " << npu << std::endl;
+  initHist(npu);
+  run(npu);
+  saveHist();
+
   return 0;
 }
 # endif
