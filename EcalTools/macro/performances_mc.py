@@ -94,7 +94,7 @@ def getRelReso(fitmandsigma):
     err = sigma.getError()
     return (val,err)
 
-def printPlot(frames, name, text=[], colors=[], histopt='', legend=None, sim=True, yaxMin=None, yaxMax=None, gridx=False, gridy=False, bandPlot=None):
+def printPlot(frames, name, text=[], colors=[], histopt='', legend=None, sim=True, yaxMin=None, yaxMax=None, gridx=False, gridy=False, bandPlot=None, ttext=None):
     canv = ROOT.TCanvas("canv","",1200,1200)
     canv.SetLeftMargin(0.15)
     canv.SetRightMargin(0.05)
@@ -108,8 +108,11 @@ def printPlot(frames, name, text=[], colors=[], histopt='', legend=None, sim=Tru
         if frame.InheritsFrom("TH1"):
             frame.SetMaximum(ymax*(1.10))
             frame.SetMinimum(ymin if yaxMin else 0)
-        frame.GetXaxis().SetNdivisions(505)
-        frame.GetXaxis().SetDecimals(1)    
+        xax = frame.GetXaxis(); yax = frame.GetYaxis()
+        xax.SetNdivisions(505)
+        xax.SetDecimals(1)    
+        xax.SetTitleOffset(1.1); xax.SetTitleSize(0.05)
+        yax.SetTitleOffset(1.3); yax.SetTitleSize(0.05)
         if frame.InheritsFrom("TH1"):
             if len(histopt)==0:
                 frame.Draw('' if iframe==0 else 'same')
@@ -122,6 +125,10 @@ def printPlot(frames, name, text=[], colors=[], histopt='', legend=None, sim=Tru
     if bandPlot:
         bandPlot.Draw('same hist F')
     if legend: legend.Draw()
+    if ttext:
+         ttext.SetTextAlign(21)
+         ttext.SetTextSize(0.05)
+         ttext.Draw()
     printCanvas(canv, name, text, colors, sim=sim)
 
 def doSpam(text,x1,y1,x2,y2,align=12,fill=False,textSize=0.033,textColor=ROOT.kBlack,_noDelete={},debugMargins=False):
@@ -238,10 +245,10 @@ if __name__ == "__main__":
             resolutionsEt[key].SetMarkerSize(3)
             if subdet=='EB':
                 resolutionsEt[key].SetMarkerStyle(ROOT.kFullCircle if lbl=='multifit' else ROOT.kOpenCircle)
-                resolutionsEt[key].SetMarkerColor(ROOT.kAzure-3); resolutionsEt[key].SetLineColor(ROOT.kAzure-3); 
+                resolutionsEt[key].SetMarkerColor(ROOT.kRed); resolutionsEt[key].SetLineColor(ROOT.kRed); 
             else:
                 resolutionsEt[key].SetMarkerStyle(ROOT.kFullSquare if lbl=='multifit' else ROOT.kOpenSquare)
-                resolutionsEt[key].SetMarkerColor(ROOT.kOrange-3); resolutionsEt[key].SetLineColor(ROOT.kOrange-3); 
+                resolutionsEt[key].SetMarkerColor(ROOT.kRed); resolutionsEt[key].SetLineColor(ROOT.kRed); 
                 
             
     print "Plots = ",fit_plots
@@ -270,14 +277,22 @@ if __name__ == "__main__":
             
 
     # resolution vs ET
-    plots = []; labels = []; styles = []
-    for k,h in resolutionsEt.iteritems():
-        label = '{subdet}, {reco}'.format(subdet='Barrel' if 'EB' in k else 'Endcaps',reco=k.split('_')[0])
-        labels.append(label)
-        plots.append(h)
-        styles.append('pe')
-    leg = doLegend(plots,labels,styles,legBorder=False,corner='TC')
-    printPlot(plots,"plots/resolutionEt",histopt='lpe',legend=leg)
+    # split EB/EE
+    for subd in ['EB','EE']:
+        plots = []; labels = []; styles = []
+        for k,h in resolutionsEt.iteritems():
+            if subd not in k: continue
+            label = '{reco}'.format(reco=k.split('_')[0])
+            labels.append(label)
+            plots.append(h)
+            styles.append('pe')
+            ## just sort the legend in the same way for EB/EE
+            if labels[0]=='multifit':
+                labels.reverse(); plots.reverse(); styles.reverse()
+        leg = doLegend(plots,labels,styles,legBorder=False,corner='TR')
+        tt = ROOT.TText(0.8,0.6,'ECAL {sub}'.format(sub='Barrel' if subd=='EB' else 'Endcap'))
+        tt.SetNDC(); tt.SetTextFont(42)
+        printPlot(plots,"plots/resolutionEt_{det}".format(det=subd),histopt='lpe',legend=leg,ttext=tt)
     
     # difference in quadrature
     plots = []; labels = []; styles = []
