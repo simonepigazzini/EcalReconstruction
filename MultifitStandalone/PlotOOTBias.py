@@ -13,7 +13,7 @@ def getOneReso(ibx):
 
     enecut = 0.100 # GeV (44 MeV is the input noise)
 
-    hreso = ROOT.TH1F('hreso','',50,0,2)
+    hreso = ROOT.TH1F('hreso','',200,0,2)
     iamp = ibx+5
     fullcut = 'BX0{plus}{ibx}>=0 && BX0{plus}{ibx}<2800 && (amp[{iamp}]-{truea})>0 && (amp[{iamp}]-{truea})/energyPU[BX0{plus}{ibx}]<2 && energyPU[BX0{plus}{ibx}]>{cut}'.format(plus='+' if ibx>=0 else '',ibx=ibx,cut=enecut,iamp=iamp,truea=E if ibx==0 else 0)
     var = '(amp[{iamp}]-{truea})/energyPU[BX0{plus}{ibx}]'.format(iamp=iamp,truea=E if ibx==0 else 0,plus='+' if ibx>=0 else '',ibx=ibx,cut=enecut)
@@ -63,7 +63,7 @@ def plotPUSpectrum(tree):
 
     tree.Draw("energyPU>>hpu","energyPU>0.1")
 
-    hpu.GetXaxis().SetTitle('Pileup/crystal energy (GeV)')
+    hpu.GetXaxis().SetTitle('OOT pileup energy / crystal (GeV)')
     hpu.GetYaxis().SetTitle("Events")
     hpu.GetXaxis().SetTitleOffset(1.1);
     hpu.GetXaxis().SetTitleSize(0.05)
