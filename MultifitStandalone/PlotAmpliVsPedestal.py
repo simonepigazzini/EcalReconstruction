@@ -52,7 +52,13 @@ if __name__ == "__main__":
 
     lat.DrawLatex(0.19, 0.92, '#bf{CMS}')
     lat.DrawLatex(0.73, 0.92, '(13 TeV)')
-    lat.DrawLatex(0.19,0.20, 'E=50 GeV')
+    lat.DrawLatex(0.25,0.28, 'E=50 GeV')
+    lat.DrawLatex(0.25,0.23, '<PU> = 40')
+
+    ## another tlatex to make the font smaller
+    lat2 = ROOT.TLatex()
+    lat2.SetNDC(); lat2.SetTextFont(42); lat2.SetTextSize(0.04)
+    lat2.DrawLatex(0.30, 0.92, '#it{Standalone simulation}')
     
     canv.SaveAs("bias_vs_dped.pdf")
     canv.SaveAs("bias_vs_dped.png")

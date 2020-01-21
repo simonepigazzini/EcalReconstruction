@@ -28,7 +28,9 @@ def getOneMassHisto(tree,absetamin,absetamax,variable='R9Ele[0]',xmin=0,xmax=1.1
         time = '1'
         nbins = 200 if absetamax<1.3 else 100
     runRangeCut = 'runNumber>={rmin} && runNumber<={rmax}'.format(rmin=runRange[0],rmax=runRange[1])
-    #unconv     = 'fbremEle[0]>0 && fbremEle[0]<{fbremcut} && fbremEle[1]>0 && fbremEle[1]<{fbremcut}'.format(fbremcut=0.3 if absetamax<1.5 else 0.5)
+    ## the following is used for the mass plot
+    #unconv     = 'fbremEle[0]>0 && fbremEle[0]<{fbremcut} && fbremEle[1]>0 && fbremEle[1]<{fbremcut}'.format(fbremcut=0.1 if absetamax<1.5 else 0.5)
+    ## the following is used for the cluster shape history plot
     unconv = '1'
     cut = '{c1} && {c2} && {c3} && {c4}'.format(c1=phasespace,c2=unconv,c3=time,c4=runRangeCut)
     #variable   = 'invMass_5x5SC'
@@ -81,23 +83,23 @@ if __name__ == "__main__":
     chains = {'weights': ROOT.TChain('selected'),
               'multifit': ROOT.TChain('selected') }
 
-    bins_etafine   = [0,0.42,0.79,1.12,1.4442,1.566,1.8,2.0,2.5]
-    bins_etacoarse = [0,1.5,2.5]; 
+    bins_etafine   = [0,0.25,0.42,0.6,0.79,0.95]#,1.12,1.4442]
+    bins_etacoarse = [0,1.5,2.5];
+    ## bins_etafine used for the mass plot
+    #bins_eta = bins_etafine
+    ## bins_etacoarse used for the R9 history
     bins_eta = bins_etacoarse
 
+    oneday = 24*60*60
+    onehour = 60*60
+    deltat = 5*onehour
+    beginTime = 1466953984 # 26/06/2016 - start of fill 5045
+    endTime = 1467088854 # 28/06/2016 - end of fill 5045
+
+    beginTime = 1468948818 # 19/07/2016 - start of fill 5105
+    endTime = 1469032179 # 20/07/2016 - end of fill 5105
+
     if options.step=='histograms':
-        oneday = 24*60*60
-        onehour = 60*60
-        deltat = 5*onehour
-        beginTime = 1466953984 # 26/06/2016 - start of fill 5045
-        endTime = 1467088854 # 28/06/2016 - end of fill 5045
-
-        beginTime = 1468948818
-        endTime = 1469032179
-        
-        #beginTime = 1462950000
-        #endTime = 1473000000
-
         
         outfname = options.outfile
         outfile = ROOT.TFile(outfname,'recreate')
@@ -136,7 +138,7 @@ if __name__ == "__main__":
             tokens = hname.split('_')
             variable = tokens[0]; reco = tokens[1]
             startTime = tokens[-7].replace('eventTimegt',''); stopTime = tokens[-5].replace('eventTimelt','');
-            #print "var = ",variable," reco = ",reco," start = ",startTime,"   stop = ",stopTime
+            print "var = ",variable," reco = ",reco," start = ",startTime,"   stop = ",stopTime
             #median,effsigma = (getMedian(histo),effSigma(histo))
             #median,effsigma = (getMaximumPosition(histo),effSigma(histo))
             #median,sigma = getFitPeak(histo)
@@ -153,10 +155,10 @@ if __name__ == "__main__":
         history = ROOT.TGraphErrors(nTimePoints/2)
         print "nTimePoints = ",nTimePoints/2
         history.GetXaxis().SetTimeDisplay(1)
-        history.GetXaxis().SetTimeFormat("%H:%M");
-        history.GetXaxis().SetTitle("Time during fill (hr:min)")
-        history.GetXaxis().SetTitleOffset(0.1)
+        history.GetXaxis().SetTimeFormat("%H:%M")
+        history.GetXaxis().SetTitle("Time during 20/07/2016 LHC fill")
         history.GetYaxis().SetTitle("Median of cluster R_{9}")
+        history.GetYaxis().SetTitleOffset(0.3)
         
         graph = {}; graph_npoints = {}
         hist_colors = {'weights':ROOT.kBlack, 'multifit':ROOT.kRed}
@@ -166,9 +168,8 @@ if __name__ == "__main__":
                     graph[(reco,subdet,est)] = history.Clone('history_{reco}_{sub}_{est}'.format(reco=reco,sub=subdet,est=est))
                     graph_npoints[(reco,subdet,est)] = 0
                     graph[(reco,subdet,est)].SetTitle("")
-                    graph[(reco,subdet,est)].GetXaxis().SetTitle()
-                    graph[(reco,subdet,est)].SetMarkerStyle(ROOT.kOpenSquare)
-                    graph[(reco,subdet,est)].SetMarkerSize(1.2)
+                    graph[(reco,subdet,est)].SetMarkerStyle(ROOT.kFullCircle)
+                    graph[(reco,subdet,est)].SetMarkerSize(2)
                     graph[(reco,subdet,est)].SetMarkerColor(hist_colors[reco])
                     graph[(reco,subdet,est)].SetLineColor(hist_colors[reco])
                     if est=='median':
@@ -183,7 +184,7 @@ if __name__ == "__main__":
         for key,val in hist_res.iteritems():
             (variable,reco,subdet,start,stop) = key
             (median,effsigma) = val
-            time = int((float(stop.replace('p0',''))+float(start.replace('p0','')))/2.)
+            time = int((float(stop.replace('p0',''))+float(start.replace('p0','')))/2.) - beginTime
             print "time = ",datetime.utcfromtimestamp(time).strftime('%Y-%m-%d %H:%M:%S')
             median_norm = 1.
             sigma_norm = 1.0
@@ -199,8 +200,8 @@ if __name__ == "__main__":
             for est in ['median','sigma']:
                 plots = [ graph[(reco,subdet,est)] for reco in ['weights','multifit'] ]
                 labels = ['weights','multifit']
-                styles = ['pe','pe']
-                leg = doLegend(plots,labels,styles,legBorder=False,corner='TL')
+                styles = ['p','p']
+                leg = doLegend(plots,labels,styles,legBorder=False,corner='BR')
                 nameplot = 'history_mass_{sub}_{est}'.format(sub=subdet,est=est)
                 printPlot(plots, nameplot, sim=False, legend=leg)
 
@@ -226,8 +227,8 @@ if __name__ == "__main__":
         resolVsEta = ROOT.TH1F('resolVsEta','',len(bins_eta)-1,array('f',bins_eta))
         resolVsEta.GetXaxis().SetTitle('#eta')
         resolVsEta.GetYaxis().SetTitle('Effective resolution (GeV)')
-        resolVsEta.SetMarkerStyle(ROOT.kFullSquare)
-        resolVsEta.SetMarkerSize(1)
+        resolVsEta.SetMarkerStyle(ROOT.kFullCircle)
+        resolVsEta.SetMarkerSize(2)
 
         gapBand = resolVsEta.Clone('gapBand')
         gapBand.SetBinContent(5,100)
@@ -256,10 +257,10 @@ if __name__ == "__main__":
                 frames.append(mass_etafine[key])
                 resol = effSigma(mass_etafine[key])
                 median = getMedian(mass_etafine[key])
-                text.append("#sigma_{{ eff }}^{{ {label} }} = {resol:.1f} (GeV)".format(resol=resol, label=lbl))
+                text.append("#sigma_{{ eff }}^{{ {label} }} = {resol:.2f} (GeV)".format(resol=resol, label=lbl))
                 colors.append(hist_colors[lbl])
                 # fill the resolution vs ET histo
-                resolutionsEta[lbl].SetBinContent(ieb+1,0 if ieb==4 else resol) # don't show the gap
+                resolutionsEta[lbl].SetBinContent(ieb+1,resol)
                 resolutionsEta[lbl].SetBinError(ieb+1,0.001) # this is just to show the error on the X
                 resolutionsEta[lbl].GetXaxis().SetTitle('max(|#eta_{1}|,|#eta_{2}|)')
                 resolutionsEta[lbl].GetYaxis().SetTitle("#sigma_{eff}^{m5x5} (GeV)")
@@ -273,4 +274,4 @@ if __name__ == "__main__":
             plots.append(h)
             styles.append('pe')
         leg = doLegend(plots,labels,styles,legBorder=False,corner='TL')
-        printPlot(plots,"plots/resolutionZdataEta",histopt='pe',legend=leg,sim=False,yaxMin=3.9,yaxMax=7.0,gridy=True,bandPlot=gapBand)
+        printPlot(plots,"plots/resolutionZdataEta",histopt='pe',legend=leg,sim=False,yaxMin=4.0,yaxMax=4.8,gridy=True,bandPlot=None)

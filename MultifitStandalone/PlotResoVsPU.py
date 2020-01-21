@@ -80,11 +80,7 @@ def getOne(reco,npu,energy,includeITasTrue=False,eta="0.0"):
 
     return (mean,meanerr,effs,0)
 
-if __name__ == "__main__":
-
-    ## toys done for 2 or 50 GeV
-    Energy = 2 # GeV
-    
+def plotOneEnergy(Energy):
     ROOT.gStyle.SetOptStat(0)
 
     canv = ROOT.TCanvas("canv","",1200,1200)
@@ -121,8 +117,8 @@ if __name__ == "__main__":
             for itpu in ['ittrue','itfalse']:
                 useItInEtrue = itpu=='ittrue'
                 vals = getOne(reco,pu,Energy,useItInEtrue,'0.0')
-                graphs[(reco,itpu)].SetPoint     (i,pu,vals[2]/vals[0]-offset[reco])
-                graphs[(reco,itpu)].SetPointError(i,0,vals[3]/vals[0])
+                graphs[(reco,itpu)].SetPoint     (i,pu,(vals[2]/vals[0]-offset[reco])*100)
+                graphs[(reco,itpu)].SetPointError(i,0,(vals[3]/vals[0])*100)
 
         
     graphs[('weights','itfalse')].SetMarkerStyle(ROOT.kFullCircle)
@@ -144,9 +140,9 @@ if __name__ == "__main__":
 
     xax = graphs[('weights','itfalse')].GetXaxis(); yax = graphs[('weights','itfalse')].GetYaxis()
     if Energy>10:
-        yax.SetRangeUser(0.0004,0.0012)
+        yax.SetRangeUser(0.04,0.12)
     else:
-        yax.SetRangeUser(0.005,0.04)
+        yax.SetRangeUser(0.5,4.0)
     yax.SetDecimals()
     xax.SetTitleOffset(1.1); xax.SetTitleSize(0.05)
     yax.SetTitleOffset(1.5); yax.SetTitleSize(0.05)
@@ -160,9 +156,23 @@ if __name__ == "__main__":
     
     lat = ROOT.TLatex()
     lat.SetNDC(); lat.SetTextFont(42)
-    lat.DrawLatex(0.19, 0.92, '#bf{CMS} Simulation')
+    lat.DrawLatex(0.19, 0.92, '#bf{CMS}')
     lat.DrawLatex(0.73, 0.92, '(13 TeV)')
     lat.DrawLatex(0.19,0.20, 'E={ene} GeV'.format(ene=Energy))
-    
+
+    ## another tlatex to make the font smaller
+    lat2 = ROOT.TLatex()
+    lat2.SetNDC(); lat2.SetTextFont(42); lat2.SetTextSize(0.04)
+    lat2.DrawLatex(0.30, 0.92, '#it{Standalone simulation}')
+
     canv.SaveAs("resol_vs_pu_{ene}GeV.pdf".format(ene=Energy))
     canv.SaveAs("resol_vs_pu_{ene}GeV.png".format(ene=Energy))
+    
+
+if __name__ == "__main__":
+
+    ## toys done for 2 or 50 GeV
+    energies = [2,50]
+    for ene in energies:
+        plotOneEnergy(ene)
+    
