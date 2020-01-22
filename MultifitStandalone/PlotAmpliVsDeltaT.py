@@ -22,9 +22,9 @@ def getGraph(filename):
         gr.SetPointError(i,0,err)
     gr.SetMarkerStyle(ROOT.kFullCircle)
     gr.SetMarkerSize(1.5)
-    gr.Draw("ACPE")
+    gr.Draw("APE")
     xax = gr.GetXaxis(); yax = gr.GetYaxis()
-    xax.SetRangeUser(-4.5,4.5)
+    xax.SetRangeUser(-4.,4.)
     yax.SetRangeUser(0.97,1.05)
     yax.SetDecimals()
     xax.SetTitleOffset(1.1); xax.SetTitleSize(0.05)
@@ -32,11 +32,11 @@ def getGraph(filename):
     xax.SetTitle('#Delta T (ns)')
     yax.SetTitle('A/A_{true}')
     return gr
-    
-if __name__ == "__main__":
 
-    grfull = getGraph("data/reco_signal_50GeV_eta_0.0_pu_40_shiftdt_pm5ns.root")
-    grzoom = getGraph("data/reco_signal_50GeV_eta_0.0_pu_40_shiftdt_pm1ns.root")
+def plotOnePartition(eta):
+
+    grfull = getGraph("data/reco_signal_50GeV_eta_%.1f_pu_40_shiftdt_pm5ns.root" % eta)
+    grzoom = getGraph("data/reco_signal_50GeV_eta_%.1f_pu_40_shiftdt_pm1ns.root" % eta)
     
     ROOT.gStyle.SetOptStat(0)
 
@@ -47,20 +47,37 @@ if __name__ == "__main__":
     canv.SetRightMargin(0.1)
     canv.SetBottomMargin(0.15)
 
-    grfull.Draw("ACPE")
+    grfull.Draw("APE")
 
     lat = ROOT.TLatex()
     lat.SetNDC(); lat.SetTextFont(42)
-    lat.DrawLatex(0.19, 0.92, '#bf{CMS}')
+    lat.DrawLatex(0.18, 0.92, '#bf{CMS}')
     lat.DrawLatex(0.73, 0.92, '(13 TeV)')
+    lat.DrawLatex(0.60,0.30, 'ECAL {part}'.format(part="Barrel" if eta<1.5 else "Endcap"))
+    lat.DrawLatex(0.60,0.25, 'E=50 GeV')
+    lat.DrawLatex(0.60,0.20, '<PU> = 40')
 
+    ## another tlatex to make the font smaller
+    lat2 = ROOT.TLatex()
+    lat2.SetNDC(); lat2.SetTextFont(42); lat2.SetTextSize(0.04)
+    lat2.DrawLatex(0.30, 0.92, '#it{Standalone simulation}')
+    
     subpad = ROOT.TPad("subpad","",0.22,0.5,0.55,0.88); subpad.Draw(); subpad.cd();
     subpad.SetGridx(); subpad.SetGridy()
     subpad.SetLeftMargin(0.17)
     subpad.SetBottomMargin(0.15)
     grzoom.GetYaxis().SetRangeUser(0.985,1.015)
     grzoom.GetYaxis().SetRangeUser(0.985,1.015)
-    grzoom.Draw("ACPE")
+    grzoom.Draw("APE")
 
-    canv.SaveAs("bias_vs_dt.pdf")
+    canv.SaveAs("bias_{part}_vs_dt.pdf".format(part='eb' if eta<1.5 else 'ee'))
+    canv.SaveAs("bias_{part}_vs_dt.png".format(part='eb' if eta<1.5 else 'ee'))
+
+
+if __name__ == "__main__":
+
+    etas = [0.0,2.5]
+    for eta in etas:
+        plotOnePartition(eta)        
+    
     

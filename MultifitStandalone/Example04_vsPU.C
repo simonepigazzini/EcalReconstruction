@@ -21,21 +21,22 @@
 
 
 
-void Example04()
+void Example04(int nPU)
 {
   Pulse pSh;
-  
-  TString filenameOutput = "data/samples_signal_50GeV_eta_0.0_pu_40.root"; 
+
+  const float   signalAmplitude = 50;
+  const float   eta = 2.5;
+  TString filenameOutput = TString::Format("data/samples_signal_%dGeV_eta_%.1f_pu_%d.root",int(signalAmplitude),eta,nPU); 
   
   // Noise level (GeV)
-  double sigmaNoise = 0.044;
+  double sigmaNoise = eta<1.5 ? 0.044 : 0.300 ;
   
 
   // input Waveforms
 
-  TFile *file = new TFile("data/waveform_signal_50GeV_eta_0.0_pu_40.root");
+  TFile *file = new TFile(TString::Format("data/waveform_signal_%dGeV_eta_%.1f_pu_%d.root",int(signalAmplitude),eta,nPU));
   int    BX0;
-  int    nBX    = NBXTOTAL;
   int    nWF;
   double waveform[WFLENGTH];
   double energyPU[NBXTOTAL];
@@ -60,10 +61,6 @@ void Example04()
   treeOut->Branch("nFreq",             &nFreq,               "nFreq/I");
   treeOut->Branch("amplitudeTruth",    &amplitudeTruth,      "amplitudeTruth/D");
   treeOut->Branch("samples",           samples,              "samples[nSmpl]/D");
-  treeOut->Branch("BX0",               &BX0,                 "BX0/I");
-  treeOut->Branch("nBX",               &nBX,                 "nBX/I");
-  treeOut->Branch("energyPU",          energyPU,             "energyPU[nBX]/D");
-
   
   int nentries = tree->GetEntries();
   for(int ievt=0; ievt<nentries; ievt++){

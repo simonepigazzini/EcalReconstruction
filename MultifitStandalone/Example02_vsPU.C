@@ -26,17 +26,20 @@
 #include <iostream>
 
 
-void Example02()
+void Example02(int nPU)
 {
 
   // make sure these inputs are what you really want
   
-  const TString fileInput       = "data/EmptyFileCRRC43.root";
-  const TString fileOutput      = "data/waveform_signal_50GeV_eta_0.0_pu_40.root";
-  const int     nPU             = 40;
-  const int     nEventsTotal    = 100000;
-  const float   eta             = 0.0;
-  const float   signalAmplitude = 50.0;
+  const int     nEventsTotal    = 10000;
+  const float   eta             = 2.5;
+  const float   signalAmplitude = 50;
+  TString fileInput;
+  if (eta<1.5) fileInput = TString("data/EmptyFileCRRC43.root");
+  else         fileInput = TString("data/EmptyFileCRRC60.root");
+  const TString fileOutput      = TString::Format("data/waveform_signal_%dGeV_eta_%.1f_pu_%d.root",int(signalAmplitude),eta,nPU);
+
+  std::cout << "Output file is " << fileOutput.Data() << std::endl;
   
   TFile *file = new TFile(fileInput.Data());
 
@@ -111,7 +114,7 @@ void Example02()
     for(int ibx = 0; ibx < ibxMax; ibx++){
       for(int iwf = 0; iwf < nWF; iwf++){
 	double t = (BX0 - ibx) * 25. + iwf - (nWF / 2);
-	waveform[iwf] += energyPU[ibx] * pSh.fShape(t);
+	waveform[iwf] += 10 * energyPU[ibx] * pSh.fShape(t);
       }
     }
 
