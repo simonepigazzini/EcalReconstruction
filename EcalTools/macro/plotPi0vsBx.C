@@ -132,11 +132,11 @@ void plotPi0SigmavsBx() {
   
   for(int i=0 ; i<8 ; i++) {
            
-    masse[i]=masse[i] ;
+    masse[i]=masse[i] * 1000 ;
            
-    masseM[i]=masseM[i] ;
-    masse_err[i]=masse_err[i] ;
-    masseM_err[i]=masseM_err[i] ;
+    masseM[i]=masseM[i] * 1000 ;
+    masse_err[i]=masse_err[i] * 1000 ;
+    masseM_err[i]=masseM_err[i] * 1000 ;
     printf(" i %d masse[i] %f masse_err %f \n",i,masse[i],masse_err[i]) ;
   }
   
@@ -167,13 +167,13 @@ void plotPi0SigmavsBx() {
   mg_masse->Add(graph_mass) ;
   mg_masse->Add(graph_massM) ;
   mg_masse->Draw("ap") ;
-  mg_masse->GetYaxis()->SetTitle("#sigma_{m(#gamma#gamma)}") ;
+  mg_masse->GetYaxis()->SetTitle("#sigma_{m(#gamma#gamma)} (MeV)") ;
   mg_masse->GetYaxis()->SetTitleOffset(1.5);
   mg_masse->GetYaxis()->SetDecimals(2);
 
   mg_masse->GetXaxis()->SetTitle("bunch crossing number") ;
-  mg_masse->SetMaximum(0.022) ;
-  mg_masse->SetMinimum(0.008) ;
+  mg_masse->SetMaximum(22) ;
+  mg_masse->SetMinimum(8) ;
   mg_masse->Draw("ap") ;
 
   TLegend *leg = new TLegend(0.60,0.70,0.90,0.85,"","brNDC");
@@ -192,5 +192,6 @@ void plotPi0SigmavsBx() {
   lat.Draw();
   cmasse->Update() ;
   cmasse->SaveAs("pi0SigmavsBx.pdf") ;
+  cmasse->SaveAs("pi0SigmavsBx.png") ;
 }
 

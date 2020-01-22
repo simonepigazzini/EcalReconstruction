@@ -206,6 +206,11 @@ if __name__ == "__main__":
                 printPlot(plots, nameplot, sim=False, legend=leg)
 
 
+                ## save also the graphs in a TFile to be compared with the lumi
+                tfile = ROOT.TFile.Open(nameplot+'_graphs.root','recreate')
+                for p in plots:
+                    p.Write()
+                tfile.Close()
 
     if options.step=='etaresol':
 
