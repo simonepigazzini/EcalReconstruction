@@ -65,9 +65,10 @@ class TagFitter:
             if ncry % 1000 == 0: print "fitted ",ncry," pulse shapes"
             key = (partition,detid)
             normshape = self.getPeakNormalisedPulseShape(pulseshape,int(partition),detid)
+            print "template = ",normshape
             fout.write(partition+"  "+detid+"  "+"  ".join("%.6f" % x for x in normshape)+"\n")
             ncry += 1
-            if ncry > 10: break
+            if ncry > 3: break
         print "Bad Fits = ",self._badFits
         
 

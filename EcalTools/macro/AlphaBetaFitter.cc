@@ -88,6 +88,7 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
     canv->SetBottomMargin(0.15);
     canv->SetTopMargin(0.10);
     histo->SetMarkerStyle(kFullSquare);
+    histo->SetLineColor(kBlack);
     histo->GetXaxis()->SetTitle("Time sample");
     histo->GetXaxis()->SetTitleOffset(1.2);
     histo->GetXaxis()->SetTitleSize(0.05);
@@ -98,7 +99,7 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
   }
 
   TH1F *gapBand = (TH1F*)histo->Clone("gapBand");
-  histo->Fit("alphabeta","QM","same",0,10);
+  histo->Fit("alphabeta","M","same",0,10);
   if (_extrapTail) {
     gapBand->SetFillColor(kGray);
     gapBand->SetLineColor(0);
@@ -112,7 +113,21 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
       }
     }
     gapBand->Draw("hist");
-    histo->Draw("same pe0");
+    // histogram in the readout
+    TH1F *histoRead = (TH1F*)histo->Clone("histoRead");
+    for (int ir=10; ir<16; ir++) {
+      histoRead->SetBinContent(ir,-1);
+    }
+    histoRead->Draw("same pe0");
+
+    // histogram outside the readout
+    TH1F *histoOutRead = (TH1F*)histo->Clone("histoOutRead");
+    for (int ir=0; ir<11; ir++) {
+      histoOutRead->SetBinContent(ir,-1);
+    }
+    histoOutRead->SetMarkerStyle(kOpenSquare);
+    histoOutRead->Draw("same pe0");
+    //    histo->Draw("same pe0");
   }
   
   for(int p=1; p<4; ++p) {
