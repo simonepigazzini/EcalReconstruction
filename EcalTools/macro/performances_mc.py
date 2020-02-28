@@ -292,7 +292,7 @@ if __name__ == "__main__":
             if labels[0]=='multifit':
                 labels.reverse(); plots.reverse(); styles.reverse()
         leg = doLegend(plots,labels,styles,legBorder=False,corner='TR')
-        tt = ROOT.TLatex(0.7,0.6,'#splitline{%s}{5x5 crystal matrix}' % ('Barrel' if subd=='EB' else 'Endcap'))
+        tt = ROOT.TLatex(0.7,0.6,'#splitline{%s}{5x5 crystal matrix}' % ('Barrel' if subd=='EB' else 'Endcaps'))
         tt.SetNDC(); tt.SetTextFont(42)
         printPlot(plots,"plots/resolutionEt_{det}".format(det=subd),histopt='lpe',legend=leg,ttext=tt)
     
