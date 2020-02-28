@@ -55,7 +55,7 @@ def getOne(reco,npu,energy,includeITasTrue=False,eta="0.0"):
     tf = ROOT.TFile('data/reco_{suffix}signal_{ene}GeV_eta_{eta}_pu_{npu}.root'.format(suffix='wgt_' if reco=='weights' else '',ene=energy,eta=eta,npu=npu))
     tree = tf.Get('amplitudes')
     xmin,xmax = (0.9,1.02) if energy>10 else (0.9,1.4)
-    histo  = ROOT.TH1F('resol','',1000,xmin,xmax)
+    histo  = ROOT.TH1F('resol','',500,xmin,xmax)
 
     ## note: amplitudeTruth = true E + in-time PU (with this will estimate only the effect of the IT PU)
     if includeITasTrue:
@@ -104,10 +104,10 @@ def plotOneEnergy(Energy):
 
     offset = {}
     if Energy<10:
-        offset['weights'] = 5e-3
+        offset['weights'] = 8e-3
         offset['multifit'] = 0
     else:
-        offset['weights'] = 2.5e-4
+        offset['weights'] = 3.2e-4
         offset['multifit'] = 0
     
     for i,pu in enumerate(purange):

@@ -74,7 +74,7 @@ def plotPUSpectrum(tree):
 
     lat = ROOT.TLatex()
     lat.SetNDC(); lat.SetTextFont(42)
-    lat.DrawLatex(0.19, 0.92, '#bf{CMS}')
+    lat.DrawLatex(0.19, 0.92, '#bf{CMS} Simulation')
     lat.DrawLatex(0.73, 0.92, '(13 TeV)')
 
     for ext in ['pdf','png']:
