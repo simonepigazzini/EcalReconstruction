@@ -107,7 +107,7 @@ def plotOneEnergy(Energy):
         offset['weights'] = 8e-3
         offset['multifit'] = 0
     else:
-        offset['weights'] = 3.2e-4
+        offset['weights'] = 3.4e-4
         offset['multifit'] = 0
     
     for i,pu in enumerate(purange):
@@ -130,10 +130,14 @@ def plotOneEnergy(Energy):
     graphs[('weights','ittrue')].Draw("CPE")
 
     graphs[('multifit','itfalse')].SetMarkerStyle(ROOT.kFullSquare)
+    graphs[('multifit','itfalse')].SetMarkerColor(ROOT.kRed)
+    graphs[('multifit','itfalse')].SetLineColor(ROOT.kRed)
     graphs[('multifit','itfalse')].SetMarkerSize(1.5)
     graphs[('multifit','itfalse')].Draw("CPE")
 
     graphs[('multifit','ittrue')].SetMarkerStyle(ROOT.kOpenSquare)
+    graphs[('multifit','ittrue')].SetMarkerColor(ROOT.kRed)
+    graphs[('multifit','ittrue')].SetLineColor(ROOT.kRed)
     graphs[('multifit','ittrue')].SetMarkerSize(1.5)
     graphs[('multifit','ittrue')].Draw("CPE")
 

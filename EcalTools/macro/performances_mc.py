@@ -129,7 +129,7 @@ def printPlot(frames, name, text=[], colors=[], histopt='', legend=None, sim=Tru
          ttext.SetTextAlign(21)
          ttext.SetTextSize(0.05)
          ttext.Draw()
-    printCanvas(canv, name, text, colors, sim=sim)
+    printCanvas(canv, name, text, colors, textSize=0.04, sim=sim)
 
 def doSpam(text,x1,y1,x2,y2,align=12,fill=False,textSize=0.033,textColor=ROOT.kBlack,_noDelete={},debugMargins=False):
     cmsprel = ROOT.TPaveText(x1,y1,x2,y2,"NDC");
@@ -162,7 +162,7 @@ def printCanvas(c1, name, text=[], colors=[], options=None,textSize=0.03,sim=Tru
     y0 = 0.85 - textSize*1.8
     for il,line in enumerate(text):
         niceline = re.sub(r"(\s+)-(\d+)",r"\1#minus\2", line)
-        doSpam(niceline, 0.20, y0, 0.40, y0 + textSize*1.2, 11, textSize=textSize, textColor=colors[il])
+        doSpam(niceline, 0.20, y0, 0.60, y0 + textSize*1.2, 11, textSize=textSize, textColor=colors[il])
         y0 -= textSize * 1.8
     for ext in ['pdf','png','root']:
         c1.Print('{name}.{ext}'.format(name=name,ext=ext))
@@ -243,12 +243,14 @@ if __name__ == "__main__":
             key = '{reco}_{part}'.format(reco=lbl,part=subdet)
             resolutionsEt[key] = resolVsEt.Clone('resolEt_'+key)
             resolutionsEt[key].SetMarkerSize(3)
-            if subdet=='EB':
-                resolutionsEt[key].SetMarkerStyle(ROOT.kFullCircle if lbl=='multifit' else ROOT.kOpenCircle)
-                resolutionsEt[key].SetMarkerColor(ROOT.kRed); resolutionsEt[key].SetLineColor(ROOT.kRed); 
+            if lbl=='multifit':
+                resolutionsEt[key].SetMarkerStyle(ROOT.kFullCircle)
+                resolutionsEt[key].SetMarkerColor(ROOT.kRed)
+                resolutionsEt[key].SetLineColor(ROOT.kRed)
             else:
-                resolutionsEt[key].SetMarkerStyle(ROOT.kFullSquare if lbl=='multifit' else ROOT.kOpenSquare)
-                resolutionsEt[key].SetMarkerColor(ROOT.kRed); resolutionsEt[key].SetLineColor(ROOT.kRed); 
+                resolutionsEt[key].SetMarkerStyle(ROOT.kOpenCircle)
+                resolutionsEt[key].SetMarkerColor(ROOT.kBlack)
+                resolutionsEt[key].SetLineColor(ROOT.kBlack)                
                 
             
     print "Plots = ",fit_plots
@@ -290,7 +292,7 @@ if __name__ == "__main__":
             if labels[0]=='multifit':
                 labels.reverse(); plots.reverse(); styles.reverse()
         leg = doLegend(plots,labels,styles,legBorder=False,corner='TR')
-        tt = ROOT.TText(0.8,0.6,'ECAL {sub}'.format(sub='Barrel' if subd=='EB' else 'Endcap'))
+        tt = ROOT.TLatex(0.7,0.6,'#splitline{%s}{5x5 crystal matrix}' % ('Barrel' if subd=='EB' else 'Endcap'))
         tt.SetNDC(); tt.SetTextFont(42)
         printPlot(plots,"plots/resolutionEt_{det}".format(det=subd),histopt='lpe',legend=leg,ttext=tt)
     

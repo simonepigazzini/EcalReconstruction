@@ -22,21 +22,21 @@ def makePads(canv):
     ROOT.gStyle.SetOptStat(0)
     
     canv.cd()
-    lMargin = 0.12
+    lMargin = 0.20
     rMargin = 0.05
-    bMargin = 0.30
-    tMargin = 0.07
+    bMargin = 0.32
+    tMargin = 0.1
     padTop = ROOT.TPad('padTop','',0.,0.4,1,0.98)
     padTop.SetLeftMargin(lMargin)
     padTop.SetRightMargin(rMargin)
     padTop.SetTopMargin(tMargin)
-    padTop.SetBottomMargin(0)
+    padTop.SetBottomMargin(0.03)
     padTop.SetFrameBorderMode(0);
     padTop.SetBorderMode(0);
     padTop.SetBorderSize(0);
     padTop.Draw()
 
-    padBottom = ROOT.TPad('padBottom','',0.,0.02,1,0.4)
+    padBottom = ROOT.TPad('padBottom','',0.,0.02,1,0.36)
     padBottom.SetLeftMargin(lMargin)
     padBottom.SetRightMargin(rMargin)
     padBottom.SetTopMargin(0)
@@ -51,7 +51,7 @@ def makePads(canv):
 if __name__ == "__main__":
 
     
-    tfile = ROOT.TFile.Open('history_mass_EB_median_graphs.root')
+    tfile = ROOT.TFile.Open('history_r9final_EB_median_graphs.root')
     gr_w = tfile.Get('history_weights_EB_median')
     gr_m = tfile.Get('history_multifit_EB_median')
 
@@ -91,8 +91,8 @@ if __name__ == "__main__":
 
     ## print the graphs here
     padTop.cd()
-    padTop.SetGridy()
-    padTop.SetGridx()
+    #padTop.SetGridy()
+    #padTop.SetGridx()
 
     ## the original plot has the UTC time in x, convert just in #hours
     arr_xr9w = list(gr_w.GetX())
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     #gr_w.Draw('APE')
     #gr_m.Draw('PE')
 
-    gr_w1.SetMarkerStyle(ROOT.kFullCircle)
+    gr_w1.SetMarkerStyle(ROOT.kOpenCircle)
     gr_m1.SetMarkerStyle(ROOT.kFullCircle)
     gr_w1.SetMarkerSize(3)
     gr_m1.SetMarkerSize(3)
@@ -135,31 +135,38 @@ if __name__ == "__main__":
     gr_w1.GetXaxis().SetRangeUser(0,25)
     gr_w1.GetXaxis().SetTickSize(0)
     gr_w1.GetXaxis().SetNdivisions(5,ROOT.kTRUE)
+    gr_w1.GetXaxis().SetLabelSize(0)
+    gr_w1.GetXaxis().SetLabelColor(0)
     gr_w1.GetYaxis().SetDecimals()
     gr_w1.GetYaxis().SetRangeUser(0.88,0.92)
     gr_w1.GetYaxis().CenterTitle()
     gr_w1.GetYaxis().SetTitleFont(42)
-    gr_w1.GetYaxis().SetTitleOffset(1.0)
+    gr_w1.GetYaxis().SetTitleOffset(1.3)
+    gr_w1.GetYaxis().SetLabelSize(0.06)
     gr_w1.GetYaxis().SetNdivisions(5,ROOT.kFALSE)
     gr_w1.GetYaxis().SetTitle("Median of cluster R_{9}")
-    gr_w1.GetYaxis().SetTitleSize(0.05)
+    gr_w1.GetYaxis().SetTitleSize(0.07)
     
     ## legend
-    plots = [gr_w,gr_m]
+    plots = [gr_w1,gr_m1]
     labels = ['weights','multifit']
     styles = ['p','p']
     leg = doLegend(plots,labels,styles,legBorder=False,corner='BR',textSize=0.050)
     
     lat = ROOT.TLatex()
-    lat.SetNDC(); lat.SetTextFont(42)
-    lat.DrawLatex(0.13, 0.94, '#bf{CMS}')
-    lat.DrawLatex(0.77, 0.94, '6 fb^{-1} (13 TeV)')
-    lat.DrawLatex(0.20,0.83, '#bf{ECAL Barrel}')
+    lat.SetNDC(); lat.SetTextFont(42); lat.SetTextSize(0.07)
+    lat.DrawLatex(0.21, 0.94, '#bf{CMS}')
+    lat.DrawLatex(0.67, 0.94, '650 pb^{-1} (13 TeV)')
+
+    ## another tlatex to make the font smaller
+    lat2 = ROOT.TLatex()
+    lat2.SetNDC(); lat2.SetTextFont(42); lat2.SetTextSize(0.05)
+    lat2.DrawLatex(0.23,0.83, '#bf{ECAL Barrel}')
 
     ## print the lumi here
     padBottom.cd()
-    padBottom.SetGridy()
-    padBottom.SetGridx()
+    #padBottom.SetGridy()
+    #padBottom.SetGridx()
 
     gr_lumifine.SetTitle('')
     gr_lumifine.SetMarkerStyle(ROOT.kFullCircle)
@@ -168,23 +175,23 @@ if __name__ == "__main__":
     gr_lumifine.Draw('AP')
 
     gr_lumifine.GetXaxis().SetRangeUser(0,25)
-    gr_lumifine.GetXaxis().SetTitle("Time during 20/07/2016 LHC fill (h)")
+    gr_lumifine.GetXaxis().SetTitle("Time during LHC fill 5105 (h)")
     gr_lumifine.GetYaxis().SetTitle("#splitline{LHC luminosity}{  (10^{33} cm^{-2}s^{-1})}")
-    gr_lumifine.GetXaxis().SetTitleOffset(1)
+    gr_lumifine.GetXaxis().SetTitleOffset(1.5)
     gr_lumifine.GetXaxis().CenterTitle()
     gr_lumifine.GetXaxis().SetTitleFont(42)
-    gr_lumifine.GetXaxis().SetTitleSize(0.1)
-    gr_lumifine.GetXaxis().SetLabelSize(0.07)
+    gr_lumifine.GetXaxis().SetTitleSize(0.12)
+    gr_lumifine.GetXaxis().SetLabelSize(0.1)
     gr_lumifine.GetXaxis().SetTitleOffset(1.3)
-    gr_lumifine.GetXaxis().SetNdivisions(10)
+    gr_lumifine.GetXaxis().SetNdivisions(512)
 
     gr_lumifine.GetYaxis().SetTitleOffset(1)
     gr_lumifine.GetYaxis().CenterTitle()
     gr_lumifine.GetYaxis().SetTitleFont(42)
-    gr_lumifine.GetYaxis().SetTitleSize(0.08)
-    gr_lumifine.GetYaxis().SetTitleOffset(0.5)
-    gr_lumifine.GetYaxis().SetNdivisions(4)
-    gr_lumifine.GetYaxis().SetLabelSize(0.05)
+    gr_lumifine.GetYaxis().SetTitleSize(0.11)
+    gr_lumifine.GetYaxis().SetTitleOffset(0.6)
+    gr_lumifine.GetYaxis().SetNdivisions(512)
+    gr_lumifine.GetYaxis().SetLabelSize(0.1)
 
     
     # gr_lumi.SetTitle('')

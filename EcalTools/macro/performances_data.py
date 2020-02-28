@@ -10,8 +10,8 @@ from PlotUtils import doLegend
 
 from performances_mc import effSigma,printCanvas,printPlot,fitOneReso
 
-def getOneMassHisto(tree,absetamin,absetamax,variable='R9Ele[0]',xmin=0,xmax=1.1,timeMin=-1,timeMax=-1,runRange=(-1,1e+6),name='r9'):
-#def getOneMassHisto(tree,absetamin,absetamax,variable='invMass_5x5SC',xmin=50,xmax=110,timeMin=-1,timeMax=-1,runRange=(-1,1e+6),name='mass'):
+#def getOneMassHisto(tree,absetamin,absetamax,variable='R9Ele[0]',xmin=0,xmax=1.1,timeMin=-1,timeMax=-1,runRange=(-1,1e+6),name='r9'):
+def getOneMassHisto(tree,absetamin,absetamax,variable='invMass_5x5SC',xmin=50,xmax=110,timeMin=-1,timeMax=-1,runRange=(-1,1e+6),name='mass'):
     canv = ROOT.TCanvas("canvreso","",1200,1200)
     canv.SetLeftMargin(0.15)
     canv.SetRightMargin(0.15)
@@ -29,9 +29,9 @@ def getOneMassHisto(tree,absetamin,absetamax,variable='R9Ele[0]',xmin=0,xmax=1.1
         nbins = 200 if absetamax<1.3 else 100
     runRangeCut = 'runNumber>={rmin} && runNumber<={rmax}'.format(rmin=runRange[0],rmax=runRange[1])
     ## the following is used for the mass plot
-    #unconv     = 'fbremEle[0]>0 && fbremEle[0]<{fbremcut} && fbremEle[1]>0 && fbremEle[1]<{fbremcut}'.format(fbremcut=0.1 if absetamax<1.5 else 0.5)
+    unconv     = 'fbremEle[0]>0 && fbremEle[0]<{fbremcut} && fbremEle[1]>0 && fbremEle[1]<{fbremcut}'.format(fbremcut=0.1 if absetamax<1.5 else 0.5)
     ## the following is used for the cluster shape history plot
-    unconv = '1'
+    #unconv = '1'
     cut = '{c1} && {c2} && {c3} && {c4}'.format(c1=phasespace,c2=unconv,c3=time,c4=runRangeCut)
     #variable   = 'invMass_5x5SC'
     #variable   = 'invMass'
@@ -80,6 +80,7 @@ if __name__ == "__main__":
     dirs = [weights_dir,mf_dir]
     recolabels = ['weights','multifit']
     hist_colors = {'weights':ROOT.kBlack, 'multifit':ROOT.kRed}
+    hist_mkstyles = {'weights':ROOT.kOpenCircle, 'multifit':ROOT.kFullCircle}
     chains = {'weights': ROOT.TChain('selected'),
               'multifit': ROOT.TChain('selected') }
 
@@ -224,8 +225,9 @@ if __name__ == "__main__":
                 hist = getOneMassHisto(chains[reco],bins_eta[ieb],bins_eta[ieb+1],timeMin=0,timeMax=1E+10,name='mass_'+reco)
                 hist.SetLineColor(hist_colors[reco])
                 hist.SetMarkerColor(hist_colors[reco])
-                hist.SetMarkerSize(0.9)
-                hist.SetMarkerStyle(ROOT.kOpenSquare)
+                hist.SetMarkerSize(2)
+                hist.SetMarkerStyle(hist_mkstyles[reco])
+                hist.Rebin(2)
                 mass_etafine[(reco,ieb)] = hist
                 
         # superimpose weights / MF
@@ -278,5 +280,7 @@ if __name__ == "__main__":
             labels.append(k)
             plots.append(h)
             styles.append('pe')
+            if labels[0]=='multifit': # sort the legend as the other plots in the paper
+                labels.reverse(); plots.reverse(); styles.reverse()
         leg = doLegend(plots,labels,styles,legBorder=False,corner='TL')
         printPlot(plots,"plots/resolutionZdataEta",histopt='pe',legend=leg,sim=False,yaxMin=4.0,yaxMax=4.8,gridy=True,bandPlot=None)
