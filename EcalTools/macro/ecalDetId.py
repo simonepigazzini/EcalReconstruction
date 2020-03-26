@@ -16,7 +16,7 @@ class EcalDetId:
 
     def xyz(self,detid):
         if detid not in self.geometry: 
-            print "WARNING! DetId ",detid," not in the geometry file. Not used in validation. Please check inputs."
+            print("WARNING! DetId ",detid," not in the geometry file. Not used in validation. Please check inputs.")
             return(-999,-999,-999)
         coordinates = (self.geometry[detid])[-3:]
         return [int(i) for i in coordinates]
@@ -54,7 +54,7 @@ class etaRingMapping:
         else: 
             if ring==-1: return 0
             if ring not in self.eeringcrystals: 
-                print "WARNING! Ring ",ring," not valid. Returning 0 crystals."
+                print("WARNING! Ring ",ring," not valid. Returning 0 crystals.")
                 return 0
             else: return len(self.eeringcrystals[ring])
 
