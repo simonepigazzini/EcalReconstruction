@@ -115,7 +115,7 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
     gapBand->Draw("hist");
     // histogram in the readout
     TH1F *histoRead = (TH1F*)histo->Clone("histoRead");
-    for (int ir=10; ir<16; ir++) {
+    for (int ir=11; ir<16; ir++) {
       histoRead->SetBinContent(ir,-1);
     }
     histoRead->Draw("same pe0");
