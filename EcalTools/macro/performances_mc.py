@@ -14,7 +14,7 @@ def effSigma(histo):
     rms = histo.GetRMS()
     total=histo.Integral()
     if total < 100:
-        print "effsigma: Too few entries to compute it: ", total
+        print ("effsigma: Too few entries to compute it: ", total)
         return 0.
     ierr=0
     ismin=999
@@ -23,14 +23,14 @@ def effSigma(histo):
     nrms=int(rms/bwid)
     if nrms > nb/10: nrms=int(nb/10) # Could be tuned...
     widmin=9999999.
-    for iscan in xrange(-nrms,nrms+1): # // Scan window centre
+    for iscan in range(-nrms,nrms+1): # // Scan window centre
         ibm=int((ave-xmin)/bwid)+1+iscan
         x=(ibm-0.5)*bwid+xmin
         xj=x; xk=x;
         jbm=ibm; kbm=ibm;
         bin=histo.GetBinContent(ibm)
         total=bin
-        for j in xrange(1,nb):
+        for j in range(1,nb):
             if jbm < nb:
                 jbm += 1
                 xj += bwid
@@ -51,7 +51,7 @@ def effSigma(histo):
             widmin=wid
             ismin=iscan
     if ismin == nrms or ismin == -nrms: ierr=3
-    if ierr != 0: print "effsigma: Error of type ", ierr
+    if ierr != 0: print ("effsigma: Error of type ", ierr)
     return widmin
 
     
@@ -104,7 +104,7 @@ def printPlot(frames, name, text=[], colors=[], histopt='', legend=None, sim=Tru
     if gridx: canv.SetGridx()
     if gridy: canv.SetGridy()
     for iframe,frame in enumerate(frames):
-        print "drawing frame ...",frame.GetName()
+        print ("drawing frame ...",frame.GetName())
         if frame.InheritsFrom("TH1"):
             frame.SetMaximum(ymax*(1.10))
             frame.SetMinimum(ymin if yaxMin else 0)
@@ -205,8 +205,8 @@ if __name__ == "__main__":
     for idir,d in enumerate(dirs):
         reco = recolabels[idir]
         chains[reco].Add('{d1}/{d2}/photongun_*.root'.format(d1=maindir,d2=d))
-        for ieb in xrange(len(bins_eta)-1):
-            for iet in xrange(len(bins_et)-1):
+        for ieb in range(len(bins_eta)-1):
+            for iet in range(len(bins_et)-1):
                 subdet_idx = 0 if abs(bins_eta[ieb])<1.4442 else 1
                 x_range = (ranges_etacoarse[iet])[subdet_idx]
                 hist,effsigma = getOneResolutionHisto(chains[reco],bins_eta[ieb],bins_eta[ieb+1],bins_et[iet],bins_et[iet+1],x_range[0],x_range[1])
@@ -253,11 +253,11 @@ if __name__ == "__main__":
                 resolutionsEt[key].SetLineColor(ROOT.kBlack)                
                 
             
-    print "Plots = ",fit_plots
+    print ("Plots = ",fit_plots)
     
-    for ieb in xrange(len(bins_eta)-1):
+    for ieb in range(len(bins_eta)-1):
         subdet = 'EB' if bins_eta[ieb]<1 else 'EE'
-        for iet in xrange(len(bins_et)-1):
+        for iet in range(len(bins_et)-1):
             frames = []
             text = ['Resolution 5x5']; colors = [ROOT.kBlack]
             for lbl in recolabels:
