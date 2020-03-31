@@ -220,7 +220,7 @@ if __name__ == "__main__":
                 
     # superimpose weights / MF
     resolVsEt = ROOT.TH1F('resolVsEt','',len(bins_et)-1,array('f',bins_et))
-    resolVsEt.GetXaxis().SetTitle('E_{T} (GeV)')
+    resolVsEt.GetXaxis().SetTitle('p_{T} (GeV)')
     resolVsEt.GetYaxis().SetTitle('Effective resolution (%)')
     resolVsEt.SetMarkerStyle(ROOT.kFullSquare)
     resolVsEt.SetMarkerSize(1)
@@ -282,7 +282,7 @@ if __name__ == "__main__":
     # split EB/EE
     for subd in ['EB','EE']:
         plots = []; labels = []; styles = []
-        for k,h in resolutionsEt.iteritems():
+        for k,h in resolutionsEt.items():
             if subd not in k: continue
             label = '{reco}'.format(reco=k.split('_')[0])
             labels.append(label)

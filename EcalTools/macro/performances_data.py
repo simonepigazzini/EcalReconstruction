@@ -260,7 +260,7 @@ if __name__ == "__main__":
         
         for ieb in range(len(bins_eta)-1):
             frames = []
-            text = ['#sigma_{eff}^{m5x5}/m (incl. Z width)']; colors = [ROOT.kBlack]
+            text = ['5x5 clusters']; colors = [ROOT.kBlack]
             for lbl in recolabels:
                 key = (lbl,ieb)
                 frames.append(mass_etafine[key])
