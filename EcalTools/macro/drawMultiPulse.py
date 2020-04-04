@@ -24,7 +24,7 @@ def printOnePlot(frames, name, text=[], histopts=[], legend=None, sim=True, yaxM
             frame.SetMaximum(ymax*(1.10))
             frame.SetMinimum(ymin if yaxMin else 0)
         xax = frame.GetXaxis(); yax = frame.GetYaxis()
-        xax.SetNdivisions(505)
+        xax.SetNdivisions(510,ROOT.kTRUE)
         xax.SetDecimals(1)    
         xax.SetTitleOffset(1.1); xax.SetTitleSize(0.05); xax.SetLabelSize(0.05)
         yax.SetTitleOffset(1.3); yax.SetTitleSize(0.05); yax.SetLabelSize(0.05)
