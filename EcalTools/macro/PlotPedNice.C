@@ -227,30 +227,34 @@ void PlotPedNice(){
    lat.DrawLatex(0.16, 0.93, "#bf{CMS} ");
    lat.DrawLatex(0.60, 0.93, "159 fb^{-1} (13 TeV)");
    lat.DrawLatex(0.65, 0.83, "ECAL Barrel");
-   auto legend2 = new TLegend(0.45,0.19,0.85,0.30,NULL,"brNDC");
+   auto legend2 = new TLegend(0.50,0.19,0.87,0.30,NULL,"brNDC");
    legend2->SetBorderSize(0);
 
-   TLegendEntry *entry2=legend2->AddEntry("entry2","Non-collision runs (long term variation)","p");
+   TLegendEntry *entry2=legend2->AddEntry("entry2","Non-collision runs","p");
    entry2->SetMarkerColor(kRed+3);
    entry2->SetMarkerStyle(20);
    entry2->SetMarkerSize(1.5);
-   TLegendEntry *entry=legend2->AddEntry("entry","Collision runs (short term variation)","p");
+   TLegendEntry *entry=legend2->AddEntry("entry","Collision runs","p");
    entry->SetMarkerColor(kGreen+4);
    entry->SetMarkerStyle(24);
    entry->SetMarkerSize(1.5);
 
    legend2->Draw();
 
-   TPad *subpad = new TPad("subpad","",0.20,0.55,0.55,0.85); subpad->Draw(); subpad->cd(); 
+   TPad *subpad = new TPad("subpad","",0.17,0.55,0.60,0.89); subpad->Draw(); subpad->cd(); 
+   subpad->SetLeftMargin(0.18);
+   subpad->SetRightMargin(0.12);
    TGraph * inset_pedm0 = (TGraph*)pedm0->Clone("inset_pedm0");
-   inset_pedm0->GetXaxis()->SetTitle("Time");
-   inset_pedm0->GetYaxis()->SetTitle("Pedestal Mean (ADC counts)");
+   //inset_pedm0->GetXaxis()->SetTitle("Time");
+   //inset_pedm0->GetYaxis()->SetTitle("Pedestal Mean (ADC counts)");
    inset_pedm0->GetXaxis()->SetTimeDisplay(1);
    inset_pedm0->GetXaxis()->SetNdivisions(404);
-   inset_pedm0->GetXaxis()->SetLabelSize(0.035);
-   inset_pedm0->GetYaxis()->SetLabelSize(0.035);
-   inset_pedm0->GetXaxis()->SetTitleSize(0.04);
-   inset_pedm0->GetYaxis()->SetTitleSize(0.04);
+   inset_pedm0->GetXaxis()->SetLabelSize(0.1);
+   inset_pedm0->GetXaxis()->SetLabelOffset(0.05);
+   inset_pedm0->GetYaxis()->SetLabelSize(0.1);
+   inset_pedm0->GetYaxis()->SetDecimals();
+   inset_pedm0->GetXaxis()->SetTitleSize(0.10);
+   inset_pedm0->GetYaxis()->SetTitleSize(0.10);
 
 
    inset_pedm0->GetXaxis()->SetTimeFormat("%Y/%m");

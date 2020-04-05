@@ -20,7 +20,7 @@ class TagFitter:
         self._data = self.loadTemplates(filename)
         self._badFits = 0
         if "/AlphaBetaFitter_cc.so" not in rt.gSystem.GetLibraries():
-            print "Load C++ Fitter"
+            print("Load C++ Fitter")
             rt.gROOT.ProcessLine(".L AlphaBetaFitter.cc+")
         self.abfitter = rt.AlphaBetaFitter()
         self.abfitter.drawExtrapolatedTail()
@@ -60,15 +60,16 @@ class TagFitter:
         fout = open(fileout,"w")
         myData = self.parseDic(self._data)
         ncry=0
-        for (partition,detid),pulseshape in myData.iteritems():
-            #if int(partition)==0: continue
-            if ncry % 1000 == 0: print "fitted ",ncry," pulse shapes"
+        for (partition,detid),pulseshape in myData.items():
+            if int(partition)==1: continue
+            if ncry % 1000 == 0: print("fitted ",ncry," pulse shapes")
             key = (partition,detid)
             normshape = self.getPeakNormalisedPulseShape(pulseshape,int(partition),detid)
+            print("template = ",normshape)
             fout.write(partition+"  "+detid+"  "+"  ".join("%.6f" % x for x in normshape)+"\n")
             ncry += 1
-            if ncry > 10: break
-        print "Bad Fits = ",self._badFits
+            if ncry > 3: break
+        print("Bad Fits = ",self._badFits)
         
 
 if __name__ == "__main__":

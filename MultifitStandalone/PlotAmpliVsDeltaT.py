@@ -2,7 +2,7 @@
 import ROOT
 import root_numpy as rtnp
 
-def getGraph(filename):
+def getGraph(filename,inset=False):
     tf = ROOT.TFile.Open(filename)
     tree = tf.Get("amplitudes")
     hsteps = tf.Get("hsteps")
@@ -27,10 +27,11 @@ def getGraph(filename):
     xax.SetRangeUser(-4.,4.)
     yax.SetRangeUser(0.97,1.05)
     yax.SetDecimals()
-    xax.SetTitleOffset(1.1); xax.SetTitleSize(0.05)
-    yax.SetTitleOffset(1.5); yax.SetTitleSize(0.05)
-    xax.SetTitle('#Delta T (ns)')
-    yax.SetTitle('A/A_{true}')
+    if not inset:
+        xax.SetTitleOffset(1.1); xax.SetTitleSize(0.05)
+        yax.SetTitleOffset(1.5); yax.SetTitleSize(0.05)
+        xax.SetTitle('#DeltaT_{max} (ns)')
+        yax.SetTitle('A / A_{true}')
     return gr
 
 def plotOnePartition(eta):
@@ -62,12 +63,20 @@ def plotOnePartition(eta):
     lat2.SetNDC(); lat2.SetTextFont(42); lat2.SetTextSize(0.04)
     lat2.DrawLatex(0.30, 0.92, '#it{Standalone simulation}')
     
-    subpad = ROOT.TPad("subpad","",0.22,0.5,0.55,0.88); subpad.Draw(); subpad.cd();
+    subpad = ROOT.TPad("subpad","",0.18,0.47,0.55,0.89); subpad.Draw(); subpad.cd();
     subpad.SetGridx(); subpad.SetGridy()
     subpad.SetLeftMargin(0.17)
-    subpad.SetBottomMargin(0.15)
+    subpad.SetRightMargin(0.01)
+    subpad.SetBottomMargin(0.1)
+    subpad.SetTopMargin(0.03)
     grzoom.GetYaxis().SetRangeUser(0.985,1.015)
     grzoom.GetYaxis().SetRangeUser(0.985,1.015)
+
+    grzoom.GetXaxis().SetLabelSize(0.07)
+    grzoom.GetYaxis().SetLabelSize(0.07)
+    grzoom.GetXaxis().SetTitleSize(0)
+    grzoom.GetYaxis().SetTitleSize(0)
+
     grzoom.Draw("APE")
 
     canv.SaveAs("bias_{part}_vs_dt.pdf".format(part='eb' if eta<1.5 else 'ee'))

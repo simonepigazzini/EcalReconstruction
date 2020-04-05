@@ -64,18 +64,18 @@ void plotPi0vsBx() {
   
   TGraphErrors *graph_mass ;
   graph_mass = new TGraphErrors(8,bx_num,masse,bx_num_err,masse_err) ;
-  graph_mass->SetMarkerStyle(kFullCircle) ;
-  graph_mass->SetMarkerColor(kMagenta+2) ;
-  graph_mass->SetLineColor(kMagenta+2) ;
-  graph_mass->SetMarkerSize(1.0) ;
+  graph_mass->SetMarkerStyle(kOpenCircle) ;
+  graph_mass->SetMarkerColor(kBlack) ;
+  graph_mass->SetLineColor(kBlack) ;
+  graph_mass->SetMarkerSize(1.5) ;
   graph_mass->SetTitle("Weights") ;
 
   TGraphErrors *graph_massM ;
   graph_massM = new TGraphErrors(8,bx_num,masseM,bx_num_err,masseM_err) ;
-  graph_massM->SetMarkerStyle(kFullSquare) ;
-  graph_massM->SetMarkerColor(kAzure+7) ;
-  graph_massM->SetLineColor(kAzure+7) ;
-  graph_massM->SetMarkerSize(1.0) ;
+  graph_massM->SetMarkerStyle(kFullCircle) ;
+  graph_massM->SetMarkerColor(kRed) ;
+  graph_massM->SetLineColor(kRed) ;
+  graph_massM->SetMarkerSize(1.5) ;
   graph_massM->SetTitle("Multi") ;
 
   TCanvas *cmasse = new TCanvas("mass_vs_#Bx","mass_vs_#Bx", 0,0,600,600);
@@ -98,8 +98,12 @@ void plotPi0vsBx() {
   mg_masse->SetMinimum(0.98) ;
   mg_masse->Draw("ap") ;
 
-  TLegend *leg = new TLegend(0.60,0.70,0.90,0.85,"","brNDC");
+  TLegend *leg = new TLegend(0.70,0.70,0.90,0.85,"","brNDC");
   leg->SetBorderSize(0);
+  leg->SetFillColor(0);
+  leg->SetShadowColor(0);
+  leg->SetTextFont(42);
+  leg->SetTextSize(0.035);
   leg->AddEntry(graph_mass,"weights","pe");
   leg->AddEntry(graph_massM,"multifit","pe");                       
   
@@ -142,18 +146,18 @@ void plotPi0SigmavsBx() {
   
   TGraphErrors *graph_mass ;
   graph_mass = new TGraphErrors(8,bx_num,masse,bx_num_err,masse_err) ;
-  graph_mass->SetMarkerStyle(kFullCircle) ;
-  graph_mass->SetMarkerColor(kMagenta+2) ;
-  graph_mass->SetLineColor(kMagenta+2) ;
-  graph_mass->SetMarkerSize(1.0) ;
+  graph_mass->SetMarkerStyle(kOpenCircle) ;
+  graph_mass->SetMarkerColor(kBlack) ;
+  graph_mass->SetLineColor(kBlack) ;
+  graph_mass->SetMarkerSize(1.5) ;
   graph_mass->SetTitle("Weights") ;
 
   TGraphErrors *graph_massM ;
   graph_massM = new TGraphErrors(8,bx_num,masseM,bx_num_err,masseM_err) ;
-  graph_massM->SetMarkerStyle(kFullSquare) ;
-  graph_massM->SetMarkerColor(kAzure+7) ;
-  graph_massM->SetLineColor(kAzure+7) ;
-  graph_massM->SetMarkerSize(1.0) ;
+  graph_massM->SetMarkerStyle(kFullCircle) ;
+  graph_massM->SetMarkerColor(kRed) ;
+  graph_massM->SetLineColor(kRed) ;
+  graph_massM->SetMarkerSize(1.5) ;
   graph_massM->SetTitle("Multi") ;
 
   TCanvas *cmasse = new TCanvas("mass_vs_#Bx","mass_vs_#Bx", 0,0,600,600);
@@ -176,8 +180,12 @@ void plotPi0SigmavsBx() {
   mg_masse->SetMinimum(8) ;
   mg_masse->Draw("ap") ;
 
-  TLegend *leg = new TLegend(0.60,0.70,0.90,0.85,"","brNDC");
+  TLegend *leg = new TLegend(0.70,0.70,0.90,0.85,"","brNDC");
   leg->SetBorderSize(0);
+  leg->SetFillColor(0);
+  leg->SetShadowColor(0);
+  leg->SetTextFont(42);
+  leg->SetTextSize(0.035);
   leg->AddEntry(graph_mass,"weights","pe");
   leg->AddEntry(graph_massM,"multifit","pe");                       
   

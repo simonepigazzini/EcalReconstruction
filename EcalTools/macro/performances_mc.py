@@ -14,7 +14,7 @@ def effSigma(histo):
     rms = histo.GetRMS()
     total=histo.Integral()
     if total < 100:
-        print "effsigma: Too few entries to compute it: ", total
+        print ("effsigma: Too few entries to compute it: ", total)
         return 0.
     ierr=0
     ismin=999
@@ -23,14 +23,14 @@ def effSigma(histo):
     nrms=int(rms/bwid)
     if nrms > nb/10: nrms=int(nb/10) # Could be tuned...
     widmin=9999999.
-    for iscan in xrange(-nrms,nrms+1): # // Scan window centre
+    for iscan in range(-nrms,nrms+1): # // Scan window centre
         ibm=int((ave-xmin)/bwid)+1+iscan
         x=(ibm-0.5)*bwid+xmin
         xj=x; xk=x;
         jbm=ibm; kbm=ibm;
         bin=histo.GetBinContent(ibm)
         total=bin
-        for j in xrange(1,nb):
+        for j in range(1,nb):
             if jbm < nb:
                 jbm += 1
                 xj += bwid
@@ -51,7 +51,7 @@ def effSigma(histo):
             widmin=wid
             ismin=iscan
     if ismin == nrms or ismin == -nrms: ierr=3
-    if ierr != 0: print "effsigma: Error of type ", ierr
+    if ierr != 0: print ("effsigma: Error of type ", ierr)
     return widmin
 
     
@@ -104,7 +104,7 @@ def printPlot(frames, name, text=[], colors=[], histopt='', legend=None, sim=Tru
     if gridx: canv.SetGridx()
     if gridy: canv.SetGridy()
     for iframe,frame in enumerate(frames):
-        print "drawing frame ...",frame.GetName()
+        print ("drawing frame ...",frame.GetName())
         if frame.InheritsFrom("TH1"):
             frame.SetMaximum(ymax*(1.10))
             frame.SetMinimum(ymin if yaxMin else 0)
@@ -129,7 +129,7 @@ def printPlot(frames, name, text=[], colors=[], histopt='', legend=None, sim=Tru
          ttext.SetTextAlign(21)
          ttext.SetTextSize(0.05)
          ttext.Draw()
-    printCanvas(canv, name, text, colors, sim=sim)
+    printCanvas(canv, name, text, colors, textSize=0.04, sim=sim)
 
 def doSpam(text,x1,y1,x2,y2,align=12,fill=False,textSize=0.033,textColor=ROOT.kBlack,_noDelete={},debugMargins=False):
     cmsprel = ROOT.TPaveText(x1,y1,x2,y2,"NDC");
@@ -162,7 +162,7 @@ def printCanvas(c1, name, text=[], colors=[], options=None,textSize=0.03,sim=Tru
     y0 = 0.85 - textSize*1.8
     for il,line in enumerate(text):
         niceline = re.sub(r"(\s+)-(\d+)",r"\1#minus\2", line)
-        doSpam(niceline, 0.20, y0, 0.40, y0 + textSize*1.2, 11, textSize=textSize, textColor=colors[il])
+        doSpam(niceline, 0.20, y0, 0.60, y0 + textSize*1.2, 11, textSize=textSize, textColor=colors[il])
         y0 -= textSize * 1.8
     for ext in ['pdf','png','root']:
         c1.Print('{name}.{ext}'.format(name=name,ext=ext))
@@ -205,8 +205,8 @@ if __name__ == "__main__":
     for idir,d in enumerate(dirs):
         reco = recolabels[idir]
         chains[reco].Add('{d1}/{d2}/photongun_*.root'.format(d1=maindir,d2=d))
-        for ieb in xrange(len(bins_eta)-1):
-            for iet in xrange(len(bins_et)-1):
+        for ieb in range(len(bins_eta)-1):
+            for iet in range(len(bins_et)-1):
                 subdet_idx = 0 if abs(bins_eta[ieb])<1.4442 else 1
                 x_range = (ranges_etacoarse[iet])[subdet_idx]
                 hist,effsigma = getOneResolutionHisto(chains[reco],bins_eta[ieb],bins_eta[ieb+1],bins_et[iet],bins_et[iet+1],x_range[0],x_range[1])
@@ -220,7 +220,7 @@ if __name__ == "__main__":
                 
     # superimpose weights / MF
     resolVsEt = ROOT.TH1F('resolVsEt','',len(bins_et)-1,array('f',bins_et))
-    resolVsEt.GetXaxis().SetTitle('E_{T} (GeV)')
+    resolVsEt.GetXaxis().SetTitle('p_{T} (GeV)')
     resolVsEt.GetYaxis().SetTitle('Effective resolution (%)')
     resolVsEt.SetMarkerStyle(ROOT.kFullSquare)
     resolVsEt.SetMarkerSize(1)
@@ -243,19 +243,21 @@ if __name__ == "__main__":
             key = '{reco}_{part}'.format(reco=lbl,part=subdet)
             resolutionsEt[key] = resolVsEt.Clone('resolEt_'+key)
             resolutionsEt[key].SetMarkerSize(3)
-            if subdet=='EB':
-                resolutionsEt[key].SetMarkerStyle(ROOT.kFullCircle if lbl=='multifit' else ROOT.kOpenCircle)
-                resolutionsEt[key].SetMarkerColor(ROOT.kRed); resolutionsEt[key].SetLineColor(ROOT.kRed); 
+            if lbl=='multifit':
+                resolutionsEt[key].SetMarkerStyle(ROOT.kFullCircle)
+                resolutionsEt[key].SetMarkerColor(ROOT.kRed)
+                resolutionsEt[key].SetLineColor(ROOT.kRed)
             else:
-                resolutionsEt[key].SetMarkerStyle(ROOT.kFullSquare if lbl=='multifit' else ROOT.kOpenSquare)
-                resolutionsEt[key].SetMarkerColor(ROOT.kRed); resolutionsEt[key].SetLineColor(ROOT.kRed); 
+                resolutionsEt[key].SetMarkerStyle(ROOT.kOpenCircle)
+                resolutionsEt[key].SetMarkerColor(ROOT.kBlack)
+                resolutionsEt[key].SetLineColor(ROOT.kBlack)                
                 
             
-    print "Plots = ",fit_plots
+    print ("Plots = ",fit_plots)
     
-    for ieb in xrange(len(bins_eta)-1):
+    for ieb in range(len(bins_eta)-1):
         subdet = 'EB' if bins_eta[ieb]<1 else 'EE'
-        for iet in xrange(len(bins_et)-1):
+        for iet in range(len(bins_et)-1):
             frames = []
             text = ['Resolution 5x5']; colors = [ROOT.kBlack]
             for lbl in recolabels:
@@ -280,7 +282,7 @@ if __name__ == "__main__":
     # split EB/EE
     for subd in ['EB','EE']:
         plots = []; labels = []; styles = []
-        for k,h in resolutionsEt.iteritems():
+        for k,h in resolutionsEt.items():
             if subd not in k: continue
             label = '{reco}'.format(reco=k.split('_')[0])
             labels.append(label)
@@ -290,7 +292,7 @@ if __name__ == "__main__":
             if labels[0]=='multifit':
                 labels.reverse(); plots.reverse(); styles.reverse()
         leg = doLegend(plots,labels,styles,legBorder=False,corner='TR')
-        tt = ROOT.TText(0.8,0.6,'ECAL {sub}'.format(sub='Barrel' if subd=='EB' else 'Endcap'))
+        tt = ROOT.TLatex(0.7,0.6,'#splitline{%s}{5x5 crystal matrix}' % ('Barrel' if subd=='EB' else 'Endcaps'))
         tt.SetNDC(); tt.SetTextFont(42)
         printPlot(plots,"plots/resolutionEt_{det}".format(det=subd),histopt='lpe',legend=leg,ttext=tt)
     

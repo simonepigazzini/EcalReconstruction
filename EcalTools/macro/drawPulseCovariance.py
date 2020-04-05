@@ -103,8 +103,14 @@ if __name__ == "__main__":
             covmat.GetXaxis().SetBinLabel(xbin+1,covMatAxisLabel(xbin))
             covmat.GetYaxis().SetBinLabel(xbin+1,covMatAxisLabel(xbin))
 
+        
+        covmat.GetXaxis().SetTitleOffset(1.5)
+        covmat.GetYaxis().SetTitleOffset(1.5)
+        covmat.GetZaxis().SetTitleOffset(1.3)
+        
         covmat.GetXaxis().SetTitle('Time sample')
         covmat.GetYaxis().SetTitle('Time sample')
+        covmat.GetZaxis().SetTitle('#bf{#rho}_{pulse}')
         covmat.Draw("colz text45")
         lat.DrawLatex(0.16, 0.92, '#bf{CMS}')
         lat.DrawLatex(0.60, 0.92, '1 fb^{-1} (13 TeV)')
