@@ -50,18 +50,18 @@ def doPlot(hists,plotname):
             h.SetLineColor(ROOT.kBlack)
             labeledHists[3] = h
         elif h.GetName()=='total':
-            h.SetLineWidth(3)
+            h.SetLineWidth(5)
             h.SetLineColor(ROOT.kBlue+1)
             labeledHists[0] = h
         elif h.GetName()=='intime':
             h.SetLineColor(ROOT.kRed)
-            h.SetLineWidth(3)
-            h.SetLineStyle(9)
+            h.SetLineWidth(2)
+            h.SetLineStyle(7)
             labeledHists[1] = h
         else:
             ootn = int(h.GetName().split('oot')[-1])
             h.SetLineColor(ootcolors[ootn])
-            h.SetLineStyle(10)
+            h.SetLineStyle(3)
             h.SetLineWidth(2)
         h.GetXaxis().SetTitle('Time sample')
         h.GetYaxis().SetTitle('Energy (GeV)')
@@ -69,7 +69,7 @@ def doPlot(hists,plotname):
         
     genericOOT = hists[0].Clone('genericoot')
     genericOOT.SetLineColor(ROOT.kBlack)
-    genericOOT.SetLineStyle(ootstyle)
+    genericOOT.SetLineStyle(3)
     labeledHists[2] = genericOOT
 
     labels = ['Total pulse','In-time pulse','Out-of-time pulses','Observed signal']
