@@ -68,7 +68,7 @@ def doPlot(hists,plotname):
         h.SetMinimum(-0.15)
         
     genericOOT = hists[0].Clone('genericoot')
-    genericOOT.SetLineColor(ROOT.kBlack)
+    genericOOT.SetLineColor(ROOT.kGray+1)
     genericOOT.SetLineStyle(3)
     labeledHists[2] = genericOOT
 
