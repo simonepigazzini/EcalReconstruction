@@ -13,21 +13,21 @@ if __name__ == "__main__":
 
     graphs = {}
     
-    for k,f in files.iteritems():
-        print "processing reco ",k
+    for k,f in files.items():
+        print ("processing reco ",k)
         tf = ROOT.TFile(f)
         canv = tf.Get(canvases[k])
         for obj in canv.GetListOfPrimitives():
             if obj.InheritsFrom("TMultiGraph"):
-                print "this is a MG: ",obj.GetName()
+                print ("this is a MG: ",obj.GetName())
                 for gr in obj.GetListOfGraphs():
-                    print "\t single gr name = ",gr.GetName()
+                    print ("\t single gr name = ",gr.GetName())
                     if "_cor_" in gr.GetName():
                         graphs[k] = gr.Clone("pi0_"+k)
                         graphs[k].SetMarkerSize(1.3)
                         graphs[k].SetTitle("")
 
-    print "Graphs = ",graphs
+    print ("Graphs = ",graphs)
 
     ROOT.gStyle.SetPaintTextFormat('.2f')
     canv = ROOT.TCanvas("canv","",2400,1200)
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     leg.SetBorderSize(0)
 
     igr = 0
-    for k,gr in graphs.iteritems():
+    for k,gr in graphs.items():
         if igr==0:
             gr.GetYaxis().SetRangeUser(0.985,1.02)
             gr.GetXaxis().SetTimeFormat("%d/%H:%M");

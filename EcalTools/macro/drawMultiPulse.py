@@ -73,7 +73,7 @@ def doPlot(hists,plotname):
     labeledHists[2] = genericOOT
 
     labels = ['Total pulse','In-time pulse','Out-of-time pulses','Observed signal']
-    styles = ['l','l','l','pe']
+    styles = ['l','l','l','p']
     plotopts = ['hist' for i in range(len(hists)-1)] + ['pe X0']
     
     leg = doLegend(labeledHists,labels,styles,legBorder=False,corner='TL')
@@ -93,8 +93,9 @@ def array2hist(arr,name,errors=[]):
 def drawBarrel():
 
     data  = [0,0,0,3.2e-2, 9.1e-1,  1.20,  1.23,    1.09,    8.06e-1, 5.60e-1]
-    errdata = [3.9e-2 for i in range(10)]
-
+    #errdata = [3.9e-2 for i in range(10)] # removed because CWR comment
+    errdata = [0 for i in range(10)]
+    
     total = [0,0,0,8.9e-3, 8.97e-1, 1.18,  1.25,    1.06,    0.79   , 5.45e-1]
     IT    = [0,0,0,8.9e-3, 8.97e-1, 1.17,  1.05,    0.80,    5.57e-1, 3.66e-1]
     OOT0  = [0,0,0,0,     0,        3.7e-3,1.94e-1, 2.56e-1, 2.3e-1 , 1.73e-1]
@@ -109,8 +110,9 @@ def drawBarrel():
 
 def drawEndcap():
     data = [2.51,   3.12,  3.11,  3.78,   6.75,  7.86,   6.89,  5.64,  4.38,  3.11]
-    errdata = [0.17 for i in range(10)]
-
+    #errdata = [0.17 for i in range(10)] # removed because CWR comment
+    errdata = [0 for i in range(10)]
+    
     total = [2.52,  3.17,  3.00,  3.72,   6.73,   7.75,   6.92,   5.74,  4.33,  3.04]
     IT    = [0.00,  0.00,  0.00,  0.57,   3.86,   5.00,   4.55,   3.53,  2.50,  1.66]
     OOT0  = [0.00,  0.00,  0.00,  0.00,   0.00,   0.00,   0.01,   0.02,  0.01,  0.00]

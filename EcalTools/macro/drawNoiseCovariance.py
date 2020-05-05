@@ -24,14 +24,14 @@ def noiseAutocorr(partition='EB',gain=12):
     if (partition,gain) in noisecorr:
         return noisecorr[(partition,gain)]
     else:
-        print "ERROR! wrong partition: ", partition," or gain: ",gain
+        print ("ERROR! wrong partition: ", partition," or gain: ",gain)
         return []
 
 def noiseCov(partition='EB',gain=12):
     autocorr = noiseAutocorr(partition,gain)
     covmat = numpy.zeros((nsamples,nsamples))
-    for i in xrange(10):
-        for j in xrange(10):
+    for i in range(10):
+        for j in range(10):
             vidx = abs(j-i)
             covmat[i,j]=autocorr[vidx]
     return covmat
@@ -39,8 +39,8 @@ def noiseCov(partition='EB',gain=12):
 def noiseCovTH2(partition='EB',gain=12):
     covmat = noiseCov(partition,gain)
     histo = ROOT.TH2D('covmat_{part}_gain{g}'.format(part=partition,g=gain),'',nsamples,0,nsamples,nsamples,0,nsamples)
-    for i in xrange(10):
-        for j in xrange(10):
+    for i in range(10):
+        for j in range(10):
             histo.SetBinContent(i+1,j+1,covmat[i,j])
     return histo
 
@@ -81,7 +81,7 @@ if __name__ == "__main__":
             covmat.GetYaxis().SetTickLength(0.)
             covmat.GetXaxis().LabelsOption("v")
             covmat.GetZaxis().SetRangeUser(0,1)
-            for xbin in xrange(nsamples):
+            for xbin in range(nsamples):
                 covmat.GetXaxis().SetBinLabel(xbin+1,covMatAxisLabel(xbin))
                 covmat.GetYaxis().SetBinLabel(xbin+1,covMatAxisLabel(xbin))
 

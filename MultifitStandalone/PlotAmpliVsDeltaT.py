@@ -8,7 +8,7 @@ def getGraph(filename,inset=False):
     hsteps = tf.Get("hsteps")
 
     steps = rtnp.hist2array(hsteps)
-    print steps
+    print (steps)
 
     gr = ROOT.TGraphErrors(len(steps))
     gr.SetTitle("")
@@ -17,7 +17,7 @@ def getGraph(filename,inset=False):
         tree.Draw("amplitude[{i}]/amplitudeTruth>>hist".format(i=i))
         bias = hist.GetMean()
         err = hist.GetMeanError()
-        print "deltat = {dt} => bias = {bias}".format(dt=s,bias=bias)
+        print ("deltat = {dt} => bias = {bias}".format(dt=s,bias=bias))
         gr.SetPoint(i,s,bias)
         gr.SetPointError(i,0,err)
     gr.SetMarkerStyle(ROOT.kFullCircle)

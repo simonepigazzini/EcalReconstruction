@@ -17,7 +17,7 @@ def getOneReso(ibx):
     iamp = ibx+5
     fullcut = 'BX0{plus}{ibx}>=0 && BX0{plus}{ibx}<2800 && (amp[{iamp}]-{truea})>0 && (amp[{iamp}]-{truea})/energyPU[BX0{plus}{ibx}]<2 && energyPU[BX0{plus}{ibx}]>{cut}'.format(plus='+' if ibx>=0 else '',ibx=ibx,cut=enecut,iamp=iamp,truea=E if ibx==0 else 0)
     var = '(amp[{iamp}]-{truea})/energyPU[BX0{plus}{ibx}]'.format(iamp=iamp,truea=E if ibx==0 else 0,plus='+' if ibx>=0 else '',ibx=ibx,cut=enecut)
-    print "Plotting: ",var,"  with fullcut = ",fullcut
+    print ("Plotting: ",var,"  with fullcut = ",fullcut)
     tree.Draw('{v}>>hreso'.format(v=var),fullcut)
     mean = hreso.GetMean()
     meanerr = hreso.GetMeanError()

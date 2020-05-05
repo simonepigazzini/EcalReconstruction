@@ -77,7 +77,7 @@ void AlphaBetaFitter::setParameters(bool doEB, double pedestal) {
 }
 
 void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canvasName) {
-  
+  gStyle->SetErrorX(0);
   setParameters(doEB,pedestal);
   
   TCanvas *canv = 0;
@@ -104,7 +104,7 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
     gapBand->SetFillColor(kGray);
     gapBand->SetLineColor(0);
     for(int i=0; i<16; ++i) {
-      histo->SetBinError(i,0.02*histo->GetBinContent(i));
+      histo->SetBinError(i,0.002*histo->GetBinContent(i));
       if(i>10) {
         histo->SetBinContent(i,_fitF->Eval(i-0.5));
         gapBand->SetBinContent(i,2);
@@ -127,7 +127,7 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
     }
     histoOutRead->SetMarkerStyle(kOpenSquare);
     histoOutRead->Draw("same pe0");
-    //    histo->Draw("same pe0");
+    //    histo->Draw("same p0");
   }
   
   for(int p=1; p<4; ++p) {

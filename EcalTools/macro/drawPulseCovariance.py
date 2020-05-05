@@ -34,7 +34,7 @@ def covMatrix(barrel):
              -7.323e-07, -1.320e-06,  0.000e+00,  6.446e-07,  7.575e-07,  6.886e-07,  6.146e-07,  4.283e-07,  3.882e-07,  4.293e-07,  5.493e-07,  7.027e-07 ]
 
     covMat = {}
-    for k in xrange(nsamples*nsamples):
+    for k in range(nsamples*nsamples):
         i = k/nsamples
         j = k%nsamples
         covMat[(i,j)] = ebcov[k] if barrel else eecov[k]
@@ -44,17 +44,17 @@ def covMatrix(barrel):
 def pulseCovariance(barrel):
     covMat = covMatrix(barrel)
     pulseCov = ROOT.TH2D("pulseCov","",nsamples,0,nsamples,nsamples,0,nsamples)
-    [ pulseCov.SetBinContent(i+1,j+1,covMat[(i,j)]) for i in xrange(nsamples) for j in xrange(nsamples) ]
+    [ pulseCov.SetBinContent(i+1,j+1,covMat[(i,j)]) for i in range(nsamples) for j in range(nsamples) ]
     return pulseCov
 
 def pulseCorrelation(barrel):
     covMat = covMatrix(barrel)
     pulseCorr = ROOT.TH2D("pulseCorr","",nsamples,0,nsamples,nsamples,0,nsamples)
-    for i in xrange(nsamples):
-        for j in xrange(nsamples):
+    for i in range(nsamples):
+        for j in range(nsamples):
             val = covMat[(i,j)]/sqrt(abs(covMat[(i,i)]*covMat[(j,j)])) if covMat[(i,i)]*covMat[(j,j)] !=0 else 0
             #print "val = ", val
-            if abs(val)>1: print i," ",j,"  ",i*nsamples+j,"  ",covMat[(i,j)],"  ",sqrt(abs(covMat[(i,i)])),"  ",sqrt(abs(covMat[(j,j)]))
+            if abs(val)>1: print (i," ",j,"  ",i*nsamples+j,"  ",covMat[(i,j)],"  ",sqrt(abs(covMat[(i,i)])),"  ",sqrt(abs(covMat[(j,j)])))
             pulseCorr.SetBinContent(i+1,j+1,val)
     return pulseCorr
             
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     canv.SetBottomMargin(0.15)
     #canv.SetLogz(1)
     
-    for iseb in xrange(2):
+    for iseb in range(2):
         covmat = pulseCorrelation(iseb)
         
         rmax = max(abs(covmat.GetMaximum()),abs(covmat.GetMinimum()))
@@ -99,7 +99,7 @@ if __name__ == "__main__":
         covmat.GetXaxis().SetTickLength(0.)
         covmat.GetYaxis().SetTickLength(0.)
         covmat.GetXaxis().LabelsOption("v")
-        for xbin in xrange(nsamples):
+        for xbin in range(nsamples):
             covmat.GetXaxis().SetBinLabel(xbin+1,covMatAxisLabel(xbin))
             covmat.GetYaxis().SetBinLabel(xbin+1,covMatAxisLabel(xbin))
 
