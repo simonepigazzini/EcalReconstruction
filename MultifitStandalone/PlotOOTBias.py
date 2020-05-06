@@ -58,7 +58,8 @@ def plotPUSpectrum(tree):
     c.SetBottomMargin(0.15)
     c.SetLogy()
     c.SetLogx()
-
+    c.SetTicks()
+    
     hpu = ROOT.TH1F('hpu','',200,0.1,100)
     hpu.SetMarkerStyle(ROOT.kFullCircle)
     hpu.SetMarkerSize(1)
@@ -109,7 +110,8 @@ if __name__ == "__main__":
     canv.SetLeftMargin(0.17)
     canv.SetRightMargin(0.1)
     canv.SetBottomMargin(0.15)
-
+    canv.SetTicks(1,1)
+    
     bias_gr.SetMarkerStyle(ROOT.kFullCircle)
     bias_gr.SetMarkerSize(2)
     bias_gr.SetMarkerColor(ROOT.kRed+2)
@@ -127,7 +129,7 @@ if __name__ == "__main__":
     xax.SetTitleOffset(1.1); xax.SetTitleSize(0.05)
     yax.SetTitleOffset(1.5); yax.SetTitleSize(0.05)
     xax.SetTitle("Bunch crossing")
-    yax.SetTitle("A_{PU}/A_{PU}^{true}")
+    yax.SetTitle("A^{PU} / A_{BX}^{true}")
 
     lat = ROOT.TLatex()
     lat.SetNDC(); lat.SetTextFont(42)
