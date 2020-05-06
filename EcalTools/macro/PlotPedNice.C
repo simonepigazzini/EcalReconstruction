@@ -90,11 +90,12 @@ void PlotPedNice(){
   ped0->GetXaxis()->SetTitle("Date (year/month)");
   ped0->GetYaxis()->SetTitle("Noise (ADC counts)");
   ped0->GetXaxis()->SetTimeDisplay(1);
-  ped0->GetXaxis()->SetNdivisions(412);
+  ped0->GetXaxis()->SetNdivisions(406);
   ped0->GetXaxis()->SetLabelSize(0.04);
   ped0->GetYaxis()->SetLabelSize(0.04);
   ped0->GetXaxis()->SetTitleSize(0.04);
   ped0->GetYaxis()->SetTitleSize(0.04);
+  ped0->GetYaxis()->SetDecimals();
 
   ped0->GetXaxis()->SetTimeFormat("%Y/%m");
   ped0->GetXaxis()->LabelsOption("v");
@@ -202,7 +203,7 @@ void PlotPedNice(){
    pedm0->GetXaxis()->SetTitle("Date (year/month)");
    pedm0->GetYaxis()->SetTitle("Pedestal mean (ADC counts)");
    pedm0->GetXaxis()->SetTimeDisplay(1);
-   pedm0->GetXaxis()->SetNdivisions(406);
+   pedm0->GetXaxis()->SetNdivisions(405);
    pedm0->GetXaxis()->SetLabelSize(0.04);
    pedm0->GetYaxis()->SetLabelSize(0.04);
    pedm0->GetXaxis()->SetTitleSize(0.04);
