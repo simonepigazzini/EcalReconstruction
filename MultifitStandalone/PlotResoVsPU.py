@@ -156,13 +156,13 @@ def plotOneEnergy(Energy):
     plots = [graphs[('weights','itfalse')],graphs[('weights','ittrue')],graphs[('multifit','itfalse')],graphs[('multifit','ittrue')]]
     labels = ['weights','weights, only OOT PU','multifit','multifit, only OOT PU']
     styles = ['pl','pl','pl','pl']
-    leg = doLegend(plots,labels,styles,legBorder=False,corner='TL')
+    leg = doLegend(plots,labels,styles,legBorder=False,legWidth=0.5,corner='TL')
     
     lat = ROOT.TLatex()
     lat.SetNDC(); lat.SetTextFont(42)
     lat.DrawLatex(0.19, 0.92, '#bf{CMS}')
     lat.DrawLatex(0.73, 0.92, '(13 TeV)')
-    lat.DrawLatex(0.19,0.20, 'E={ene} GeV'.format(ene=Energy))
+    lat.DrawLatex(0.19,0.20, 'E = {ene} GeV'.format(ene=Energy))
 
     ## another tlatex to make the font smaller
     lat2 = ROOT.TLatex()
