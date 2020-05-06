@@ -99,6 +99,7 @@ def printPlot(frames, name, text=[], colors=[], histopt='', legend=None, sim=Tru
     canv.SetLeftMargin(0.15)
     canv.SetRightMargin(0.05)
     canv.SetBottomMargin(0.15)
+    canv.SetTicks(1,1)
     ymax = yaxMax if yaxMax else max([f.GetMaximum() for f in frames])
     ymin = yaxMin if yaxMin else min([f.GetMinimum() for f in frames])
     if gridx: canv.SetGridx()
