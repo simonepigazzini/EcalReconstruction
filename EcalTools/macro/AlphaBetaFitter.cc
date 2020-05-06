@@ -87,15 +87,18 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
     canv->SetRightMargin(0.05);
     canv->SetBottomMargin(0.15);
     canv->SetTopMargin(0.10);
+    canv->SetTicks(1,1);
     histo->SetMarkerStyle(kFullSquare);
     histo->SetLineColor(kBlack);
     histo->GetXaxis()->SetTitle("Time sample");
     histo->GetXaxis()->SetTitleOffset(1.2);
     histo->GetXaxis()->SetTitleSize(0.05);
+    histo->GetXaxis()->SetNdivisions(20,kTRUE);
     histo->GetYaxis()->SetTitle("Normalized Amplitude");
     histo->GetYaxis()->SetTitleOffset(1.2);
     histo->GetYaxis()->SetTitleSize(0.05);
     histo->GetYaxis()->SetRangeUser(0,1.2);
+    histo->GetYaxis()->SetDecimals();
   }
 
   TH1F *gapBand = (TH1F*)histo->Clone("gapBand");
@@ -146,8 +149,8 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
     lat.DrawLatex(0.60, 0.92, "0.5 fb^{-1} (13 TeV)");
     TLatex labels;
     labels.SetNDC(); labels.SetTextFont(42); labels.SetTextSize(0.04);
-    labels.DrawLatex(0.7,0.85, "#it{extrapolated}");
-    labels.DrawLatex(0.2,0.85, "#it{readout}");
+    labels.DrawLatex(0.7,0.80, "#it{extrapolated}");
+    labels.DrawLatex(0.2,0.80, "#it{readout}");
     canv->SaveAs(canvasName.c_str());
     delete canv;
     delete gapBand;
