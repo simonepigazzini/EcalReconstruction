@@ -31,7 +31,7 @@ def getGraph(filename,inset=False):
         xax.SetTitleOffset(1.1); xax.SetTitleSize(0.05)
         yax.SetTitleOffset(1.5); yax.SetTitleSize(0.05)
         xax.SetTitle('#DeltaT_{max} (ns)')
-        yax.SetTitle('A / A_{true}')
+        yax.SetTitle('<A> / A_{true}')
     return gr
 
 def plotOnePartition(eta):
