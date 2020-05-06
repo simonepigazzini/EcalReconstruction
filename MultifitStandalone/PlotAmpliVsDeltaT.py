@@ -47,7 +47,8 @@ def plotOnePartition(eta):
     canv.SetLeftMargin(0.17)
     canv.SetRightMargin(0.1)
     canv.SetBottomMargin(0.15)
-
+    canv.SetTicks(1,1)
+    
     grfull.Draw("APE")
 
     lat = ROOT.TLatex()
@@ -55,7 +56,7 @@ def plotOnePartition(eta):
     lat.DrawLatex(0.18, 0.92, '#bf{CMS}')
     lat.DrawLatex(0.73, 0.92, '(13 TeV)')
     lat.DrawLatex(0.60,0.30, 'ECAL {part}'.format(part="Barrel" if eta<1.5 else "Endcap"))
-    lat.DrawLatex(0.60,0.25, 'E=50 GeV')
+    lat.DrawLatex(0.60,0.25, 'E = 50 GeV')
     lat.DrawLatex(0.60,0.20, '<PU> = 40')
 
     ## another tlatex to make the font smaller
@@ -69,6 +70,7 @@ def plotOnePartition(eta):
     subpad.SetRightMargin(0.01)
     subpad.SetBottomMargin(0.1)
     subpad.SetTopMargin(0.03)
+    subpad.SetTicks(1,1)
     grzoom.GetYaxis().SetRangeUser(0.985,1.015)
     grzoom.GetYaxis().SetRangeUser(0.985,1.015)
 
