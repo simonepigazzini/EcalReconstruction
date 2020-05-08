@@ -57,21 +57,22 @@ def plotPUSpectrum(tree):
     c.SetRightMargin(0.1)
     c.SetBottomMargin(0.15)
     c.SetLogy()
-    c.SetLogx()
+#    c.SetLogx()
     c.SetTicks()
     
-    hpu = ROOT.TH1F('hpu','',200,0.1,100)
+    hpu = ROOT.TH1F('hpu','',200,0.0,100)
     hpu.SetMarkerStyle(ROOT.kFullCircle)
     hpu.SetMarkerSize(1)
     hpu.SetLineColor(ROOT.kBlack)
-
-    tree.Draw("energyPU>>hpu","energyPU>0.1")
+    
+    tree.Draw("energyPU>>hpu","energyPU>0.05")
 
     hpu.GetXaxis().SetTitle('OOT pileup energy / crystal (GeV)')
     hpu.GetYaxis().SetTitle("Events")
     hpu.GetXaxis().SetTitleOffset(1.1);
     hpu.GetXaxis().SetTitleSize(0.05)
-    hpu.Draw('pe')
+    hpu.GetXaxis().SetRangeUser(0.05,100)
+    hpu.Draw('peX0')
 
     lat = ROOT.TLatex()
     lat.SetNDC(); lat.SetTextFont(42)

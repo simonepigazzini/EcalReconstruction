@@ -89,11 +89,11 @@ void plotPi0vsBx() {
   mg_masse->Add(graph_mass) ;
   mg_masse->Add(graph_massM) ;
   mg_masse->Draw("ap") ;
-  mg_masse->GetYaxis()->SetTitle("m_{#gamma#gamma}/m_{#gamma#gamma}^{BX=1}") ;
+  mg_masse->GetYaxis()->SetTitle("m_{#gamma#gamma} / m_{#gamma#gamma}^{BX_{start}=1}") ;
   mg_masse->GetYaxis()->SetTitleOffset(1.3);
   mg_masse->GetYaxis()->SetDecimals(2);
 
-  mg_masse->GetXaxis()->SetTitle("bunch crossing number") ;
+  mg_masse->GetXaxis()->SetTitle("bunch crossing in LHC train") ;
   mg_masse->SetMaximum(1.05) ;
   mg_masse->SetMinimum(0.98) ;
   mg_masse->Draw("ap") ;
@@ -175,7 +175,7 @@ void plotPi0SigmavsBx() {
   mg_masse->GetYaxis()->SetTitleOffset(1.5);
   mg_masse->GetYaxis()->SetDecimals(2);
 
-  mg_masse->GetXaxis()->SetTitle("bunch crossing number") ;
+  mg_masse->GetXaxis()->SetTitle("bunch crossing in LHC train") ;
   mg_masse->SetMaximum(22) ;
   mg_masse->SetMinimum(8) ;
   mg_masse->Draw("ap") ;

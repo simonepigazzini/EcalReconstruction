@@ -138,6 +138,17 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
     _errs[p-1] = _fitF->GetParError(p);
   }
 
+  // for CWR comment, find the ToT (T=10% Ampli)
+  // float threshold=0.1; // is normalized
+  // float t0=-1; float t1=-1;
+  // for(float t=0; t<20; t+=0.01) {
+  //   float val = _fitF->Eval(t);
+  //   //std::cout << "\tt = " << t << " val = " << val << std::endl;
+  //   if (t0<0 && _fitF->Eval(t)>threshold) t0=t;
+  //   if (t0>0 && _fitF->Eval(t)<threshold) t1=t;
+  // }
+  // std::cout << "T0 = " << t0 << "  T1 = " << t1 << "  TOT = " << t1-t0 << std::endl;
+  
   if(canvasName!="") {
     gROOT->LoadMacro("tdrstyle.C");
     setTDRStyle();
