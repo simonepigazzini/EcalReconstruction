@@ -47,9 +47,9 @@ if __name__ == "__main__":
     yax.SetDecimals()
     xax.SetTitleOffset(1.1); xax.SetTitleSize(0.05)
     yax.SetTitleOffset(1.5); yax.SetTitleSize(0.05)
-    xax.SetTitle('#DeltaP (ADC counts)')
+    xax.SetTitle('#Delta#it{P} (ADC counts)')
     # yax.SetTitle('A/A_{true}')
-    yax.SetTitle('<A> - A_{true} (ADC counts)')
+    yax.SetTitle('<#it{A}> - #it{A}_{true} (ADC counts)')
 
     lat.DrawLatex(0.19, 0.92, '#bf{CMS}')
     lat.DrawLatex(0.73, 0.92, '(13 TeV)')

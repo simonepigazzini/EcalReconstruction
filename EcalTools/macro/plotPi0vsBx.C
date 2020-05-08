@@ -89,7 +89,7 @@ void plotPi0vsBx() {
   mg_masse->Add(graph_mass) ;
   mg_masse->Add(graph_massM) ;
   mg_masse->Draw("ap") ;
-  mg_masse->GetYaxis()->SetTitle("m_{#gamma#gamma} / m_{#gamma#gamma}^{BX_{start}=1}") ;
+  mg_masse->GetYaxis()->SetTitle("#it{m}_{#gamma#gamma} / #it{m}_{#gamma#gamma}^{BX_{start}=1}") ;
   mg_masse->GetYaxis()->SetTitleOffset(1.3);
   mg_masse->GetYaxis()->SetDecimals(2);
 
@@ -171,7 +171,7 @@ void plotPi0SigmavsBx() {
   mg_masse->Add(graph_mass) ;
   mg_masse->Add(graph_massM) ;
   mg_masse->Draw("ap") ;
-  mg_masse->GetYaxis()->SetTitle("#sigma_{m(#gamma#gamma)} (MeV)") ;
+  mg_masse->GetYaxis()->SetTitle("#sigma_{#it{m}(#gamma#gamma)} (MeV)") ;
   mg_masse->GetYaxis()->SetTitleOffset(1.5);
   mg_masse->GetYaxis()->SetDecimals(2);
 

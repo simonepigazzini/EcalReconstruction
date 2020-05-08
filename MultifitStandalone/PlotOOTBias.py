@@ -131,7 +131,7 @@ if __name__ == "__main__":
     xax.SetTitleOffset(1.1); xax.SetTitleSize(0.05)
     yax.SetTitleOffset(1.5); yax.SetTitleSize(0.05)
     xax.SetTitle("Bunch crossing")
-    yax.SetTitle("A^{PU} / A_{BX}^{true}")
+    yax.SetTitle("#it{A}^{PU} / #it{A}_{BX}^{true}")
 
     lat = ROOT.TLatex()
     lat.SetNDC(); lat.SetTextFont(42)

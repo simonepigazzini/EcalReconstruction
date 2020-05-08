@@ -225,7 +225,7 @@ if __name__ == "__main__":
                 
     # superimpose weights / MF
     resolVsEt = ROOT.TH1F('resolVsEt','',len(bins_et)-1,array('f',bins_et))
-    resolVsEt.GetXaxis().SetTitle('p_{T} (GeV)')
+    resolVsEt.GetXaxis().SetTitle('#it{p}_{T} (GeV)')
     resolVsEt.GetYaxis().SetTitle('Effective resolution (%)')
     resolVsEt.SetMarkerStyle(ROOT.kFullSquare)
     resolVsEt.SetMarkerSize(1)

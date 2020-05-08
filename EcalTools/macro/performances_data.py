@@ -41,7 +41,7 @@ def getOneMassHisto(tree,absetamin,absetamax,variable='invMass_5x5SC',xmin=50,xm
     nicename = cut.replace(">","gt").replace("<","lt").replace("&&","AND").replace(".","p").replace(" ","_").replace(")","").replace("(","").replace("[",'').replace("]",'').replace("!","NOT").replace('||','OR')
     histoname = '{name}_{cuts}'.format(name=name,cuts=nicename)
     histo = ROOT.TH1D(histoname,'',nbins,xmin,xmax)
-    histo.GetXaxis().SetTitle("m_{ee}^{5x5} (GeV)")
+    histo.GetXaxis().SetTitle("#it{m}_{ee}^{5x5} (GeV)")
     histo.GetYaxis().SetTitle("Entries")
     tree.Draw('{var}>>{hn}'.format(var=variable,hn=histoname),cut)
     return histo
@@ -266,7 +266,7 @@ if __name__ == "__main__":
                 frames.append(mass_etafine[key])
                 resol = effSigma(mass_etafine[key])
                 median = getMedian(mass_etafine[key])
-                text.append("#sigma_{{ eff }}^{{ {label} }}/m = {resol:.2f}%".format(resol=resol/ZMASS*100, label=lbl))
+                text.append("#sigma_{{ eff }}^{{ {label} }} / #it{{ m }} = {resol:.2f}%".format(resol=resol/ZMASS*100, label=lbl))
                 colors.append(hist_colors[lbl])
                 # fill the resolution vs ET histo
                 resolutionsEta[lbl].SetBinContent(ieb+1,resol/ZMASS*100)
