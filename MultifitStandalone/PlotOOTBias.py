@@ -91,8 +91,6 @@ if __name__ == "__main__":
 
     plotPUSpectrum(tree)
 
-    exit(0)
-    
     bias_gr = ROOT.TGraphErrors(10)
     bias_gr.SetTitle('')
     mode_gr = ROOT.TGraphErrors(10)
@@ -127,6 +125,7 @@ if __name__ == "__main__":
     #bias_gr.Draw("AP")
     xax = mode_gr.GetXaxis(); yax = mode_gr.GetYaxis()
     xax.SetRangeUser(-6,5)
+    xax.SetNdivisions(10,ROOT.kTRUE)
     yax.SetRangeUser(ymin,ymax)
     yax.SetDecimals()
     xax.SetTitleOffset(1.1); xax.SetTitleSize(0.05)
@@ -152,6 +151,11 @@ if __name__ == "__main__":
     labels = ['mean','mode']
     styles = ['p','p']
     #leg = doLegend(plots,labels,styles,legBorder=False,corner='TC')
+
+    # horizontal line at 1
+    line = ROOT.TLine()
+    line.SetLineWidth(2)
+    line.DrawLine(-6, 1, 5, 1)
     
     for ext in ['pdf','png','root']:
         canv.SaveAs("ootpu_bias.{ext}".format(ext=ext))

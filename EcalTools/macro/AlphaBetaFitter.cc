@@ -11,6 +11,7 @@
 #include <TF1.h>
 #include <TCanvas.h>
 #include <TLatex.h>
+#include <TLegend.h>
 #include "tdrstyle.C"
 
 double alphabeta(double *x, double *par) {
@@ -102,6 +103,8 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
   }
 
   TH1F *gapBand = (TH1F*)histo->Clone("gapBand");
+  TH1F *histoRead = 0;
+  TH1F *histoOutRead = 0;
   histo->Fit("alphabeta","M","same",0,10);
   if (_extrapTail) {
     gapBand->SetFillColor(kGray);
@@ -117,14 +120,14 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
     }
     gapBand->Draw("hist");
     // histogram in the readout
-    TH1F *histoRead = (TH1F*)histo->Clone("histoRead");
+    histoRead = (TH1F*)histo->Clone("histoRead");
     for (int ir=11; ir<16; ir++) {
       histoRead->SetBinContent(ir,-1);
     }
     histoRead->Draw("same pe0");
 
     // histogram outside the readout
-    TH1F *histoOutRead = (TH1F*)histo->Clone("histoOutRead");
+    histoOutRead = (TH1F*)histo->Clone("histoOutRead");
     for (int ir=0; ir<11; ir++) {
       histoOutRead->SetBinContent(ir,-1);
     }
@@ -162,6 +165,18 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
     labels.SetNDC(); labels.SetTextFont(42); labels.SetTextSize(0.04);
     labels.DrawLatex(0.7,0.80, "#it{extrapolated}");
     labels.DrawLatex(0.2,0.80, "#it{readout}");
+
+    TLegend leg(0.6,0.6,0.85,0.75);
+    leg.SetFillStyle(0);
+    leg.SetLineWidth(0);
+    leg.SetBorderSize(0);
+    leg.SetTextFont(42);
+    leg.SetTextSize(0.03);
+    leg.AddEntry(histoRead,"readout samples","p");
+    leg.AddEntry(histoOutRead,"extrapolated samples","p");
+    leg.AddEntry(_fitF,"fit","l");
+    leg.Draw();
+    
     canv->SaveAs(canvasName.c_str());
     delete canv;
     delete gapBand;
