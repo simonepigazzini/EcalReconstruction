@@ -160,28 +160,29 @@ void PlotPedNice(){
   lat.DrawLatex(0.16, 0.93, "#bf{CMS} ");
   lat.DrawLatex(0.60, 0.93, "159 fb^{-1} (13 TeV)");
   lat.DrawLatex(0.65, 0.83, "ECAL Barrel");
-  auto legend = new TLegend(0.18,0.50,0.55,0.89,NULL,"brNDC");
+  auto legend = new TLegend(0.16,0.50,0.65,0.89,NULL,"brNDC");
   legend->SetBorderSize(0);
-  legend->SetTextSize(0.025);
+  legend->SetTextSize(0.035);
+  legend->SetTextFont(42);
   legend->SetNColumns(2);
   
-  legend->AddEntry("ped0","|#eta| #in [0.00,0.08)","l");
-  legend->AddEntry("ped1","|#eta| #in [0.08,0.17)","l");
-  legend->AddEntry("ped2","|#eta| #in [0.17,0.26)","l");
-  legend->AddEntry("ped3","|#eta| #in [0.26,0.34)","l");
-  legend->AddEntry("ped4","|#eta| #in [0.34,0.43)","l");
-  legend->AddEntry("ped5","|#eta| #in [0.43,0.51)","l");
-  legend->AddEntry("ped6","|#eta| #in [0.51,0.60)","l");
-  legend->AddEntry("ped7","|#eta| #in [0.60,0.68)","l");
-  legend->AddEntry("ped8","|#eta| #in [0.68,0.77)","l");
-  legend->AddEntry("ped9","|#eta| #in [0.77,0.85)","l");
-  legend->AddEntry("ped10","|#eta| #in [0.85,0.94)","l");
-  legend->AddEntry("ped11","|#eta| #in [0.94,1.02)","l");
-  legend->AddEntry("ped12","|#eta| #in [1.02,1.11)","l");
-  legend->AddEntry("ped13","|#eta| #in [1.11,1.19)","l");
-  legend->AddEntry("ped14","|#eta| #in [1.19,1.28)","l");
-  legend->AddEntry("ped15","|#eta| #in [1.28,1.36)","l");
-  legend->AddEntry("ped16","|#eta| #in [1.36,1.45]","l");
+  legend->AddEntry("ped0","0.00#leq|#eta|<0.08","l");
+  legend->AddEntry("ped1","0.08#leq|#eta|<0.17","l");
+  legend->AddEntry("ped2","0.17#leq|#eta|<0.26","l");
+  legend->AddEntry("ped3","0.26#leq|#eta|<0.34","l");
+  legend->AddEntry("ped4","0.34#leq|#eta|<0.43","l");
+  legend->AddEntry("ped5","0.43#leq|#eta|<0.51","l");
+  legend->AddEntry("ped6","0.51#leq|#eta|<0.60","l");
+  legend->AddEntry("ped7","0.60#leq|#eta|<0.68","l");
+  legend->AddEntry("ped8","0.68#leq|#eta|<0.77","l");
+  legend->AddEntry("ped9","0.77#leq|#eta|<0.85","l");
+  legend->AddEntry("ped10","0.85#leq|#eta|<0.94","l");
+  legend->AddEntry("ped11","0.94#leq|#eta|<1.02","l");
+  legend->AddEntry("ped12","1.02#leq|#eta|<1.11","l");
+  legend->AddEntry("ped13","1.11#leq|#eta|<1.19","l");
+  legend->AddEntry("ped14","1.19#leq|#eta|<1.28","l");
+  legend->AddEntry("ped15","1.28#leq|#eta|<1.36","l");
+  legend->AddEntry("ped16","1.36#leq|#eta|#leq1.45","l");
   legend->Draw();
 
   f.Close(); 
@@ -209,6 +210,7 @@ void PlotPedNice(){
    pedm0->GetXaxis()->SetTitleSize(0.04);
    pedm0->GetYaxis()->SetTitleSize(0.04);
    pedm0->GetYaxis()->SetNdivisions(405);
+   pedm0->GetYaxis()->SetTitleFont(42);
 
    pedm0->GetXaxis()->SetTimeFormat("%Y/%m");
    pedm0->GetXaxis()->LabelsOption("v");
@@ -228,9 +230,11 @@ void PlotPedNice(){
    lat.DrawLatex(0.16, 0.93, "#bf{CMS} ");
    lat.DrawLatex(0.60, 0.93, "159 fb^{-1} (13 TeV)");
    lat.DrawLatex(0.65, 0.83, "ECAL Barrel");
-   auto legend2 = new TLegend(0.50,0.19,0.87,0.30,NULL,"brNDC");
+   auto legend2 = new TLegend(0.55,0.17,0.87,0.35,NULL,"brNDC");
    legend2->SetBorderSize(0);
-
+   legend2->SetTextFont(42);
+   legend2->SetTextSize(0.038);
+   
    TLegendEntry *entry2=legend2->AddEntry("entry2","Non-collision runs","p");
    entry2->SetMarkerColor(kRed+3);
    entry2->SetMarkerStyle(20);

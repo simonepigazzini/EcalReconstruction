@@ -90,7 +90,7 @@ def doLegend(plots,labels,styles,nentries=1,corner="TR",textSize=0.035,cutoff=1e
         elif corner == "TC":
             (x1,y1,x2,y2) = (.5, .65 - textSize*max(nentries-3,0), .5+legWidth, .87)
         elif corner == "TL":
-            (x1,y1,x2,y2) = (.16, .65 - textSize*max(nentries-3,0), .16+legWidth, .87)
+            (x1,y1,x2,y2) = (.16, .60 - textSize*max(nentries-3,0), .16+legWidth, .87)
         elif corner == "BR":
             (x1,y1,x2,y2) = (.86-legWidth, .04, .86, .18)
         elif corner == "BC":

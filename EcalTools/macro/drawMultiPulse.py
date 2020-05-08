@@ -40,7 +40,7 @@ def printOnePlot(frames, name, text=[], histopts=[], legend=None, sim=True, yaxM
          ttext.Draw()
     if ttext2:
          ttext2.SetTextAlign(21)
-         ttext2.SetTextSize(0.05)
+         ttext2.SetTextSize(0.06)
          ttext2.Draw()        
     printCanvas(canv, name, text, textSize=0.04, sim=sim)
 
@@ -77,14 +77,14 @@ def doPlot(hists,plotname):
     genericOOT.SetLineStyle(3)
     labeledHists[2] = genericOOT
 
-    labels = ['Total pulse','In-time pulse','Out-of-time pulses','Observed signal']
+    labels = ['Total','In-time','Out-of-time','Observed']
     styles = ['l','l','l','p']
     plotopts = ['hist' for i in range(len(hists)-1)] + ['pe X0']
     
-    leg = doLegend(labeledHists,labels,styles,legBorder=False,corner='TL',legWidth=0.25,textSize=0.040)
-    tt = ROOT.TLatex(0.3,0.55, '<PU>=20')
+    leg = doLegend(labeledHists,labels,styles,legBorder=False,corner='TL',legWidth=0.25,textSize=0.050)
+    tt = ROOT.TLatex(0.25,0.52, '<PU>=20')
     tt.SetNDC(); tt.SetTextFont(42)
-    tt2 = ROOT.TLatex(0.82,0.81, 'ECAL barrel' if 'EB' in plotname else 'ECAL endcap')
+    tt2 = ROOT.TLatex(0.83,0.79, 'Barrel' if 'EB' in plotname else 'Endcaps')
     tt2.SetNDC(); tt2.SetTextFont(42)
     printOnePlot(hists, plotname, histopts=plotopts, yaxMin=-0.01, ttext=tt, ttext2=tt2, legend=leg)
     

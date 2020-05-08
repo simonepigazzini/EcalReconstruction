@@ -76,7 +76,7 @@ def plotPUSpectrum(tree):
 
     lat = ROOT.TLatex()
     lat.SetNDC(); lat.SetTextFont(42)
-    lat.DrawLatex(0.19, 0.92, '#bf{CMS} Simulation')
+    lat.DrawLatex(0.19, 0.92, '#bf{CMS} #it{Simulation}')
     lat.DrawLatex(0.73, 0.92, '(13 TeV)')
 
     for ext in ['pdf','png']:
@@ -91,6 +91,8 @@ if __name__ == "__main__":
 
     plotPUSpectrum(tree)
 
+    exit(0)
+    
     bias_gr = ROOT.TGraphErrors(10)
     bias_gr.SetTitle('')
     mode_gr = ROOT.TGraphErrors(10)

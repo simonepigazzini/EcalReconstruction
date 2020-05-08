@@ -35,7 +35,7 @@ def covMatrix(barrel):
 
     covMat = {}
     for k in range(nsamples*nsamples):
-        i = k/nsamples
+        i = k//nsamples
         j = k%nsamples
         covMat[(i,j)] = ebcov[k] if barrel else eecov[k]
     return covMat
@@ -55,7 +55,7 @@ def pulseCorrelation(barrel):
             val = covMat[(i,j)]/sqrt(abs(covMat[(i,i)]*covMat[(j,j)])) if covMat[(i,i)]*covMat[(j,j)] !=0 else 0
             #print "val = ", val
             if abs(val)>1: print (i," ",j,"  ",i*nsamples+j,"  ",covMat[(i,j)],"  ",sqrt(abs(covMat[(i,i)])),"  ",sqrt(abs(covMat[(j,j)])))
-            pulseCorr.SetBinContent(i+1,j+1,val)
+            pulseCorr.SetBinContent(i+1,j+1,int(100*val))
     return pulseCorr
             
 
@@ -81,7 +81,7 @@ if __name__ == "__main__":
                                          255,  0.95)
 
     
-    ROOT.gStyle.SetPaintTextFormat('.2f')
+    ROOT.gStyle.SetPaintTextFormat('.0f')
     canv = ROOT.TCanvas("canv","",1200,1200)
     canv.SetGridx()
     canv.SetGridy()
@@ -99,6 +99,7 @@ if __name__ == "__main__":
         covmat.GetXaxis().SetTickLength(0.)
         covmat.GetYaxis().SetTickLength(0.)
         covmat.GetXaxis().LabelsOption("v")
+        covmat.SetMarkerSize(1.5)
         for xbin in range(nsamples):
             covmat.GetXaxis().SetBinLabel(xbin+1,covMatAxisLabel(xbin))
             covmat.GetYaxis().SetBinLabel(xbin+1,covMatAxisLabel(xbin))
@@ -110,7 +111,8 @@ if __name__ == "__main__":
         
         covmat.GetXaxis().SetTitle('Time sample')
         covmat.GetYaxis().SetTitle('Time sample')
-        covmat.GetZaxis().SetTitle('#bf{#rho}_{pulse}')
+        covmat.GetZaxis().SetTitle('#bf{#rho}_{pulse} (%)')
+        covmat.GetZaxis().CenterTitle()
         covmat.Draw("colz text45")
         lat.DrawLatex(0.16, 0.92, '#bf{CMS}')
         lat.DrawLatex(0.60, 0.92, '1 fb^{-1} (13 TeV)')

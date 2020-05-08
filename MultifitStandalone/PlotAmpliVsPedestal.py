@@ -47,7 +47,7 @@ if __name__ == "__main__":
     yax.SetDecimals()
     xax.SetTitleOffset(1.1); xax.SetTitleSize(0.05)
     yax.SetTitleOffset(1.5); yax.SetTitleSize(0.05)
-    xax.SetTitle('#Delta P (ADC counts)')
+    xax.SetTitle('#DeltaP (ADC counts)')
     # yax.SetTitle('A/A_{true}')
     yax.SetTitle('<A> - A_{true} (ADC counts)')
 

@@ -41,7 +41,7 @@ def noiseCovTH2(partition='EB',gain=12):
     histo = ROOT.TH2D('covmat_{part}_gain{g}'.format(part=partition,g=gain),'',nsamples,0,nsamples,nsamples,0,nsamples)
     for i in range(10):
         for j in range(10):
-            histo.SetBinContent(i+1,j+1,covmat[i,j])
+            histo.SetBinContent(i+1,j+1,int(100*covmat[i,j]))
     return histo
 
 def covMatAxisLabel(bin):
@@ -66,7 +66,7 @@ if __name__ == "__main__":
                                          255,  0.95)
     ROOT.TColor.InvertPalette()
     
-    ROOT.gStyle.SetPaintTextFormat('.2f')
+    ROOT.gStyle.SetPaintTextFormat('.0f')
     canv = ROOT.TCanvas("canv","",1200,1200)
     canv.SetGridx()
     canv.SetGridy()
@@ -81,6 +81,7 @@ if __name__ == "__main__":
             covmat.GetYaxis().SetTickLength(0.)
             covmat.GetXaxis().LabelsOption("v")
             covmat.GetZaxis().SetRangeUser(0,1)
+            covmat.SetMarkerSize(1.5)
             for xbin in range(nsamples):
                 covmat.GetXaxis().SetBinLabel(xbin+1,covMatAxisLabel(xbin))
                 covmat.GetYaxis().SetBinLabel(xbin+1,covMatAxisLabel(xbin))
@@ -91,7 +92,8 @@ if __name__ == "__main__":
 
             covmat.GetXaxis().SetTitle('Time sample')
             covmat.GetYaxis().SetTitle('Time sample')
-            covmat.GetZaxis().SetTitle('#bf{#rho}_{noise}')
+            covmat.GetZaxis().SetTitle('#bf{#rho}_{noise} (%)')
+            covmat.GetZaxis().CenterTitle()
             covmat.Draw("colz text45")
             lat.DrawLatex(0.16, 0.92, '#bf{CMS}')
             lat.DrawLatex(0.70, 0.92, '(13 TeV)')
