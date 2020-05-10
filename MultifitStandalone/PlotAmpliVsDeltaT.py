@@ -55,7 +55,7 @@ def plotOnePartition(eta):
     lat.SetNDC(); lat.SetTextFont(42)
     lat.DrawLatex(0.18, 0.92, '#bf{CMS}')
     lat.DrawLatex(0.73, 0.92, '(13 TeV)')
-    lat.DrawLatex(0.60,0.30, 'ECAL {part}'.format(part="Barrel" if eta<1.5 else "Endcap"))
+    lat.DrawLatex(0.60,0.30, '{part}'.format(part="Barrel" if eta<1.5 else "Endcap"))
     lat.DrawLatex(0.60,0.25, 'E = 50 GeV')
     lat.DrawLatex(0.60,0.20, '<PU> = 40')
 

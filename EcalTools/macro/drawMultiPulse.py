@@ -84,7 +84,7 @@ def doPlot(hists,plotname):
     leg = doLegend(labeledHists,labels,styles,legBorder=False,corner='TL',legWidth=0.25,textSize=0.050)
     tt = ROOT.TLatex(0.25,0.52, '<PU>=20')
     tt.SetNDC(); tt.SetTextFont(42)
-    tt2 = ROOT.TLatex(0.83,0.79, 'Barrel' if 'EB' in plotname else 'Endcaps')
+    tt2 = ROOT.TLatex(0.83,0.79, 'Barrel' if 'EB' in plotname else 'Endcap')
     tt2.SetNDC(); tt2.SetTextFont(42)
     printOnePlot(hists, plotname, histopts=plotopts, yaxMin=-0.01, ttext=tt, ttext2=tt2, legend=leg)
     

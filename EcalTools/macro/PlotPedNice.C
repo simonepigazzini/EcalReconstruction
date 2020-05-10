@@ -159,7 +159,7 @@ void PlotPedNice(){
   lat.SetTextFont(42);
   lat.DrawLatex(0.16, 0.93, "#bf{CMS} ");
   lat.DrawLatex(0.60, 0.93, "159 fb^{-1} (13 TeV)");
-  lat.DrawLatex(0.65, 0.83, "ECAL Barrel");
+  lat.DrawLatex(0.65, 0.83, "Barrel");
   auto legend = new TLegend(0.16,0.50,0.65,0.89,NULL,"brNDC");
   legend->SetBorderSize(0);
   legend->SetTextSize(0.035);
@@ -229,7 +229,7 @@ void PlotPedNice(){
 
    lat.DrawLatex(0.16, 0.93, "#bf{CMS} ");
    lat.DrawLatex(0.60, 0.93, "159 fb^{-1} (13 TeV)");
-   lat.DrawLatex(0.65, 0.83, "ECAL Barrel");
+   lat.DrawLatex(0.65, 0.83, "Barrel");
    auto legend2 = new TLegend(0.55,0.17,0.87,0.35,NULL,"brNDC");
    legend2->SetBorderSize(0);
    legend2->SetTextFont(42);

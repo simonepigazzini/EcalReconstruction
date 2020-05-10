@@ -85,9 +85,9 @@ if __name__ == "__main__":
     canv = ROOT.TCanvas("canv","",1200,1200)
     canv.SetGridx()
     canv.SetGridy()
-    canv.SetLeftMargin(0.15)
-    canv.SetRightMargin(0.15)
-    canv.SetBottomMargin(0.15)
+    canv.SetLeftMargin(0.18)
+    canv.SetRightMargin(0.18)
+    canv.SetBottomMargin(0.18)
     #canv.SetLogz(1)
     
     for iseb in range(2):
@@ -107,11 +107,14 @@ if __name__ == "__main__":
         
         covmat.GetXaxis().SetTitleOffset(1.5)
         covmat.GetYaxis().SetTitleOffset(1.5)
-        covmat.GetZaxis().SetTitleOffset(1.3)
+        covmat.GetZaxis().SetTitleOffset(1.2)
+        covmat.GetXaxis().SetTitleSize(0.05)
+        covmat.GetYaxis().SetTitleSize(0.05)
+        covmat.GetZaxis().SetTitleSize(0.05)
         
         covmat.GetXaxis().SetTitle('Time sample')
         covmat.GetYaxis().SetTitle('Time sample')
-        covmat.GetZaxis().SetTitle('#bf{#rho}_{pulse} (%)')
+        covmat.GetZaxis().SetTitle('{subdet}  #bf{{#rho}}_{{pulse}} (%)'.format(subdet = 'Barrel' if iseb else 'Endcap') )
         covmat.GetZaxis().CenterTitle()
         covmat.Draw("colz text45")
         lat.DrawLatex(0.16, 0.92, '#bf{CMS}')

@@ -95,7 +95,7 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
     histo->GetXaxis()->SetTitleOffset(1.2);
     histo->GetXaxis()->SetTitleSize(0.05);
     histo->GetXaxis()->SetNdivisions(20,kTRUE);
-    histo->GetYaxis()->SetTitle("Normalized Amplitude");
+    histo->GetYaxis()->SetTitle("Normalized amplitude");
     histo->GetYaxis()->SetTitleOffset(1.2);
     histo->GetYaxis()->SetTitleSize(0.05);
     histo->GetYaxis()->SetRangeUser(0,1.2);
@@ -163,8 +163,9 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
     lat.DrawLatex(0.60, 0.92, "0.5 fb^{-1} (13 TeV)");
     TLatex labels;
     labels.SetNDC(); labels.SetTextFont(42); labels.SetTextSize(0.04);
-    labels.DrawLatex(0.7,0.80, "#it{extrapolated}");
-    labels.DrawLatex(0.2,0.80, "#it{readout}");
+    labels.DrawLatex(0.7,0.80, "#it{Extrapolated}");
+    labels.DrawLatex(0.2,0.80, "#it{Readout}");
+    labels.DrawLatex(0.17,0.20, (doEB ? "Barrel" : "Endcap"));
 
     TLegend leg(0.6,0.6,0.85,0.75);
     leg.SetFillStyle(0);
@@ -172,9 +173,9 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
     leg.SetBorderSize(0);
     leg.SetTextFont(42);
     leg.SetTextSize(0.03);
-    leg.AddEntry(histoRead,"readout samples","p");
-    leg.AddEntry(histoOutRead,"extrapolated samples","p");
-    leg.AddEntry(_fitF,"fit","l");
+    leg.AddEntry(histoRead,"Readout samples","p");
+    leg.AddEntry(histoOutRead,"Extrapolated samples","p");
+    leg.AddEntry(_fitF,"Fit","l");
     leg.Draw();
     
     canv->SaveAs(canvasName.c_str());
