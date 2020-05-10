@@ -8,7 +8,7 @@ def getGraph(filename,inset=False):
     hsteps = tf.Get("hsteps")
 
     steps = rtnp.hist2array(hsteps)
-    print steps
+    print (steps)
 
     gr = ROOT.TGraphErrors(len(steps))
     gr.SetTitle("")
@@ -17,7 +17,7 @@ def getGraph(filename,inset=False):
         tree.Draw("amplitude[{i}]/amplitudeTruth>>hist".format(i=i))
         bias = hist.GetMean()
         err = hist.GetMeanError()
-        print "deltat = {dt} => bias = {bias}".format(dt=s,bias=bias)
+        print ("deltat = {dt} => bias = {bias}".format(dt=s,bias=bias))
         gr.SetPoint(i,s,bias)
         gr.SetPointError(i,0,err)
     gr.SetMarkerStyle(ROOT.kFullCircle)
@@ -30,8 +30,8 @@ def getGraph(filename,inset=False):
     if not inset:
         xax.SetTitleOffset(1.1); xax.SetTitleSize(0.05)
         yax.SetTitleOffset(1.5); yax.SetTitleSize(0.05)
-        xax.SetTitle('#DeltaT_{max} (ns)')
-        yax.SetTitle('A / A_{true}')
+        xax.SetTitle('#Delta#it{T}_{max} (ns)')
+        yax.SetTitle('<#it{A}> / #it{A}_{true}')
     return gr
 
 def plotOnePartition(eta):
@@ -47,15 +47,16 @@ def plotOnePartition(eta):
     canv.SetLeftMargin(0.17)
     canv.SetRightMargin(0.1)
     canv.SetBottomMargin(0.15)
-
+    canv.SetTicks(1,1)
+    
     grfull.Draw("APE")
 
     lat = ROOT.TLatex()
     lat.SetNDC(); lat.SetTextFont(42)
     lat.DrawLatex(0.18, 0.92, '#bf{CMS}')
     lat.DrawLatex(0.73, 0.92, '(13 TeV)')
-    lat.DrawLatex(0.60,0.30, 'ECAL {part}'.format(part="Barrel" if eta<1.5 else "Endcap"))
-    lat.DrawLatex(0.60,0.25, 'E=50 GeV')
+    lat.DrawLatex(0.60,0.30, '{part}'.format(part="Barrel" if eta<1.5 else "Endcap"))
+    lat.DrawLatex(0.60,0.25, 'E = 50 GeV')
     lat.DrawLatex(0.60,0.20, '<PU> = 40')
 
     ## another tlatex to make the font smaller
@@ -69,6 +70,7 @@ def plotOnePartition(eta):
     subpad.SetRightMargin(0.01)
     subpad.SetBottomMargin(0.1)
     subpad.SetTopMargin(0.03)
+    subpad.SetTicks(1,1)
     grzoom.GetYaxis().SetRangeUser(0.985,1.015)
     grzoom.GetYaxis().SetRangeUser(0.985,1.015)
 

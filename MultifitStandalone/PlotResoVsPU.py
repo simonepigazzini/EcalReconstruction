@@ -11,7 +11,7 @@ def effSigma(histo):
     rms = histo.GetRMS()
     total=histo.Integral()
     if total < 100:
-        print "effsigma: Too few entries to compute it: ", total
+        print(("effsigma: Too few entries to compute it: ", total))
         return 0.
     ierr=0
     ismin=999
@@ -20,14 +20,14 @@ def effSigma(histo):
     nrms=int(rms/bwid)
     if nrms > nb/10: nrms=int(nb/10) # Could be tuned...
     widmin=9999999.
-    for iscan in xrange(-nrms,nrms+1): # // Scan window centre
+    for iscan in range(-nrms,nrms+1): # // Scan window centre
         ibm=int((ave-xmin)/bwid)+1+iscan
         x=(ibm-0.5)*bwid+xmin
         xj=x; xk=x;
         jbm=ibm; kbm=ibm;
         bin=histo.GetBinContent(ibm)
         total=bin
-        for j in xrange(1,nb):
+        for j in range(1,nb):
             if jbm < nb:
                 jbm += 1
                 xj += bwid
@@ -48,7 +48,7 @@ def effSigma(histo):
             widmin=wid
             ismin=iscan
     if ismin == nrms or ismin == -nrms: ierr=3
-    if ierr != 0: print "effsigma: Error of type ", ierr
+    if ierr != 0: print(("effsigma: Error of type ", ierr))
     return widmin
 
 def getOne(reco,npu,energy,includeITasTrue=False,eta="0.0"):
@@ -90,7 +90,7 @@ def plotOneEnergy(Energy):
     canv.SetRightMargin(0.1)
     canv.SetBottomMargin(0.15)
 
-    purange = range(0,61,5)
+    purange = list(range(0,61,5))
 
     graphs = {}
     graphs[('multifit','itfalse')] = ROOT.TGraphErrors(len(purange))
@@ -111,7 +111,7 @@ def plotOneEnergy(Energy):
         offset['multifit'] = 0
     
     for i,pu in enumerate(purange):
-        print "testing PU = ",pu
+        print(("testing PU = ",pu))
 
         for reco in ['weights','multifit']:
             for itpu in ['ittrue','itfalse']:
@@ -154,15 +154,15 @@ def plotOneEnergy(Energy):
     yax.SetTitle('Single crystal amplitude #sigma_{eff} (%)')
 
     plots = [graphs[('weights','itfalse')],graphs[('weights','ittrue')],graphs[('multifit','itfalse')],graphs[('multifit','ittrue')]]
-    labels = ['weights','weights, only OOT PU','multifit','multifit, only OOT']
+    labels = ['weights','weights, only OOT PU','multifit','multifit, only OOT PU']
     styles = ['pl','pl','pl','pl']
-    leg = doLegend(plots,labels,styles,legBorder=False,corner='TL')
+    leg = doLegend(plots,labels,styles,legBorder=False,legWidth=0.5,corner='TL')
     
     lat = ROOT.TLatex()
     lat.SetNDC(); lat.SetTextFont(42)
     lat.DrawLatex(0.19, 0.92, '#bf{CMS}')
     lat.DrawLatex(0.73, 0.92, '(13 TeV)')
-    lat.DrawLatex(0.19,0.20, 'E={ene} GeV'.format(ene=Energy))
+    lat.DrawLatex(0.19,0.20, 'E = {ene} GeV'.format(ene=Energy))
 
     ## another tlatex to make the font smaller
     lat2 = ROOT.TLatex()

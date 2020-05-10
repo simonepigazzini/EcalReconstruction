@@ -9,11 +9,12 @@ ootcolors = [ROOT.kOrange-5,ROOT.kAzure-5,ROOT.kMagenta-3,ROOT.kGreen+2,ROOT.kGr
 ROOT.gStyle.SetLineStyleString(10,"[4 4]")
 ootstyle = 10
 
-def printOnePlot(frames, name, text=[], histopts=[], legend=None, sim=True, yaxMin=None, yaxMax=None, gridx=False, gridy=False, ttext=None):
+def printOnePlot(frames, name, text=[], histopts=[], legend=None, sim=True, yaxMin=None, yaxMax=None, gridx=False, gridy=False, ttext=None, ttext2=None):
     canv = ROOT.TCanvas("canv","",1200,900)
     canv.SetLeftMargin(0.15)
     canv.SetRightMargin(0.05)
     canv.SetBottomMargin(0.15)
+    canv.SetTicks(1,1)
     ymax = yaxMax if yaxMax else max([f.GetMaximum() for f in frames])
     ymin = yaxMin if yaxMin else min([f.GetMinimum() for f in frames])
     if gridx: canv.SetGridx()
@@ -24,7 +25,7 @@ def printOnePlot(frames, name, text=[], histopts=[], legend=None, sim=True, yaxM
             frame.SetMaximum(ymax*(1.10))
             frame.SetMinimum(ymin if yaxMin else 0)
         xax = frame.GetXaxis(); yax = frame.GetYaxis()
-        xax.SetNdivisions(510,ROOT.kTRUE)
+        xax.SetNdivisions(10,ROOT.kTRUE)
         xax.SetDecimals(1)    
         xax.SetTitleOffset(1.1); xax.SetTitleSize(0.05); xax.SetLabelSize(0.05)
         yax.SetTitleOffset(1.3); yax.SetTitleSize(0.05); yax.SetLabelSize(0.05)
@@ -37,6 +38,10 @@ def printOnePlot(frames, name, text=[], histopts=[], legend=None, sim=True, yaxM
          ttext.SetTextAlign(21)
          ttext.SetTextSize(0.05)
          ttext.Draw()
+    if ttext2:
+         ttext2.SetTextAlign(21)
+         ttext2.SetTextSize(0.06)
+         ttext2.Draw()        
     printCanvas(canv, name, text, textSize=0.04, sim=sim)
 
 def doPlot(hists,plotname):
@@ -65,21 +70,23 @@ def doPlot(hists,plotname):
             h.SetLineWidth(2)
         h.GetXaxis().SetTitle('Time sample')
         h.GetYaxis().SetTitle('Energy (GeV)')
-        h.SetMinimum(-0.15)
+        h.SetMinimum(0)
         
     genericOOT = hists[0].Clone('genericoot')
-    genericOOT.SetLineColor(ROOT.kBlack)
+    genericOOT.SetLineColor(ROOT.kGray+1)
     genericOOT.SetLineStyle(3)
     labeledHists[2] = genericOOT
 
-    labels = ['Total pulse','In-time pulse','Out-of-time pulses','Observed signal']
-    styles = ['l','l','l','pe']
+    labels = ['Total','In-time','Out-of-time','Observed']
+    styles = ['l','l','l','p']
     plotopts = ['hist' for i in range(len(hists)-1)] + ['pe X0']
     
-    leg = doLegend(labeledHists,labels,styles,legBorder=False,corner='TL')
-    tt = ROOT.TLatex(0.3,0.65, '<PU>=20, 25ns')
+    leg = doLegend(labeledHists,labels,styles,legBorder=False,corner='TL',legWidth=0.25,textSize=0.050)
+    tt = ROOT.TLatex(0.25,0.52, '<PU>=20')
     tt.SetNDC(); tt.SetTextFont(42)
-    printOnePlot(hists, plotname, histopts=plotopts, yaxMin=-0.1, ttext=tt, legend=leg)
+    tt2 = ROOT.TLatex(0.83,0.79, 'Barrel' if 'EB' in plotname else 'Endcap')
+    tt2.SetNDC(); tt2.SetTextFont(42)
+    printOnePlot(hists, plotname, histopts=plotopts, yaxMin=-0.01, ttext=tt, ttext2=tt2, legend=leg)
     
 def array2hist(arr,name,errors=[]):
     nbins = len(arr)
@@ -93,8 +100,9 @@ def array2hist(arr,name,errors=[]):
 def drawBarrel():
 
     data  = [0,0,0,3.2e-2, 9.1e-1,  1.20,  1.23,    1.09,    8.06e-1, 5.60e-1]
-    errdata = [3.9e-2 for i in range(10)]
-
+    #errdata = [3.9e-2 for i in range(10)] # removed because CWR comment
+    errdata = [0 for i in range(10)]
+    
     total = [0,0,0,8.9e-3, 8.97e-1, 1.18,  1.25,    1.06,    0.79   , 5.45e-1]
     IT    = [0,0,0,8.9e-3, 8.97e-1, 1.17,  1.05,    0.80,    5.57e-1, 3.66e-1]
     OOT0  = [0,0,0,0,     0,        3.7e-3,1.94e-1, 2.56e-1, 2.3e-1 , 1.73e-1]
@@ -109,8 +117,9 @@ def drawBarrel():
 
 def drawEndcap():
     data = [2.51,   3.12,  3.11,  3.78,   6.75,  7.86,   6.89,  5.64,  4.38,  3.11]
-    errdata = [0.17 for i in range(10)]
-
+    #errdata = [0.17 for i in range(10)] # removed because CWR comment
+    errdata = [0 for i in range(10)]
+    
     total = [2.52,  3.17,  3.00,  3.72,   6.73,   7.75,   6.92,   5.74,  4.33,  3.04]
     IT    = [0.00,  0.00,  0.00,  0.57,   3.86,   5.00,   4.55,   3.53,  2.50,  1.66]
     OOT0  = [0.00,  0.00,  0.00,  0.00,   0.00,   0.00,   0.01,   0.02,  0.01,  0.00]

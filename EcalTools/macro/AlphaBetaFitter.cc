@@ -11,6 +11,7 @@
 #include <TF1.h>
 #include <TCanvas.h>
 #include <TLatex.h>
+#include <TLegend.h>
 #include "tdrstyle.C"
 
 double alphabeta(double *x, double *par) {
@@ -77,7 +78,7 @@ void AlphaBetaFitter::setParameters(bool doEB, double pedestal) {
 }
 
 void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canvasName) {
-  
+  gStyle->SetErrorX(0);
   setParameters(doEB,pedestal);
   
   TCanvas *canv = 0;
@@ -87,24 +88,29 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
     canv->SetRightMargin(0.05);
     canv->SetBottomMargin(0.15);
     canv->SetTopMargin(0.10);
+    canv->SetTicks(1,1);
     histo->SetMarkerStyle(kFullSquare);
     histo->SetLineColor(kBlack);
     histo->GetXaxis()->SetTitle("Time sample");
     histo->GetXaxis()->SetTitleOffset(1.2);
     histo->GetXaxis()->SetTitleSize(0.05);
-    histo->GetYaxis()->SetTitle("Normalized Amplitude");
+    histo->GetXaxis()->SetNdivisions(20,kTRUE);
+    histo->GetYaxis()->SetTitle("Normalized amplitude");
     histo->GetYaxis()->SetTitleOffset(1.2);
     histo->GetYaxis()->SetTitleSize(0.05);
     histo->GetYaxis()->SetRangeUser(0,1.2);
+    histo->GetYaxis()->SetDecimals();
   }
 
   TH1F *gapBand = (TH1F*)histo->Clone("gapBand");
+  TH1F *histoRead = 0;
+  TH1F *histoOutRead = 0;
   histo->Fit("alphabeta","M","same",0,10);
   if (_extrapTail) {
     gapBand->SetFillColor(kGray);
     gapBand->SetLineColor(0);
     for(int i=0; i<16; ++i) {
-      histo->SetBinError(i,0.02*histo->GetBinContent(i));
+      histo->SetBinError(i,0.002*histo->GetBinContent(i));
       if(i>10) {
         histo->SetBinContent(i,_fitF->Eval(i-0.5));
         gapBand->SetBinContent(i,2);
@@ -114,20 +120,20 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
     }
     gapBand->Draw("hist");
     // histogram in the readout
-    TH1F *histoRead = (TH1F*)histo->Clone("histoRead");
+    histoRead = (TH1F*)histo->Clone("histoRead");
     for (int ir=11; ir<16; ir++) {
       histoRead->SetBinContent(ir,-1);
     }
     histoRead->Draw("same pe0");
 
     // histogram outside the readout
-    TH1F *histoOutRead = (TH1F*)histo->Clone("histoOutRead");
+    histoOutRead = (TH1F*)histo->Clone("histoOutRead");
     for (int ir=0; ir<11; ir++) {
       histoOutRead->SetBinContent(ir,-1);
     }
     histoOutRead->SetMarkerStyle(kOpenSquare);
     histoOutRead->Draw("same pe0");
-    //    histo->Draw("same pe0");
+    //    histo->Draw("same p0");
   }
   
   for(int p=1; p<4; ++p) {
@@ -135,6 +141,17 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
     _errs[p-1] = _fitF->GetParError(p);
   }
 
+  // for CWR comment, find the ToT (T=10% Ampli)
+  // float threshold=0.1; // is normalized
+  // float t0=-1; float t1=-1;
+  // for(float t=0; t<20; t+=0.01) {
+  //   float val = _fitF->Eval(t);
+  //   //std::cout << "\tt = " << t << " val = " << val << std::endl;
+  //   if (t0<0 && _fitF->Eval(t)>threshold) t0=t;
+  //   if (t0>0 && _fitF->Eval(t)<threshold) t1=t;
+  // }
+  // std::cout << "T0 = " << t0 << "  T1 = " << t1 << "  TOT = " << t1-t0 << std::endl;
+  
   if(canvasName!="") {
     gROOT->LoadMacro("tdrstyle.C");
     setTDRStyle();
@@ -146,8 +163,21 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
     lat.DrawLatex(0.60, 0.92, "0.5 fb^{-1} (13 TeV)");
     TLatex labels;
     labels.SetNDC(); labels.SetTextFont(42); labels.SetTextSize(0.04);
-    labels.DrawLatex(0.7,0.85, "#it{extrapolated}");
-    labels.DrawLatex(0.2,0.85, "#it{readout}");
+    labels.DrawLatex(0.7,0.80, "#it{Extrapolated}");
+    labels.DrawLatex(0.2,0.80, "#it{Readout}");
+    labels.DrawLatex(0.17,0.20, (doEB ? "Barrel" : "Endcap"));
+
+    TLegend leg(0.6,0.6,0.85,0.75);
+    leg.SetFillStyle(0);
+    leg.SetLineWidth(0);
+    leg.SetBorderSize(0);
+    leg.SetTextFont(42);
+    leg.SetTextSize(0.03);
+    leg.AddEntry(histoRead,"Readout samples","p");
+    leg.AddEntry(histoOutRead,"Extrapolated samples","p");
+    leg.AddEntry(_fitF,"Fit","l");
+    leg.Draw();
+    
     canv->SaveAs(canvasName.c_str());
     delete canv;
     delete gapBand;

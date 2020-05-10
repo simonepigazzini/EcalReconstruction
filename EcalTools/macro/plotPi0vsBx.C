@@ -89,11 +89,11 @@ void plotPi0vsBx() {
   mg_masse->Add(graph_mass) ;
   mg_masse->Add(graph_massM) ;
   mg_masse->Draw("ap") ;
-  mg_masse->GetYaxis()->SetTitle("m_{#gamma#gamma}/m_{#gamma#gamma}^{BX=1}") ;
+  mg_masse->GetYaxis()->SetTitle("#it{m}_{#gamma#gamma} / #it{m}_{#gamma#gamma}^{BX_{start}=1}") ;
   mg_masse->GetYaxis()->SetTitleOffset(1.3);
   mg_masse->GetYaxis()->SetDecimals(2);
 
-  mg_masse->GetXaxis()->SetTitle("bunch crossing number") ;
+  mg_masse->GetXaxis()->SetTitle("Bunch crossing in LHC train") ;
   mg_masse->SetMaximum(1.05) ;
   mg_masse->SetMinimum(0.98) ;
   mg_masse->Draw("ap") ;
@@ -111,7 +111,7 @@ void plotPi0vsBx() {
   lat.SetNDC(); lat.SetTextFont(42); lat.SetTextSize(0.05);
   lat.DrawLatex(0.20, 0.92, "#bf{CMS}");
   lat.DrawLatex(0.62, 0.92, "0.5 fb^{-1} (13 TeV)");
-  lat.DrawLatex(0.35, 0.25, "ECAL Barrel");
+  lat.DrawLatex(0.35, 0.25, "Barrel");
 
 
   leg->Draw();
@@ -171,11 +171,11 @@ void plotPi0SigmavsBx() {
   mg_masse->Add(graph_mass) ;
   mg_masse->Add(graph_massM) ;
   mg_masse->Draw("ap") ;
-  mg_masse->GetYaxis()->SetTitle("#sigma_{m(#gamma#gamma)} (MeV)") ;
+  mg_masse->GetYaxis()->SetTitle("#sigma_{#it{m}(#gamma#gamma)} (MeV)") ;
   mg_masse->GetYaxis()->SetTitleOffset(1.5);
   mg_masse->GetYaxis()->SetDecimals(2);
 
-  mg_masse->GetXaxis()->SetTitle("bunch crossing number") ;
+  mg_masse->GetXaxis()->SetTitle("Bunch crossing in LHC train") ;
   mg_masse->SetMaximum(22) ;
   mg_masse->SetMinimum(8) ;
   mg_masse->Draw("ap") ;
@@ -193,7 +193,7 @@ void plotPi0SigmavsBx() {
   lat.SetNDC(); lat.SetTextFont(42); lat.SetTextSize(0.05);
   lat.DrawLatex(0.20, 0.92, "#bf{CMS}");
   lat.DrawLatex(0.62, 0.92, "0.5 fb^{-1} (13 TeV)");
-  lat.DrawLatex(0.35, 0.25, "ECAL Barrel");
+  lat.DrawLatex(0.35, 0.25, "Barrel");
 
 
   leg->Draw();

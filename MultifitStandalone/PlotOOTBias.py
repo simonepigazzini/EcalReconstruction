@@ -17,7 +17,7 @@ def getOneReso(ibx):
     iamp = ibx+5
     fullcut = 'BX0{plus}{ibx}>=0 && BX0{plus}{ibx}<2800 && (amp[{iamp}]-{truea})>0 && (amp[{iamp}]-{truea})/energyPU[BX0{plus}{ibx}]<2 && energyPU[BX0{plus}{ibx}]>{cut}'.format(plus='+' if ibx>=0 else '',ibx=ibx,cut=enecut,iamp=iamp,truea=E if ibx==0 else 0)
     var = '(amp[{iamp}]-{truea})/energyPU[BX0{plus}{ibx}]'.format(iamp=iamp,truea=E if ibx==0 else 0,plus='+' if ibx>=0 else '',ibx=ibx,cut=enecut)
-    print "Plotting: ",var,"  with fullcut = ",fullcut
+    print ("Plotting: ",var,"  with fullcut = ",fullcut)
     tree.Draw('{v}>>hreso'.format(v=var),fullcut)
     mean = hreso.GetMean()
     meanerr = hreso.GetMeanError()
@@ -57,24 +57,26 @@ def plotPUSpectrum(tree):
     c.SetRightMargin(0.1)
     c.SetBottomMargin(0.15)
     c.SetLogy()
-    c.SetLogx()
-
-    hpu = ROOT.TH1F('hpu','',200,0.1,100)
+#    c.SetLogx()
+    c.SetTicks()
+    
+    hpu = ROOT.TH1F('hpu','',200,0.0,100)
     hpu.SetMarkerStyle(ROOT.kFullCircle)
     hpu.SetMarkerSize(1)
     hpu.SetLineColor(ROOT.kBlack)
-
-    tree.Draw("energyPU>>hpu","energyPU>0.1")
+    
+    tree.Draw("energyPU>>hpu","energyPU>0.05")
 
     hpu.GetXaxis().SetTitle('OOT pileup energy / crystal (GeV)')
     hpu.GetYaxis().SetTitle("Events")
     hpu.GetXaxis().SetTitleOffset(1.1);
     hpu.GetXaxis().SetTitleSize(0.05)
-    hpu.Draw('pe')
+    hpu.GetXaxis().SetRangeUser(0.05,100)
+    hpu.Draw('peX0')
 
     lat = ROOT.TLatex()
     lat.SetNDC(); lat.SetTextFont(42)
-    lat.DrawLatex(0.19, 0.92, '#bf{CMS} Simulation')
+    lat.DrawLatex(0.19, 0.92, '#bf{CMS} #it{Simulation}')
     lat.DrawLatex(0.73, 0.92, '(13 TeV)')
 
     for ext in ['pdf','png']:
@@ -109,7 +111,8 @@ if __name__ == "__main__":
     canv.SetLeftMargin(0.17)
     canv.SetRightMargin(0.1)
     canv.SetBottomMargin(0.15)
-
+    canv.SetTicks(1,1)
+    
     bias_gr.SetMarkerStyle(ROOT.kFullCircle)
     bias_gr.SetMarkerSize(2)
     bias_gr.SetMarkerColor(ROOT.kRed+2)
@@ -122,12 +125,13 @@ if __name__ == "__main__":
     #bias_gr.Draw("AP")
     xax = mode_gr.GetXaxis(); yax = mode_gr.GetYaxis()
     xax.SetRangeUser(-6,5)
+    xax.SetNdivisions(10,ROOT.kTRUE)
     yax.SetRangeUser(ymin,ymax)
     yax.SetDecimals()
     xax.SetTitleOffset(1.1); xax.SetTitleSize(0.05)
     yax.SetTitleOffset(1.5); yax.SetTitleSize(0.05)
     xax.SetTitle("Bunch crossing")
-    yax.SetTitle("A_{PU}/A_{PU}^{true}")
+    yax.SetTitle("#it{A}^{PU} / #it{A}_{BX}^{true}")
 
     lat = ROOT.TLatex()
     lat.SetNDC(); lat.SetTextFont(42)
@@ -147,6 +151,11 @@ if __name__ == "__main__":
     labels = ['mean','mode']
     styles = ['p','p']
     #leg = doLegend(plots,labels,styles,legBorder=False,corner='TC')
+
+    # horizontal line at 1
+    line = ROOT.TLine()
+    line.SetLineWidth(2)
+    line.DrawLine(-6, 1, 5, 1)
     
     for ext in ['pdf','png','root']:
         canv.SaveAs("ootpu_bias.{ext}".format(ext=ext))

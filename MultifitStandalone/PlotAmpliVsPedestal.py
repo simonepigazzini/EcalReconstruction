@@ -10,7 +10,7 @@ if __name__ == "__main__":
     hsteps = tf.Get("hsteps")
 
     steps = rtnp.hist2array(hsteps)
-    print steps
+    print(steps)
 
     gr = ROOT.TGraphErrors(len(steps))
     gr.SetTitle("")
@@ -21,7 +21,7 @@ if __name__ == "__main__":
         tree.Draw("amplitude[{i}]-amplitudeTruth>>hist".format(i=i))
         bias = hist.GetMean()
         err = hist.GetMeanError()
-        print "pedshift = {dp} => bias = {bias}".format(dp=s,bias=bias)
+        print("pedshift = {dp} => bias = {bias}".format(dp=s,bias=bias))
 
         gr.SetPoint(i,s,bias)
         gr.SetPointError(i,0,err)
@@ -33,6 +33,7 @@ if __name__ == "__main__":
     canv = ROOT.TCanvas("canv","",1200,1200)
     canv.SetGridx()
     canv.SetGridy()
+    canv.SetTicks(1,1)
     canv.SetLeftMargin(0.17)
     canv.SetRightMargin(0.1)
     canv.SetBottomMargin(0.15)
@@ -46,13 +47,14 @@ if __name__ == "__main__":
     yax.SetDecimals()
     xax.SetTitleOffset(1.1); xax.SetTitleSize(0.05)
     yax.SetTitleOffset(1.5); yax.SetTitleSize(0.05)
-    xax.SetTitle('#Delta P (ADC counts)')
+    xax.SetTitle('#Delta#it{P} (ADC counts)')
     # yax.SetTitle('A/A_{true}')
-    yax.SetTitle('A-A_{true} (ADC counts)')
+    yax.SetTitle('<#it{A}> - #it{A}_{true} (ADC counts)')
 
     lat.DrawLatex(0.19, 0.92, '#bf{CMS}')
     lat.DrawLatex(0.73, 0.92, '(13 TeV)')
-    lat.DrawLatex(0.25,0.28, 'E=50 GeV')
+    lat.DrawLatex(0.25,0.33, 'Barrel') 
+    lat.DrawLatex(0.25,0.28, 'E = 50 GeV')
     lat.DrawLatex(0.25,0.23, '<PU> = 40')
 
     ## another tlatex to make the font smaller

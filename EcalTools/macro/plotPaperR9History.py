@@ -34,6 +34,7 @@ def makePads(canv):
     padTop.SetFrameBorderMode(0);
     padTop.SetBorderMode(0);
     padTop.SetBorderSize(0);
+    padTop.SetTicks(1,1);
     padTop.Draw()
 
     padBottom = ROOT.TPad('padBottom','',0.,0.02,1,0.36)
@@ -44,6 +45,7 @@ def makePads(canv):
     padBottom.SetFrameBorderMode(0);
     padBottom.SetBorderMode(0);
     padBottom.SetBorderSize(0);
+    padBottom.SetTicks(1,1);
     padBottom.Draw()
 
     return (padTop,padBottom)
@@ -160,8 +162,8 @@ if __name__ == "__main__":
 
     ## another tlatex to make the font smaller
     lat2 = ROOT.TLatex()
-    lat2.SetNDC(); lat2.SetTextFont(42); lat2.SetTextSize(0.05)
-    lat2.DrawLatex(0.23,0.83, '#bf{ECAL Barrel}')
+    lat2.SetNDC(); lat2.SetTextFont(42); lat2.SetTextSize(0.07)
+    lat2.DrawLatex(0.27,0.80, 'Barrel')
 
     ## print the lumi here
     padBottom.cd()

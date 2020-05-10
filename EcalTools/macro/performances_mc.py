@@ -94,11 +94,12 @@ def getRelReso(fitmandsigma):
     err = sigma.getError()
     return (val,err)
 
-def printPlot(frames, name, text=[], colors=[], histopt='', legend=None, sim=True, yaxMin=None, yaxMax=None, gridx=False, gridy=False, bandPlot=None, ttext=None):
+def printPlot(frames, name, text=[], colors=[], histopt='', legend=None, sim=True, yaxMin=None, yaxMax=None, gridx=False, gridy=False, bandPlot=None, ttext=None, ttext2=None):
     canv = ROOT.TCanvas("canv","",1200,1200)
     canv.SetLeftMargin(0.15)
     canv.SetRightMargin(0.05)
     canv.SetBottomMargin(0.15)
+    canv.SetTicks(1,1)
     ymax = yaxMax if yaxMax else max([f.GetMaximum() for f in frames])
     ymin = yaxMin if yaxMin else min([f.GetMinimum() for f in frames])
     if gridx: canv.SetGridx()
@@ -129,6 +130,10 @@ def printPlot(frames, name, text=[], colors=[], histopt='', legend=None, sim=Tru
          ttext.SetTextAlign(21)
          ttext.SetTextSize(0.05)
          ttext.Draw()
+    if ttext2:
+         ttext2.SetTextAlign(21)
+         ttext2.SetTextSize(0.05)
+         ttext2.Draw()
     printCanvas(canv, name, text, colors, textSize=0.04, sim=sim)
 
 def doSpam(text,x1,y1,x2,y2,align=12,fill=False,textSize=0.033,textColor=ROOT.kBlack,_noDelete={},debugMargins=False):
@@ -220,7 +225,7 @@ if __name__ == "__main__":
                 
     # superimpose weights / MF
     resolVsEt = ROOT.TH1F('resolVsEt','',len(bins_et)-1,array('f',bins_et))
-    resolVsEt.GetXaxis().SetTitle('p_{T} (GeV)')
+    resolVsEt.GetXaxis().SetTitle('#it{p}_{T} (GeV)')
     resolVsEt.GetYaxis().SetTitle('Effective resolution (%)')
     resolVsEt.SetMarkerStyle(ROOT.kFullSquare)
     resolVsEt.SetMarkerSize(1)
@@ -294,7 +299,11 @@ if __name__ == "__main__":
         leg = doLegend(plots,labels,styles,legBorder=False,corner='TR')
         tt = ROOT.TLatex(0.7,0.6,'#splitline{%s}{5x5 crystal matrix}' % ('Barrel' if subd=='EB' else 'Endcaps'))
         tt.SetNDC(); tt.SetTextFont(42)
-        printPlot(plots,"plots/resolutionEt_{det}".format(det=subd),histopt='lpe',legend=leg,ttext=tt)
+
+        tt2 = ROOT.TLatex(0.7,0.4,'<PU> = 40')
+        tt2.SetNDC(); tt2.SetTextFont(42)
+
+        printPlot(plots,"plots/resolutionEt_{det}".format(det=subd),histopt='lpe',legend=leg,ttext=tt,ttext2=tt2)
     
     # difference in quadrature
     plots = []; labels = []; styles = []

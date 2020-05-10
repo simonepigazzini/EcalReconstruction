@@ -84,13 +84,13 @@ def doTinyCmsPrelim(textLeft="_default_",textRight="_default_",hasExpo=False,tex
 
 
 def doLegend(plots,labels,styles,nentries=1,corner="TR",textSize=0.035,cutoff=1e-2,legWidth=0.18,legBorder=True):
-        (x1,y1,x2,y2) = (.90-legWidth, .72 - textSize*max(nentries-3,0), .90, .87)
+        (x1,y1,x2,y2) = (.90-legWidth, .65 - textSize*max(nentries-3,0), .90, .87)
         if corner == "TR":
-            (x1,y1,x2,y2) = (.90-legWidth, .72 - textSize*max(nentries-3,0), .90, .87)
+            (x1,y1,x2,y2) = (.90-legWidth, .65 - textSize*max(nentries-3,0), .90, .87)
         elif corner == "TC":
-            (x1,y1,x2,y2) = (.5, .72 - textSize*max(nentries-3,0), .5+legWidth, .87)
+            (x1,y1,x2,y2) = (.5, .65 - textSize*max(nentries-3,0), .5+legWidth, .87)
         elif corner == "TL":
-            (x1,y1,x2,y2) = (.2, .72 - textSize*max(nentries-3,0), .2+legWidth, .87)
+            (x1,y1,x2,y2) = (.16, .60 - textSize*max(nentries-3,0), .16+legWidth, .87)
         elif corner == "BR":
             (x1,y1,x2,y2) = (.86-legWidth, .04, .86, .18)
         elif corner == "BC":
