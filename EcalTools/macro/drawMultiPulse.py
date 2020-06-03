@@ -73,8 +73,9 @@ def doPlot(hists,plotname):
         h.SetMinimum(0)
         
     genericOOT = hists[0].Clone('genericoot')
-    genericOOT.SetLineColor(ROOT.kGray+1)
+    genericOOT.SetLineColor(ROOT.kGray+2)
     genericOOT.SetLineStyle(3)
+    genericOOT.SetLineWidth(2)
     labeledHists[2] = genericOOT
 
     labels = ['Total','In-time','Out-of-time','Observed']
