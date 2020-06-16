@@ -72,6 +72,7 @@ def plotPUSpectrum(tree):
     hpu.GetXaxis().SetTitleOffset(1.1);
     hpu.GetXaxis().SetTitleSize(0.05)
     hpu.GetXaxis().SetRangeUser(0.05,100)
+    hpu.GetYaxis().SetTitleSize(0.05)
     hpu.Draw('peX0')
 
     lat = ROOT.TLatex()
@@ -90,7 +91,7 @@ if __name__ == "__main__":
     ROOT.gStyle.SetOptStat(0)
 
     plotPUSpectrum(tree)
-
+    
     bias_gr = ROOT.TGraphErrors(10)
     bias_gr.SetTitle('')
     mode_gr = ROOT.TGraphErrors(10)
@@ -118,6 +119,7 @@ if __name__ == "__main__":
     bias_gr.SetMarkerColor(ROOT.kRed+2)
     mode_gr.SetMarkerStyle(ROOT.kFullCircle)
     mode_gr.SetMarkerSize(3)
+    mode_gr.SetLineWidth(4)
     mode_gr.Draw("APE")
     ymin,ymax = 0.95,1.05
     mode_gr.SetMaximum(ymax)
@@ -128,10 +130,10 @@ if __name__ == "__main__":
     xax.SetNdivisions(10,ROOT.kTRUE)
     yax.SetRangeUser(ymin,ymax)
     yax.SetDecimals()
-    xax.SetTitleOffset(1.1); xax.SetTitleSize(0.05)
-    yax.SetTitleOffset(1.5); yax.SetTitleSize(0.05)
+    xax.SetTitleOffset(1.1); xax.SetTitleSize(0.06)
+    yax.SetTitleOffset(1.3); yax.SetTitleSize(0.06)
     xax.SetTitle("Bunch crossing")
-    yax.SetTitle("#it{A}^{PU} / #it{A}_{BX}^{true}")
+    yax.SetTitle("#it{A}_{BX}^{PU} / #it{A}_{BX}^{true}")
 
     lat = ROOT.TLatex()
     lat.SetNDC(); lat.SetTextFont(42)

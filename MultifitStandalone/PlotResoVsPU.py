@@ -155,8 +155,8 @@ def plotOneEnergy(Energy):
 
     plots = [graphs[('weights','itfalse')],graphs[('weights','ittrue')],graphs[('multifit','itfalse')],graphs[('multifit','ittrue')]]
     labels = ['weights','weights, only OOT PU','multifit','multifit, only OOT PU']
-    styles = ['pl','pl','pl','pl']
-    leg = doLegend(plots,labels,styles,legBorder=False,legWidth=0.5,corner='TL')
+    styles = ['p','p','p','p']
+    leg = doLegend(plots,labels,styles,legBorder=False,legWidth=0.5,textSize=0.05,corner='TL')
     
     lat = ROOT.TLatex()
     lat.SetNDC(); lat.SetTextFont(42)

@@ -156,6 +156,7 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
     gROOT->LoadMacro("tdrstyle.C");
     setTDRStyle();
     gStyle->SetOptFit(0);
+    gStyle->SetErrorX(0);
     _fitF->Draw("same");
     TLatex lat;
     lat.SetNDC(); lat.SetTextFont(42);
@@ -172,9 +173,9 @@ void AlphaBetaFitter::fit(TH1F *histo,bool doEB,float pedestal,std::string canva
     leg.SetLineWidth(0);
     leg.SetBorderSize(0);
     leg.SetTextFont(42);
-    leg.SetTextSize(0.03);
-    leg.AddEntry(histoRead,"Readout samples","p");
-    leg.AddEntry(histoOutRead,"Extrapolated samples","p");
+    leg.SetTextSize(0.04);
+    leg.AddEntry(histoRead,"Readout S_{i}","p");
+    leg.AddEntry(histoOutRead,"Extrapolated S_{i}","p");
     leg.AddEntry(_fitF,"Fit","l");
     leg.Draw();
     
