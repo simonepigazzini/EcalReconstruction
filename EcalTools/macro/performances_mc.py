@@ -190,7 +190,7 @@ if __name__ == "__main__":
 
     
 #    bins_et = [1,5,10,30,100]; ranges_etacoarse = [[(0.5,1.3),(0.2,1.4)], [(0.8,1.15),(0.6,1.2)], [(0.85,1.1),(0.7,1.1)], [(0.94,1.04),(0.85,1.1)]]
-    bins_et = [1,5,10,30,100]; ranges_etacoarse = [[(0.5,1.3),(0.2,1.7)], [(0.8,1.15),(0.4,1.3)], [(0.85,1.1),(0.6,1.2)], [(0.94,1.04),(0.75,1.15)]]
+    bins_et = [1,5,10,30,50,70,100]; ranges_etacoarse = [[(0.5,1.3),(0.2,1.7)], [(0.8,1.15),(0.4,1.3)], [(0.85,1.1),(0.6,1.2)], [(0.94,1.04),(0.75,1.15)], [(0.94,1.04),(0.75,1.15)], [(0.94,1.04),(0.75,1.15)]]
     bins_etafine   = [0,0.43,0.8,1.23,1.4442,1.566,1.8,2.0,2.5,3.0]
     bins_etacoarse = [0,1.5,2.5]; 
 
@@ -226,7 +226,7 @@ if __name__ == "__main__":
     # superimpose weights / MF
     resolVsEt = ROOT.TH1F('resolVsEt','',len(bins_et)-1,array('f',bins_et))
     resolVsEt.GetXaxis().SetTitle('#it{p}_{T} (GeV)')
-    resolVsEt.GetYaxis().SetTitle('Effective resolution (%)')
+    resolVsEt.GetYaxis().SetTitle('Effective energy resolution (%)')
     resolVsEt.SetMarkerStyle(ROOT.kFullSquare)
     resolVsEt.SetMarkerSize(1)
     

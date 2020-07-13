@@ -75,6 +75,11 @@ def plotPUSpectrum(tree):
     hpu.GetYaxis().SetTitleSize(0.05)
     hpu.Draw('peX0')
 
+    plots  = [hpu]
+    labels = ['simulated deposit']
+    styles = ['pe']
+    leg = doLegend(plots,labels,styles,legBorder=False,corner='TC')
+
     lat = ROOT.TLatex()
     lat.SetNDC(); lat.SetTextFont(42)
     lat.DrawLatex(0.19, 0.92, '#bf{CMS} #it{Simulation}')
@@ -149,10 +154,10 @@ if __name__ == "__main__":
     lat3.SetNDC(); lat3.SetTextFont(42)
     lat3.DrawLatex(0.60,0.23, '<PU> = 40')
     
-    plots  = [mode_gr] #,bias_gr]
-    labels = ['mean','mode']
-    styles = ['p','p']
-    #leg = doLegend(plots,labels,styles,legBorder=False,corner='TC')
+    plots  = [mode_gr]
+    labels = ['multifit']
+    styles = ['pe']
+    leg = doLegend(plots,labels,styles,legBorder=False,corner='TC')
 
     # horizontal line at 1
     line = ROOT.TLine()

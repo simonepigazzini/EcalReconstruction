@@ -264,7 +264,7 @@ void PlotPedNice(){
    inset_pedm0->GetYaxis()->SetTitleSize(0.10);
 
 
-   inset_pedm0->GetXaxis()->SetTimeFormat("%Y/%m");
+   inset_pedm0->GetXaxis()->SetTimeFormat("%d");
    inset_pedm0->GetXaxis()->LabelsOption("v");
    inset_pedm0->GetXaxis()->SetTimeOffset(0,"gmt");
    inset_pedm0->GetXaxis()->SetRangeUser(1533427260.,1533427260.+2*24*60*60);
@@ -274,6 +274,12 @@ void PlotPedNice(){
    inset_pedm0->SetMinimum(204.0);
    inset_pedm0->SetMaximum(206.0);
    inset_pedm0->Draw("A P");
+
+   TLatex lat2;
+   lat2.SetNDC(); 
+   lat2.SetTextFont(42);
+   lat2.SetTextSize(0.1);
+   lat2.DrawLatex(0.45, 0.8, "August 2018");
 
    TGraph * inset_pedm1 = (TGraph*)pedm1->Clone("inset_pedm1");
    inset_pedm1->SetMarkerSize(1.0);

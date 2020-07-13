@@ -150,7 +150,7 @@ def plotOneEnergy(Energy):
     yax.SetDecimals()
     xax.SetTitleOffset(1.1); xax.SetTitleSize(0.05)
     yax.SetTitleOffset(1.5); yax.SetTitleSize(0.05)
-    xax.SetTitle('number of pileup interactions')
+    xax.SetTitle('Number of pileup interactions')
     yax.SetTitle('Single crystal amplitude #sigma_{eff} (%)')
 
     plots = [graphs[('weights','itfalse')],graphs[('weights','ittrue')],graphs[('multifit','itfalse')],graphs[('multifit','ittrue')]]
