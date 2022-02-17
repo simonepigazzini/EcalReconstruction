@@ -1,47 +1,45 @@
 #include "PulseTemplates.h"
-#include "DataFormats/EgammaReco/interface/SuperCluster.h"
-#include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
+#include "FWCore/Utilities/interface/isFinite.h"
+#include "FWCore/Framework/interface/ConsumesCollector.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
-#include "DataFormats/Math/interface/deltaR.h"
-#include "RecoEcal/EgammaCoreTools/interface/EcalClusterTools.h"
 #include "Geometry/Records/interface/CaloTopologyRecord.h"
 #include "Geometry/CaloTopology/interface/CaloTopology.h"
 #include "Geometry/CaloTopology/interface/CaloSubdetectorTopology.h"
-#include "DataFormats/CaloRecHit/interface/CaloCluster.h"
-#include "DataFormats/ParticleFlowReco/interface/PFCluster.h"
 #include "CondFormats/DataRecord/interface/EcalChannelStatusRcd.h"
 #include "CommonTools/Utils/interface/StringToEnumValue.h"
-
 #include "DataFormats/Common/interface/Handle.h"
+#include "CLHEP/Matrix/Vector.h"
+#include "CLHEP/Matrix/SymMatrix.h"
 
 #include <iostream>
 #include <fstream>
 
 PulseTemplates::PulseTemplates(const edm::ParameterSet& conf)
-{
+  : pedsToken_(esConsumes()),
+    gainsToken_(esConsumes()),
+    chStatusToken_(esConsumes()) {
   
-  // for AlCaP0 stream
-  // ebDigiCollectionToken_ = consumes<EBDigiCollection>(edm::InputTag("dummyHits","dummyBarrelDigis"));
-  // eeDigiCollectionToken_ = consumes<EEDigiCollection>(edm::InputTag("dummyHits","dummyEndcapDigis"));
-
-  // for phi symmetry stream
-  // ebDigiCollectionToken_ = consumes<EBDigiCollection>(edm::InputTag("hltEcalPhiSymFilter","phiSymEcalDigisEB"));
-  // eeDigiCollectionToken_ = consumes<EEDigiCollection>(edm::InputTag("hltEcalPhiSymFilter","phiSymEcalDigisEE"));
-
   ebDigiCollectionToken_ = consumes<EBDigiCollection>(conf.getParameter<edm::InputTag>("barrelDigis"));
   eeDigiCollectionToken_ = consumes<EEDigiCollection>(conf.getParameter<edm::InputTag>("endcapDigis"));
 
   ebhitcollToken_  = consumes<EBRecHitCollection>(conf.getParameter<edm::InputTag> ("EBRecHitCollection"));
   eehitcollToken_  = consumes<EERecHitCollection>(conf.getParameter<edm::InputTag> ("EERecHitCollection"));
-  
-  minEnergyBarrel_ = conf.getParameter<double>("minEnergyBarrel");
-  minEnergyEndcap_ = conf.getParameter<double>("minEnergyEndcap");
-  maxEnergyBarrel_ = conf.getParameter<double>("maxEnergyBarrel");
-  maxEnergyEndcap_ = conf.getParameter<double>("maxEnergyEndcap");
+ 
+  minAmplitudeBarrel_ = conf.getParameter<double>("minAmplitudeBarrel");
+  minAmplitudeEndcap_ = conf.getParameter<double>("minAmplitudeEndcap");
+  maxAmplitudeBarrel_ = conf.getParameter<double>("maxAmplitudeBarrel");
+  maxAmplitudeEndcap_ = conf.getParameter<double>("maxAmplitudeEndcap");
 
-  minNHits_ = conf.getParameter<double>("minNHits");  
+  minNHits_ = conf.getParameter<int>("minNHits");  
   maxChi2_ = conf.getParameter<double>("maxChi2");
+  minPeakSignificance_ = conf.getParameter<double>("minPeakSignificance");
+  amplitudeWeight_ = conf.getParameter<bool>("amplitudeWeight");
+
+  alphaBarrel_ = conf.getParameter<double>("alphaBarrel");
+  alphaEndcap_ = conf.getParameter<double>("alphaEndcap");
+  betaBarrel_ = conf.getParameter<double>("betaBarrel");
+  betaEndcap_ = conf.getParameter<double>("betaEndcap");
 
   ebSimPulseShape_ = conf.getParameter<std::vector<double>>("ebSimPulseShape");
   eeSimPulseShape_ = conf.getParameter<std::vector<double>>("eeSimPulseShape");
@@ -125,95 +123,21 @@ void PulseTemplates::beginJob() {
       eeSimPulseShapeH_->SetBinError(i+1, 0.);
     }
   }
-
 }
 
 void PulseTemplates::beginRun( const edm::Run & iRun, const edm::EventSetup & iSetup ) { }
 
 void PulseTemplates::endRun( const edm::Run & iRun, const edm::EventSetup & iSetup ) {
-
-
-
-  /// output
-  TString nameoutput = Form("template_histograms_ECAL_run_%d.root",iRun.run());
-  TFile *outfile = TFile::Open(nameoutput.Data(),"recreate");
-  //TH1D *htempl = new TH1D("templates","",10,0,10);
-
-  // text file to fill the DB objects with templates
-  std::ofstream txtdumpfile;  
-  txtdumpfile.open (nameoutput.Data(), std::ios::out | std::ios::trunc);
-
-  for(std::map<int, std::vector<double> >::iterator it=templates_.begin(); it!=templates_.end(); ++it) {
-    unsigned int rawId = rawIds_[it->first];
-    DetId detid(rawId);
-    barrel_ = detid.subdetId()==EcalBarrel;  
-
-    txtdumpfile.unsetf ( std::ios::floatfield ); 
-    txtdumpfile << ( barrel_ ? 1 : 0 ) << "\t";
-    txtdumpfile << iXs_[it->first] << "\t" << iYs_[it->first] << "\t" << iZs_[it->first] << "\t" << rawId << "\t";
-    txtdumpfile.precision(6);
-    txtdumpfile.setf( std::ios::fixed, std::ios::floatfield ); // floatfield set to fixed
-    
-    int ix = it->first / 1000;
-    if(barrel_ && ix >= 85) ix = -1*(ix-85);
-    if((!barrel_) && ix >= 100) ix = -1*(ix-100);
-    
-    int iy = it->first % 1000;
-    std::cout << "Writing templates histogram. ix = " << ix << "  iy = " << iy << " got " << norm_counts_[it->first] << " events" << std::endl;
-
-    float pdfval[12];
-
-    TH1D *simTemplate = barrel_ ? ebSimPulseShapeH_ : eeSimPulseShapeH_;
-    for(int iSample(3); iSample < 10; iSample++) {
-      pdfval[iSample-3] = (it->second)[iSample] / norm_average_[it->first];
-      if(norm_counts_[it->first]<minNHits_) pdfval[iSample-3] = simTemplate->GetBinContent(iSample+1); // PROTECTION !!!
-      //      txtdumpfile << pdfval << "\t";
-    }
-
-    // if(nCry%1000==0) std::cout << "Fitting the crystal # " << nCry << " with rawId = " << rawId << std::endl;
-    // TH1D *fittedh = fitTemplate(th,dobarrel,0,simTemplate);
-    // for(int iExtraSample(0); iExtraSample < 5; iExtraSample++) {
-    //    // if(norm_average[it->first]>2) txtdumpfile << valExtrap[iExtraSample] << "\t";
-    //    // else txtdumpfile << simTemplate->GetBinContent(iExtraSample+11) << "\t";
-    //   if(norm_counts[it->first]>=minNHits) pdfval[7+iExtraSample] = valExtrap[iExtraSample];
-    //   else pdfval[7+iExtraSample] = simTemplate->GetBinContent(iExtraSample+11);
-    // }
-
-    /*
-    // PROTECTION AGAINST STRANGE SHAPES
-    if(fabs(pdfval[4]-simTemplate->GetBinContent(8))>0.1 || pdfval[0]==0) {
-      //      std::cout << pdfval[4] << "   " << simTemplate->GetBinContent(8) << " ==> replacing..." << std::endl;
-      for(int s=0; s<12; ++s) { 
-	pdfval[s] = simTemplate->GetBinContent(s+4);
-      }
-    }
-    */
-
-    for(int s=0;s<12;++s) txtdumpfile << pdfval[s] << "\t";
-
-    //delete fittedh;
-
-    txtdumpfile << std::endl;
-
-    //th->Write();
-    
-  }
-  //  std::cout << "Writing average template histogram (averaged over " << nCry << " crystals" << std::endl;
-  //  htemplAverage->Write();
-  
-  outfile->Close();
-  txtdumpfile.close();
-
+  writeTxtFile(iRun.run());
 }
 
 
 
 // ------------ method called once each job just after ending the event loop  ------------
 void  PulseTemplates::endJob() {
-
+  writeTxtFile(run_);
   delete ebSimPulseShapeH_;
   delete eeSimPulseShapeH_;
-
 }
 
 
@@ -222,10 +146,10 @@ void PulseTemplates::analyze(const edm::Event& e, const edm::EventSetup& es) {
   run_ = e.id().run();
   lumi_ = e.luminosityBlock();
 
-  es.get<EcalGainRatiosRcd>().get(gains);
-  es.get<EcalPedestalsRcd>().get(peds); 
-  es.get<EcalChannelStatusRcd>().get(chStatus);
-  
+  gains = es.getHandle(gainsToken_);
+  peds = es.getHandle(pedsToken_);
+  chStatus = es.getHandle(chStatusToken_);
+
   edm::Handle< EBDigiCollection > pEBDigis;
   edm::Handle< EEDigiCollection > pEEDigis;  
   
@@ -256,7 +180,7 @@ void PulseTemplates::analyze(const edm::Event& e, const edm::EventSetup& es) {
 }
 
 void PulseTemplates::FillRecHit(const EcalDataFrame& dataFrame, const EcalRecHit& rechit) {
-   
+
   const unsigned int nsample = EcalDataFrame::MAXSAMPLES;
   
   double maxamplitude = -std::numeric_limits<double>::max();
@@ -266,13 +190,12 @@ void PulseTemplates::FillRecHit(const EcalDataFrame& dataFrame, const EcalRecHit
   
   unsigned int gain = 12;
   
-  
   const EcalPedestals::Item * aped = 0;
   const EcalMGPAGainRatio * aGain = 0;
   
   DetId detid = dataFrame.id();
   barrel_ = detid.subdetId()==EcalBarrel;  
-  
+
   EcalChannelStatusMap::const_iterator chit = chStatus->find(detid);
   EcalChannelStatusCode::Code  dbstatus = chit->getStatusCode();  
   
@@ -287,7 +210,7 @@ void PulseTemplates::FillRecHit(const EcalDataFrame& dataFrame, const EcalRecHit
   
   uint32_t flagBits = setFlagBits(v_DB_reco_flags_, dbstatus);  
   if (flagmask_ & flagBits) return;
-  
+
   if (!barrel_) {
           unsigned int hashedIndex = EEDetId(detid).hashedIndex();
           aped  = &peds->endcap(hashedIndex);
@@ -358,18 +281,17 @@ void PulseTemplates::FillRecHit(const EcalDataFrame& dataFrame, const EcalRecHit
         
   }
   
-  
   gain_ = gain;
   pedrms_ = pedrms;
   pedval_ = pedval;
   
   double peaksig = pulse_[5]/pedrms_;
   
-  if (!pedestalAnalysis_ && peaksig<10.) return;
+  if (!pedestalAnalysis_ && peaksig<minPeakSignificance_) return;
 
-  double minEnergy = barrel_ ? minEnergyBarrel_ : minEnergyEndcap_;
-  double maxEnergy = barrel_ ? maxEnergyBarrel_ : maxEnergyEndcap_;
-  if(!pedestalAnalysis_ && pulse_[5] < minEnergy) return;
+  double minAmplitude = barrel_ ? minAmplitudeBarrel_ : minAmplitudeEndcap_;
+  double maxAmplitude = barrel_ ? maxAmplitudeBarrel_ : maxAmplitudeEndcap_;
+  if(!pedestalAnalysis_ && (pulse_[5] < minAmplitude || pulse_[5] > maxAmplitude)) return;
   
   if (barrel_) {
     EBDetId ebid(detid);
@@ -396,51 +318,33 @@ void PulseTemplates::FillRecHit(const EcalDataFrame& dataFrame, const EcalRecHit
   if (rechit.checkFlag(EcalRecHit::kWeird)) flag_kweird_=1;
   if (rechit.checkFlag(EcalRecHit::kDiWeird)) flag_kdiweird_=1;
 
+  if (flag_kweird_ || flag_kdiweird_) return;
 
-  // check the max deviation wrt the reference tag (exclude the last ones which can fluctuate)
-  double max_dev_ref=0;
-  for(unsigned int iSample = 4; iSample < nsample-2; ++iSample) {
-    if(templates_ref_.count(rawid_)>0) {
-      double templVal = (templates_ref_[rawid_])[iSample-3];
-      double dev = fabs(pulse_[iSample]/maxamplitude - templVal)/templVal;
-      if(dev > max_dev_ref) max_dev_ref = dev;
-    } else break;
+  double weight = amplitudeWeight_ ? pow(pulse_[5],2) : 1.0;
+
+  if(templates_.count(rawid_)==0) {
+    std::vector<double> templ;
+    templ.resize(10);
+    for(int iSample(0); iSample < 10; iSample++) templ[iSample] = pulse_[iSample]/maxamplitude * weight;
+    templates_[rawid_] = templ;
+    norm_average_[rawid_] = weight;
+    norm_counts_[rawid_] = 1;
+    // std::cout << "inserting new ped for DetId = " << rawid_ << std::endl;
+    rawIds_[rawid_] = rawid_;
+    iXs_[rawid_] = ietaix_;       iYs_[rawid_] = iphiiy_;        iZs_[rawid_] = iz_;
+  } else {
+    std::vector<double> &templ = templates_[rawid_];
+    for(int iSample(0); iSample < 10; iSample++) templ[iSample] += pulse_[iSample]/maxamplitude * weight;
+    norm_average_[rawid_] += weight;
+    norm_counts_[rawid_] ++;
+    //        std::cout << "updating ped for DetId = " << rawid_ << std::endl;
   }
-
-
-  double weight = pow(ene_,2);
-
-  int offset;
-  if(barrel_) offset = (ietaix_ > 0) ? 1000 * ietaix_ : 1000 * (abs(ietaix_)+85);
-  else offset = (iz_ > 0) ? 1000 * ietaix_ : 1000 * (ietaix_+100);
-  int ic = offset + iphiiy_;
-
-  if (ene_ > minEnergy && ene_ < maxEnergy && (!flag_kweird_) && (!flag_kdiweird_)) {
-  
-    if(templates_.count(ic)==0) {
-      std::vector<double> templ;
-      templ.resize(10);
-      for(int iSample(0); iSample < 10; iSample++) templ[iSample] = pulse_[iSample]/maxamplitude * weight;
-      templates_[ic] = templ;
-      norm_average_[ic] = weight;
-      norm_counts_[ic] = 1;
-      // std::cout << "inserting new ped for DetId = " << ic << std::endl;
-      rawIds_[ic] = rawid_;
-      iXs_[ic] = ietaix_;       iYs_[ic] = iphiiy_;        iZs_[ic] = iz_;
-    } else {
-      std::vector<double> &templ = templates_[ic];
-      for(int iSample(0); iSample < 10; iSample++) templ[iSample] += pulse_[iSample]/maxamplitude * weight;
-      norm_average_[ic] += weight;
-      norm_counts_[ic] ++;
-      //        std::cout << "updating ped for DetId = " << ic << std::endl;
-    }
-  }  
   
 }
 
 // Take our association map of dbstatuses-> recHit flagbits and return the apporpriate flagbit word
 uint32_t PulseTemplates::setFlagBits(const std::vector<std::vector<uint32_t> >& map, 
-                                             const uint32_t& status  ){
+                                     const uint32_t& status  ){
   
   for (unsigned int i = 0; i!=map.size(); ++i){
     if (std::find(map[i].begin(), map[i].end(),status)!= map[i].end()) 
@@ -448,4 +352,257 @@ uint32_t PulseTemplates::setFlagBits(const std::vector<std::vector<uint32_t> >& 
   }
 
   return 0;
+}
+
+
+void PulseTemplates::writeTxtFile(int run) {
+
+  // text file to fill the DB objects with templates
+
+  TString nameoutput = Form("template_histograms_ECAL_run_%d.txt",run);
+  std::ofstream txtdumpfile;  
+  txtdumpfile.open (nameoutput.Data(), std::ios::out | std::ios::trunc);
+
+  int nCry=0;
+  for(std::map<int, std::vector<double> >::iterator it=templates_.begin(); it!=templates_.end(); ++it) {
+    unsigned int rawId = it->first;
+    DetId detid(rawId);
+    barrel_ = detid.subdetId()==EcalBarrel;  
+
+    txtdumpfile.unsetf ( std::ios::floatfield ); 
+    txtdumpfile << ( barrel_ ? 1 : 0 ) << "\t";
+    txtdumpfile << iXs_[rawId] << "\t" << iYs_[rawId] << "\t" << iZs_[rawId] << "\t" << rawId << "\t";
+    txtdumpfile.precision(6);
+    txtdumpfile.setf( std::ios::fixed, std::ios::floatfield ); // floatfield set to fixed
+    
+    std::cout << "Writing templates histogram. Barrel = " << barrel_ << ".  ix = " << iXs_[rawId] << "  iy = " << iYs_[rawId] << " got " << norm_counts_[rawId] << " events" << std::endl;
+
+    float pdfval[12];
+
+    TH1D *simTemplate = barrel_ ? ebSimPulseShapeH_ : eeSimPulseShapeH_;
+    for(int iSample(3); iSample < 10; iSample++) {
+      if(norm_counts_[rawId]>=minNHits_) 
+        pdfval[iSample-3] = std::max((it->second)[iSample],0.) / norm_average_[rawId];
+      else
+        pdfval[iSample-3] = simTemplate->GetBinContent(iSample+1);
+    }
+
+    std::vector<double> extraSamples;
+    if (norm_counts_[rawId]>=minNHits_) {
+      extraSamples = extrapolateSamples(rawId);
+    } else {
+      std::cout << "Use SIM samples for rawId = " << rawId << std::endl;
+      for(int iExtraSample(0); iExtraSample < 5; iExtraSample++) 
+        extraSamples.push_back(simTemplate->GetBinContent(iExtraSample+11));
+    }
+    for(int iExtraSample(0); iExtraSample < 5; iExtraSample++) {
+      pdfval[7+iExtraSample] = std::max(extraSamples[iExtraSample],0.);
+    }
+
+    for(int s=0;s<12;++s) txtdumpfile << pdfval[s]/pdfval[2] << "\t";
+    txtdumpfile << std::endl;
+    nCry++;
+    
+  }
+  txtdumpfile.close();
+}
+
+double PulseTemplates::pulseShapeFunction(double t) {
+  if (alphabeta_ <= 0)
+    return ((double)0.);
+  double dtsbeta, variable, puiss;
+  double dt = t - fTim_max_;
+  if (dt > -alphabeta_) {
+    dtsbeta = dt / fBeta_;
+    variable = 1. + dt / alphabeta_;
+    puiss = pow(variable, fAlpha_);
+    return fAmp_max_ * puiss * exp(-dtsbeta) + fPed_max_;
+  }
+  return fPed_max_;
+}
+
+void PulseTemplates::InitFitParameters(double* samples, int max_sample) {
+  // in a first attempt just use the value of the maximum sample
+  fAmp_max_ = samples[max_sample];
+  fTim_max_ = max_sample;
+  fPed_max_ = 0;
+
+  //y=a*(x-xM)^2+b*(x-xM)+c
+  float a = float(samples[max_sample - 1] + samples[max_sample + 1] - 2 * samples[max_sample]) / 2.;
+  float b = float(samples[max_sample + 1] - samples[max_sample - 1]) / 2.;
+  fTim_max_ = max_sample - b / (2 * a);
+  fAmp_max_ = samples[max_sample] - b * b / (4 * a);
+}
+
+float PulseTemplates::PerformAnalyticFit(double* samples, int max_sample, double sigma_ped) {
+  //int fValue_tim_max = max_sample;
+  //! fit electronic function from simulation
+  //! parameters fAlpha_ and fBeta_ are fixed and fit is providing the 3 following parameters
+  //! the maximum amplitude ( fAmp_max_ )
+  //! the time of the maximum  ( fTim_max_)
+  //| the pedestal (fPed_max_)
+
+  double chi2 = -1, db[3];
+
+  //HepSymMatrix DM1(3) ; CLHEP::HepVector temp(3) ;
+
+  int num_fit_min = (int)(max_sample - 1);
+  int num_fit_max = (int)(max_sample + 3);
+
+  if (num_fit_min < 0)
+    num_fit_min = 0;
+  //if (num_fit_max>=fNsamples-1) num_fit_max = fNsamples-2 ;
+  if (num_fit_max >= EcalDataFrame::MAXSAMPLES) {
+    num_fit_max = EcalDataFrame::MAXSAMPLES - 1;
+  }
+
+  double one_over_sigma = 1./sigma_ped;
+  double func, delta;
+  double variation_func_max = 0.;
+  double variation_tim_max = 0.;
+  double variation_ped_max = 0.;
+  CLHEP::HepVector temp(3);
+  CLHEP::HepSymMatrix DM1(3);
+
+  //!          Loop on iterations 
+  int fNb_iter = 4;
+  for (int iter = 0; iter < fNb_iter; iter++) {
+    //!          initialization inside iteration loop !
+    chi2 = 0.;  //PROD.Zero() ;  DM1.Zero() ;
+
+    for (int i1 = 0; i1 < 3; i1++) {
+      temp[i1] = 0;
+      for (int j1 = i1; j1 < 3; j1++) {
+        DM1.fast(j1 + 1, i1 + 1) = 0;
+      }
+    }
+
+    fAmp_max_ += variation_func_max;
+    fTim_max_ += variation_tim_max;
+    fPed_max_ += variation_ped_max;
+
+    //! Then we loop on samples to be fitted
+    for (int i = num_fit_min; i <= num_fit_max; i++) {
+      //if(i>fsamp_edge_fit && i<num_fit_min) continue ; // remove front edge samples
+      //! calculate function to be fitted
+      func = pulseShapeFunction((double)i);
+      //! then calculate derivatives of function to be fitted
+      double dt = (double)i - fTim_max_;
+      if (dt > -alphabeta_) {
+        double dt_over_beta = dt / fBeta_;
+        double variable = (double)1. + dt / alphabeta_;
+        double expo = exp(-dt_over_beta);
+        double power = pow(variable, fAlpha_);
+
+        db[0] = one_over_sigma * power * expo;
+        db[1] = fAmp_max_ * db[0] * dt_over_beta / (alphabeta_ * variable);
+      } else {
+        db[0] = 0.;
+        db[1] = 0.;
+      }
+      db[2] = one_over_sigma;
+      //! compute matrix elements DM1
+      for (int i1 = 0; i1 < 3; i1++) {
+        for (int j1 = i1; j1 < 3; j1++) {
+          //double & fast(int row, int col);
+          DM1.fast(j1 + 1, i1 + 1) += db[i1] * db[j1];
+        }
+      }
+      //! compute delta
+      delta = (samples[i] - func) * one_over_sigma;
+      //! compute vector elements PROD
+      for (int ii = 0; ii < 3; ii++) {
+        temp[ii] += delta * db[ii];
+      }
+      chi2 += delta * delta;
+    }  //! end of loop on samples
+
+    int fail = 0;
+    DM1.invert(fail);
+    if (fail != 0.) {
+      //just a guess from the value of the parameters in the previous interaction;
+      edm::LogWarning("PulseTemplates::PerformAnalyticFit") << "FIT PROBLEM =====> determinant error --> No Fit Provided !";
+      InitFitParameters(samples, max_sample);
+      return -101;
+    }
+    //! compute variations of parameters fAmp_max and fTim_max
+    CLHEP::HepVector PROD = DM1 * temp;
+    //    std::cout<<"vector PROD: "<< PROD[0]<<" "<<PROD[1]<<" "<<PROD[2]<<std::endl;
+
+    // Probably the fastest way to protect against
+    // +-inf value in the matrix DM1 after inversion
+    // (which is nevertheless flagged as successfull...)
+    if (edm::isNotFinite(PROD[0])) {
+      InitFitParameters(samples, max_sample);
+      edm::LogWarning("PulseTemplates::PerformAnalyticFit") << "FIT PROBLEM =====> infinite detected --> No Fit Provided !";
+      return -103;
+    }
+
+    variation_func_max = PROD[0];
+    variation_tim_max = PROD[1];
+    variation_ped_max = PROD[2];
+    //chi2 = chi2/((double)nsamp_used - 3.) ;
+  }  //!end of loop on iterations
+
+  //!   protection again diverging/unstable fit
+  if (variation_func_max > 2000. || variation_func_max < -1000.) {
+    InitFitParameters(samples, max_sample);
+    edm::LogWarning("PulseTemplates::PerformAnalyticFit") << "FIT PROBLEM =====> unstable fit --> No Fit Provided !";
+    return -102;
+  }
+
+  //!      results of the fit are calculated
+  fAmp_max_ += variation_func_max;
+  fTim_max_ += variation_tim_max;
+  fPed_max_ += variation_ped_max;
+
+  // protection against unphysical results:
+  // ampli mismatched to MaxSample, ampli largely negative, time off preselected range
+  if (fAmp_max_ > 2 * samples[max_sample] || fAmp_max_ < -100 || fTim_max_ < 0 || 9 < fTim_max_) {
+    edm::LogWarning("PulseTemplates::PerformAnalyticFit") << "FIT PROBLEM =====> unphysical result --> No Fit Provided !";
+    // std::cout << "fAmp_max_ = " << fAmp_max_ << " > 2 * samples[max_sample] = " << samples[max_sample] << std::endl;
+    // std::cout << "fTim_max_ = " << fTim_max_ << std::endl;
+    InitFitParameters(samples, max_sample);
+    return -104;
+  }
+
+  // std::cout <<"chi2: "<<chi2<<" ampl: "<<fAmp_max_<<" time: "<<fTim_max_<<" pede: "<<fPed_max_<<std::endl;
+  return chi2;
+}
+
+std::vector<double> PulseTemplates::extrapolateSamples(int rawid) {
+  int nSamplesRead = EcalDataFrame::MAXSAMPLES;
+  int nSamplesExtra = 5;
+  double samples[nSamplesRead];
+  double maxsample(-1); // ADC value of maximal ped-subtracted sample
+  int imax(-1);         // sample number of maximal ped-subtracted sample
+  for(int iSample=0; iSample < nSamplesRead; iSample++) {
+    samples[iSample] = templates_[rawid][iSample];
+    if (samples[iSample] > maxsample) {
+      maxsample = samples[iSample];
+      imax = iSample;
+    }
+  }
+  double pedSigma = 1./sqrt(norm_counts_[rawid]);
+
+  DetId detid(rawid);
+  if (detid.subdetId()==EcalBarrel) {
+    fAlpha_ = alphaBarrel_;
+    fBeta_  = betaBarrel_;
+  } else {
+    fAlpha_ = alphaEndcap_;
+    fBeta_  = betaEndcap_;
+  }
+  alphabeta_ = fAlpha_ * fBeta_;
+  
+  InitFitParameters(samples,imax);
+  double chi2 = PerformAnalyticFit(samples,imax,pedSigma);
+  std::vector<double> extraSamples;
+  for(int iExtraSample=nSamplesRead; iExtraSample < nSamplesRead + nSamplesExtra; iExtraSample++) {
+    if (chi2>0)
+      extraSamples.push_back(pulseShapeFunction((double)iExtraSample)/fAmp_max_);
+    else
+      extraSamples.push_back(detid.subdetId()==EcalBarrel ? ebSimPulseShape_[iExtraSample-3] : eeSimPulseShape_[iExtraSample-3]);
+  }
+  return extraSamples;
 }

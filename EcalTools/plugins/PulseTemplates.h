@@ -4,47 +4,39 @@
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/one/EDAnalyzer.h"
-
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
-
-#include "DataFormats/EgammaReco/interface/SuperClusterFwd.h"
-#include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"
-#include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
-#include "DataFormats/CaloRecHit/interface/CaloClusterFwd.h"
-
-#include "SimDataFormats/Track/interface/SimTrackContainer.h"
-#include "SimDataFormats/Vertex/interface/SimVertexContainer.h"
-
-#include "TTree.h"
-#include "TH1D.h"
 
 #include "DataFormats/EcalDigi/interface/EEDataFrame.h"
 #include "DataFormats/EcalDigi/interface/EBDataFrame.h"
 #include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
-
+#include "DataFormats/EcalDigi/interface/EEDataFrame.h"
+#include "DataFormats/EcalDigi/interface/EBDataFrame.h"
+#include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
 
 #include "CondFormats/EcalObjects/interface/EcalPedestals.h"
 #include "CondFormats/EcalObjects/interface/EcalGainRatios.h"
-#include "DataFormats/EcalDigi/interface/EEDataFrame.h"
-#include "DataFormats/EcalDigi/interface/EBDataFrame.h"
-
-#include "FWCore/Framework/interface/ESHandle.h"
 #include "CondFormats/DataRecord/interface/EcalGainRatiosRcd.h"
 #include "CondFormats/DataRecord/interface/EcalPedestalsRcd.h"
 #include "CondFormats/EcalObjects/interface/EcalChannelStatus.h"
 #include "CondFormats/DataRecord/interface/EcalChannelStatusRcd.h"
 
+#include "FWCore/Framework/interface/ESHandle.h"
+#include "FWCore/Framework/interface/ConsumesCollector.h"
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "FWCore/Utilities/interface/ESGetToken.h"
+
+#include "TTree.h"
+#include "TH1D.h"
+
 #include <memory>
 
 
-
-
 class PulseTemplates : public edm::one::EDAnalyzer<> {
- public:    
-  PulseTemplates(const edm::ParameterSet&);
+public:    
+  PulseTemplates(const edm::ParameterSet& conf);
   ~PulseTemplates() { }
-  
+
   virtual void beginJob() ;
   virtual void beginRun(const edm::Run & iRun, const edm::EventSetup & iSetup );
   virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
@@ -56,11 +48,21 @@ class PulseTemplates : public edm::one::EDAnalyzer<> {
 
   uint32_t setFlagBits(const std::vector<std::vector<uint32_t> >& map, 
                         const uint32_t& status  );  
-  
+
+  void writeTxtFile(int run);
+
+  // fast alpha-beta fit from RecoLocalCalo 
+float PerformAnalyticFit(double* samples, int max_sample, double sigma_ped);
+  void InitFitParameters(double* samples, int max_sample);
+  double pulseShapeFunction(double t);
+  std::vector<double> extrapolateSamples(int rawid);
+
   edm::ESHandle<EcalPedestals> peds;
+  edm::ESGetToken<EcalPedestals, EcalPedestalsRcd> pedsToken_;
   edm::ESHandle<EcalGainRatios>  gains;    
-   
+  edm::ESGetToken<EcalGainRatios, EcalGainRatiosRcd> gainsToken_; 
   edm::ESHandle<EcalChannelStatus> chStatus;
+  edm::ESGetToken<EcalChannelStatus, EcalChannelStatusRcd> chStatusToken_;
   std::vector<int> v_chstatus_;  
   uint32_t flagmask_; // do not propagate channels with these flags on
   // Associate reco flagbit ( outer vector) to many db status flags (inner vector)
@@ -73,11 +75,15 @@ class PulseTemplates : public edm::one::EDAnalyzer<> {
   edm::EDGetTokenT<EBRecHitCollection> ebhitcollToken_;
   edm::EDGetTokenT<EERecHitCollection> eehitcollToken_;
 
-  double minEnergyBarrel_, minEnergyEndcap_;
-  double maxEnergyBarrel_, maxEnergyEndcap_;
+  double minAmplitudeBarrel_, minAmplitudeEndcap_;
+  double maxAmplitudeBarrel_, maxAmplitudeEndcap_;
   double maxChi2_;
+  double minPeakSignificance_;
+  bool amplitudeWeight_;
   std::vector<double> ebSimPulseShape_, eeSimPulseShape_;
   int minNHits_;
+  double alphaBarrel_, alphaEndcap_, betaBarrel_, betaEndcap_;
+
   bool pedestalAnalysis_;
 
   int run_;
@@ -97,6 +103,15 @@ class PulseTemplates : public edm::one::EDAnalyzer<> {
   double chi2_;
   int flag_kweird_;
   int flag_kdiweird_;
+
+  // for the extrapolation
+  double fAlpha_;    //parameter of the shape
+  double fBeta_;     //parameter of the shape
+  double fAmp_max_;  // peak amplitude
+  double fTim_max_;  // time of the peak (in 25ns units)
+  double fPed_max_;  // pedestal value
+  double alphabeta_;
+  bool doFit_;
 
   typedef std::map<unsigned int, std::vector<float> > tempmap;
   tempmap templates_ref_;
