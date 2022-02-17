@@ -52,7 +52,7 @@ public:
   void writeTxtFile(int run);
 
   // fast alpha-beta fit from RecoLocalCalo 
-float PerformAnalyticFit(double* samples, int max_sample, double sigma_ped);
+  float PerformAnalyticFit(double* samples, int max_sample, double sigma_ped);
   void InitFitParameters(double* samples, int max_sample);
   double pulseShapeFunction(double t);
   std::vector<double> extrapolateSamples(int rawid);

@@ -6,10 +6,6 @@ process = cms.Process("PulseShapes")
 LoneBunch = False
 ###############################
 
-templateOutputFile = str("templates_run"+str(run)+"_"+FEDused+"_Gain"+str(Gain)+".root")
-templateOutputFile = re.sub("\+","p", templateOutputFile)
-templateOutputFile = re.sub("\-","m", templateOutputFile)
-
 process.load('Configuration.StandardSequences.Services_cff')
 process.load('FWCore.MessageService.MessageLogger_cfi')
 process.load('Configuration.EventContent.EventContent_cff')
@@ -20,7 +16,7 @@ process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 process.load('Configuration.StandardSequences.RawToDigi_cff')
 process.load('Configuration.StandardSequences.Reconstruction_cff')
 
-process.maxEvents = cms.untracked.PSet(  input = cms.untracked.int32(100000) )
+process.maxEvents = cms.untracked.PSet(  input = cms.untracked.int32(-1) )
 process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 process.MessageLogger.suppressWarning = cms.untracked.vstring( "triggerSelectionLoneBunch" )
 
