@@ -7,6 +7,9 @@
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 
+#include "Geometry/CaloGeometry/interface/CaloSubdetectorGeometry.h"
+#include "Geometry/Records/interface/CaloGeometryRecord.h"
+
 #include "DataFormats/EcalDigi/interface/EEDataFrame.h"
 #include "DataFormats/EcalDigi/interface/EBDataFrame.h"
 #include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
@@ -74,6 +77,11 @@ public:
 
   edm::EDGetTokenT<EBRecHitCollection> ebhitcollToken_;
   edm::EDGetTokenT<EERecHitCollection> eehitcollToken_;
+
+  edm::ESGetToken<CaloSubdetectorGeometry, EcalEndcapGeometryRecord> theEndcapGeometryToken_;
+  edm::ESGetToken<CaloSubdetectorGeometry, EcalBarrelGeometryRecord> theBarrelGeometryToken_;
+  const CaloSubdetectorGeometry* theEndcapGeometry_;
+  const CaloSubdetectorGeometry* theBarrelGeometry_;
 
   double minAmplitudeBarrel_, minAmplitudeEndcap_;
   double maxAmplitudeBarrel_, maxAmplitudeEndcap_;
