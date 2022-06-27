@@ -1,5 +1,9 @@
 import FWCore.ParameterSet.Config as cms
 import re
+from FWCore.ParameterSet.VarParsing import VarParsing
+options = VarParsing ('analysis')
+options.parseArguments()
+
 process = cms.Process("PulseShapes")
 
 ######## configure here #######
@@ -67,7 +71,7 @@ process.GlobalTag.globaltag = "123X_dataRun2_v1" #auto:run2_data
 
 
 process.source = cms.Source("PoolSource",
-                              fileNames = cms.untracked.vstring('/store/data/Run2018D/AlCaPhiSym/RAW/v1/000/320/934/00000/94CFC099-1C9A-E811-8F6A-FA163E8A9748.root')
+                              fileNames = cms.untracked.vstring(options.inputFiles)
                             )
 
 # start from RAW format for more flexibility
@@ -171,3 +175,11 @@ else:
     process.p = cms.Path(process.bunchSpacingProducer *
                          process.ecalLocalRecoSequenceAlCaStream *
                          process.pulseTemplates )
+
+process.load("FWCore.MessageService.MessageLogger_cfi")
+process.MessageLogger.cout.FwkSummary = cms.untracked.PSet(
+    reportEvery = cms.untracked.int32(100000))
+process.MessageLogger.cout.FwkReport = cms.untracked.PSet(
+    reportEvery = cms.untracked.int32(100000))
+process.MessageLogger.cerr.FwkSummary.reportEvery = 100000
+process.MessageLogger.cerr.FwkReport.reportEvery = 100000
