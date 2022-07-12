@@ -18,7 +18,9 @@
 PulseTemplates::PulseTemplates(const edm::ParameterSet& conf)
   : pedsToken_(esConsumes()),
     gainsToken_(esConsumes()),
-    chStatusToken_(esConsumes()) {
+    chStatusToken_(esConsumes()),
+    theEndcapGeometryToken_(esConsumes(edm::ESInputTag("", "EcalEndcap"))),
+    theBarrelGeometryToken_(esConsumes(edm::ESInputTag("", "EcalBarrel"))) {
   
   ebDigiCollectionToken_ = consumes<EBDigiCollection>(conf.getParameter<edm::InputTag>("barrelDigis"));
   eeDigiCollectionToken_ = consumes<EEDigiCollection>(conf.getParameter<edm::InputTag>("endcapDigis"));
@@ -142,7 +144,42 @@ void  PulseTemplates::endJob() {
 
 
 void PulseTemplates::analyze(const edm::Event& e, const edm::EventSetup& es) {
-  
+
+  // initialize maps (once per job)
+  if(templates_.size()==0)
+  {
+    theEndcapGeometry_ = &es.getData(theEndcapGeometryToken_);
+    theBarrelGeometry_ = &es.getData(theBarrelGeometryToken_);
+    for(auto& detid : theBarrelGeometry_->getValidDetIds(DetId::Ecal, EcalBarrel))
+    {
+        EBDetId ebid(detid);
+        auto rawid = ebid.rawId();
+        std::vector<double> templ;
+        templ.resize(10, 0.);
+        templates_[rawid] = templ;
+        norm_average_[rawid] = 0.;
+        norm_counts_[rawid] = 0;
+        rawIds_[rawid] = rawid;
+        iXs_[rawid] = ebid.ieta();
+        iYs_[rawid] = ebid.iphi();
+        iZs_[rawid] = 0;
+    }
+    for(auto& detid : theEndcapGeometry_->getValidDetIds(DetId::Ecal, EcalEndcap))
+    {
+        EEDetId eeid(detid);
+        auto rawid = eeid.rawId();
+        std::vector<double> templ;
+        templ.resize(10, 0.);
+        templates_[rawid] = templ;
+        norm_average_[rawid] = 0.;
+        norm_counts_[rawid] = 0;
+        rawIds_[rawid] = rawid;
+        iXs_[rawid] = eeid.ix();
+        iYs_[rawid] = eeid.iy();
+        iZs_[rawid] = eeid.zside();
+    }
+  }
+
   run_ = e.id().run();
   lumi_ = e.luminosityBlock();
 
@@ -292,22 +329,7 @@ void PulseTemplates::FillRecHit(const EcalDataFrame& dataFrame, const EcalRecHit
   double minAmplitude = barrel_ ? minAmplitudeBarrel_ : minAmplitudeEndcap_;
   double maxAmplitude = barrel_ ? maxAmplitudeBarrel_ : maxAmplitudeEndcap_;
   if(!pedestalAnalysis_ && (pulse_[5] < minAmplitude || pulse_[5] > maxAmplitude)) return;
-  
-  if (barrel_) {
-    EBDetId ebid(detid);
-    ietaix_ = ebid.ieta();
-    iphiiy_ = ebid.iphi();
-    iz_ = 0;
-    rawid_ = ebid.rawId();
-  }
-  else {
-    EEDetId eeid(detid);
-    ietaix_ = eeid.ix();
-    iphiiy_ = eeid.iy();
-    iz_ = eeid.zside();  
-    rawid_ = eeid.rawId();
-  }
-  
+    
   // associated rechit quantities
   ene_     = rechit.energy();
   time_    = rechit.time();
@@ -322,24 +344,10 @@ void PulseTemplates::FillRecHit(const EcalDataFrame& dataFrame, const EcalRecHit
 
   double weight = amplitudeWeight_ ? pow(pulse_[5],2) : 1.0;
 
-  if(templates_.count(rawid_)==0) {
-    std::vector<double> templ;
-    templ.resize(10);
-    for(int iSample(0); iSample < 10; iSample++) templ[iSample] = pulse_[iSample]/maxamplitude * weight;
-    templates_[rawid_] = templ;
-    norm_average_[rawid_] = weight;
-    norm_counts_[rawid_] = 1;
-    // std::cout << "inserting new ped for DetId = " << rawid_ << std::endl;
-    rawIds_[rawid_] = rawid_;
-    iXs_[rawid_] = ietaix_;       iYs_[rawid_] = iphiiy_;        iZs_[rawid_] = iz_;
-  } else {
-    std::vector<double> &templ = templates_[rawid_];
-    for(int iSample(0); iSample < 10; iSample++) templ[iSample] += pulse_[iSample]/maxamplitude * weight;
-    norm_average_[rawid_] += weight;
-    norm_counts_[rawid_] ++;
-    //        std::cout << "updating ped for DetId = " << rawid_ << std::endl;
-  }
-  
+  for(int iSample(0); iSample < 10; iSample++) 
+    templates_[detid.rawId()][iSample] += pulse_[iSample]/maxamplitude * weight;
+  norm_average_[detid.rawId()] += weight;
+  norm_counts_[detid.rawId()] ++;
 }
 
 // Take our association map of dbstatuses-> recHit flagbits and return the apporpriate flagbit word
@@ -371,7 +379,7 @@ void PulseTemplates::writeTxtFile(int run) {
 
     txtdumpfile.unsetf ( std::ios::floatfield ); 
     txtdumpfile << ( barrel_ ? 1 : 0 ) << "\t";
-    txtdumpfile << iXs_[rawId] << "\t" << iYs_[rawId] << "\t" << iZs_[rawId] << "\t" << rawId << "\t";
+    txtdumpfile << iXs_[rawId] << "\t" << iYs_[rawId] << "\t" << iZs_[rawId] << "\t" << rawId << "\t" << norm_counts_[rawId] << "\t";
     txtdumpfile.precision(6);
     txtdumpfile.setf( std::ios::fixed, std::ios::floatfield ); // floatfield set to fixed
     
