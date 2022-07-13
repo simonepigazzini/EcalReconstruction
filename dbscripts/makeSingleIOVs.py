@@ -61,7 +61,9 @@ if __name__ == "__main__":
             os.system("mv -i {dbfile} {dbdir}".format(dbfile=dbfile,dbdir=dbdir))
             print bcolors.OKGREEN + "sqlite file ecaltemplates_popcon_run_{run}.db is in {dbdir}".format(run=run,dbdir=dbdir) + bcolors.ENDC
     
-    
     print bcolors.OKBLUE +"Now checking the multiple IOV sqlite file:" + bcolors.ENDC
     os.system("conddb --db {multIOV} list EcalPulseShapes_data".format(multIOV=multipleIOVfile))
+    if options.backup:
+        os.system("mv -i {multIOV} {dbdir}".format(multIOV=multipleIOVfile,dbdir=dbdir))
+        print bcolors.OKGREEN + "multiple IOV sqlite file {multIOV} is in {dbdir}".format(multIOV=multipleIOVfile,dbdir=dbdir) + bcolors.ENDC
 
