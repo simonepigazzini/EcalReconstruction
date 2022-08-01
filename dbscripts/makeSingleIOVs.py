@@ -24,7 +24,11 @@ if __name__ == "__main__":
     parser.add_option(     "--averageEE", dest="averageEE", action="store_true", default=False, help="average the inner endcap rings dynamically (default is average)")
     parser.add_option("-f","--fill", dest="fill", type="string", default=None, help="use the specified fill number (the file is in the EOS dir of the last processed run of the fill)")
     (options, args) = parser.parse_args()
-    if len(args)<1: raise RuntimeError, 'Expecting at least one run range in the form runmin_runmax'
+    if len(args)<1: 
+        if options.fill:
+            raise RuntimeError, 'Expecting at least one run as IOV start'
+        else:
+            raise RuntimeError, 'Expecting at least one run range in the form runmin runmax'
 
     rrange=args[:]
     if(rrange[0]==rrange[-1]):
