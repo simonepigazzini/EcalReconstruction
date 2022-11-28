@@ -46,7 +46,7 @@ class TagValidation:
             coor = item[:4]
             coor[0] = coor[3]==0
             val = item[-12:]
-            mydata[key] = {"samples" : val, "coor" : coor}
+            mydata[key] = {"samples" : val, "coor" : coor, "nhits" : item[5]}
         return mydata
 
     def printOnePlot(self, plot, canvas, outputName, drawopt="",profileY=False):
@@ -341,6 +341,49 @@ class TagValidation:
                 self.printOnePlot(h,canv,'{name}{absolute}'.format(name=h.GetName(),absolute='_absolute' if absoluteShape else ''),"",True)
         #of.Close()
 
+    def doNhits(self):
+        part = 'EB' if self.doEB else 'EE'
+        customROOTstyle()
+        newData = self.parseDic(self._allData["current"])
+        histos = []
+        (zmin,zmax) = (0,100000) # ns
+        if self.doEB:
+            h = rt.TProfile2D(('%s_nhits' % part),"",360,1,360,171,-85.5,85.5)
+            h.GetXaxis().SetTitle('i#phi')
+            h.GetYaxis().SetTitle('i#eta')
+            h.SetTitle('Number of hits')
+            h.GetZaxis().SetRangeUser(zmin,zmax)
+            histos.append(h)
+        else: 
+            hplus = rt.TProfile2D(('%splus_nhits' % part),"",100,1,100,100,1,100)
+            hplus.GetXaxis().SetTitle('ix')
+            hplus.GetYaxis().SetTitle('iy')
+            hplus.SetTitle('Number of hits')
+            hplus.GetZaxis().SetRangeUser(zmin,zmax)
+            histos.append(hplus)
+            hminus = hplus.Clone('%sminus_nhits' % part)
+            histos.append(hminus)
+
+        for key,data in newData.items():            
+            partition = data['coor'][0]
+            x,y,z = data['coor'][1:]
+
+            if partition == self.doEB:
+
+                (ix,iy) = (y,x) if self.doEB else (x+1,y+1)
+                
+                if z==0 or z==1: 
+                    htofill = histos[0]
+                else: 
+                    htofill = histos[1]
+                htofill.Fill(ix,iy,data['nhits'])
+
+        xsize = 1200
+        ysize = int(xsize*170/360+0.1*xsize) if self.doEB else int(xsize*0.9)
+        canv = rt.TCanvas("c","",xsize,ysize)
+        for h in histos:
+            self.printOnePlot(h,canv,h.GetName(),"",True)
+
     def historyPlot(self,detid,iovfiles):
         iovs = []
         for f in iovfiles: 
@@ -428,6 +471,7 @@ if __name__ == "__main__":
     parser.add_option(     "--do2DShapeDiff",  dest="do2DShapeDiff",   action="store_true", help="make the 2D shape difference map, only based on pulse shapes")
     parser.add_option(     "--do2DShape",  dest="do2DShape",   action="store_true", help="make the 2D shape map, only based on pulse shapes")
     parser.add_option(     "--do1Dpulses",  dest="do1Dpulses",   action="store_true", help="make the comparison of pulses in the same crystal for the two tags")
+    parser.add_option(     "--doNhits",  dest="doNhits",   action="store_true", help="plots new IOV nhits")
     parser.add_option("-t","--timeICs",   dest="timeICs",    type="string", default="", help="the file containing the time ICs")
     parser.add_option("--print", dest="printPlots", type="string", default="png,pdf,txt", help="print out plots in this format or formats (e.g. 'png,pdf,txt')");
     parser.add_option("--pdir", "--print-dir", dest="printDir", type="string", default="plots", help="print out plots in this directory");
@@ -439,6 +483,9 @@ if __name__ == "__main__":
     doEB = True if options.partition=='EB' else False
     
     tv = TagValidation(args,options,doEB=doEB)
+
+    if options.doNhits:
+        tv.doNhits()
 
     if options.do1Ddiff:
         tv.do1dDiff()

@@ -2,9 +2,15 @@ import FWCore.ParameterSet.Config as cms
 import re
 from FWCore.ParameterSet.VarParsing import VarParsing
 options = VarParsing ('analysis')
+options.register('globalTag',
+                 "",
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.string,
+                 "globalTag to use")
 options.parseArguments()
 
-process = cms.Process("PulseShapes")
+from Configuration.StandardSequences.Eras import eras
+process = cms.Process("PulseShapes", eras.Run3)
 
 ######## configure here #######
 LoneBunch = False
@@ -26,9 +32,12 @@ process.MessageLogger.suppressWarning = cms.untracked.vstring( "triggerSelection
 
 process.options = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
 
-from Configuration.AlCa.GlobalTag import GlobalTag as customiseGlobalTag
-process.GlobalTag.globaltag = "123X_dataRun2_v1" #auto:run2_data
-#process.GlobalTag.globaltag = "123X_dataRun3_Prompt_v1" #auto:run3_data_prompt
+process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
+if options.globalTag != '':
+    process.GlobalTag.globaltag = options.globalTag
+else:
+    from Configuration.AlCa.GlobalTag import GlobalTag
+    process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run3_data_prompt', '')
 
 # process.GlobalTag = cms.ESSource("PoolDBESSource",
 #                                  DBParameters = cms.PSet(

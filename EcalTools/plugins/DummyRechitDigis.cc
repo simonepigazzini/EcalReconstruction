@@ -21,7 +21,7 @@
 
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/EDProducer.h"
+#include "FWCore/Framework/interface/global/EDProducer.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
@@ -37,7 +37,7 @@
 // class declaration
 //
 
-class DummyRechitDigis : public edm::global::EDProducer {
+class DummyRechitDigis : public edm::global::EDProducer<> {
 public:
   explicit DummyRechitDigis(const edm::ParameterSet&);
   ~DummyRechitDigis();
@@ -45,9 +45,7 @@ public:
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
 private:
-  virtual void beginJob() override;
-  virtual void produce(edm::Event&, const edm::EventSetup&) override;
-  virtual void endJob() override;
+  virtual void produce(edm::StreamID, edm::Event&, const edm::EventSetup&) const override;
       
   // ----------member data ---------------------------
   edm::InputTag tag_barrelHitProducer_;
@@ -84,7 +82,7 @@ DummyRechitDigis::DummyRechitDigis(const edm::ParameterSet& iConfig):
 
 DummyRechitDigis::~DummyRechitDigis(){ }
 
-void DummyRechitDigis::produce(edm::Event& iEvent, const edm::EventSetup& iSetup){
+void DummyRechitDigis::produce(edm::StreamID sID, edm::Event& iEvent, const edm::EventSetup& iSetup) const {
   //std::cout << "\n-----------New Event ----------------\n " << std::endl;
    using namespace edm;   
    // build an empty collection
@@ -183,8 +181,6 @@ void DummyRechitDigis::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
    //std::cout << "-----------End Dummy Rechits ---------- " << std::endl;
 }
 
-void DummyRechitDigis::beginJob(){ }
-void DummyRechitDigis::endJob(){ }
 void DummyRechitDigis::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //The following says we do not know what parameters are allowed so do no validation
   // Please change this to state exactly what you do use, even if it is no parameters
