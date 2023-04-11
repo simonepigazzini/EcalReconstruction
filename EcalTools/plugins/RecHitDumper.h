@@ -9,11 +9,11 @@
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
-#include "FWCore/Framework/interface/EDAnalyzer.h"
+#include "FWCore/Framework/interface/one/EDAnalyzer.h"
 #include "EcalReconstruction/EcalTools/interface/CmsTree.h"
 
 
-class RecHitDumper : public edm::EDAnalyzer {
+class RecHitDumper : public edm::one::EDAnalyzer<> {
  public:
   explicit RecHitDumper(const edm::ParameterSet&);
   ~RecHitDumper();

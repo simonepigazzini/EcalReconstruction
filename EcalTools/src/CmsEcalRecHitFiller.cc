@@ -11,7 +11,6 @@
 #include <memory>
 
 #include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/EDProducer.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/Framework/interface/ESHandle.h"
@@ -92,14 +91,14 @@ void CmsEcalRecHitFiller::writeCollectionToTree(edm::InputTag collectionTag,
   bool isEB = (collectionTag.label().find("EB")!=std::string::npos);
   
   edm::ESHandle<CaloTopology> theCaloTopology;
-  iSetup.get<CaloTopologyRecord>().get(theCaloTopology); 
+  iSetup.get<CaloTopologyRecord>().get(edm::ESGetToken<CaloTopology, CaloTopologyRecord>()); 
 
   const CaloSubdetectorTopology* theSubdetTopology   = (isEB) ? 
     theCaloTopology->getSubdetectorTopology(DetId::Ecal,EcalBarrel) :
     theCaloTopology->getSubdetectorTopology(DetId::Ecal,EcalEndcap);
 
   edm::ESHandle<CaloGeometry> theCaloGeometry;
-  iSetup.get<CaloGeometryRecord>().get(theCaloGeometry);
+  iSetup.get<CaloGeometryRecord>().get(edm::ESGetToken<CaloGeometry, CaloGeometryRecord>());
 
   const CaloSubdetectorGeometry * theSubdetGeometry = (isEB) ? 
     theCaloGeometry->getSubdetectorGeometry(DetId::Ecal,EcalBarrel) :
